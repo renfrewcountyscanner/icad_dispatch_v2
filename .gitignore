@@ -1,0 +1,29 @@
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.db.*
+
+# Logs
+*.log
+log/*.log
+
+# Secrets
+var/secret_key.txt
+var/sessions/
+
+# Audio (can be large)
+audio/*.mp3
+audio/*.wav
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
