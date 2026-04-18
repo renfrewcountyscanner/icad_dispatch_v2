@@ -167,7 +167,8 @@ def call_upload():
         return _err(str(e), 422)
 
     # Apply post-tone delay (skip first N seconds of audio before saving/processing)
-    system_row = db.execute("SELECT post_tone_delay FROM radio_systems WHERE radio_system_id = ?", (radio_system_id,)).fetchone()
+    system_res = db.execute_query("SELECT post_tone_delay FROM radio_systems WHERE radio_system_id = ?", (radio_system_id,), fetch_mode="one")
+    system_row = system_res.get("result") if system_res.get("success") else None
     post_tone_delay = int(system_row["post_tone_delay"]) if system_row else 0
     if post_tone_delay > 0 and len(audio_segment) > post_tone_delay * 1000:
         delay_ms = post_tone_delay * 1000
@@ -2306,32 +2307,34 @@ def reprocess_call_tones(call_id):
     route_logger = logging.getLogger('icad_dispatch.call_upload')
     route_logger.info("Reprocess tones for call_id=%s", call_id)
     
-    db = SQLiteDatabase()
+    db = current_app.config["db"]
     try:
-        call_row = db.execute(
-            "SELECT radio_system_id, talkgroup, audio_file, start_epoch, duration FROM calls WHERE call_id = ?",
-            (call_id,)
-        ).fetchone()
-        
+        call_res = db.execute_query(
+            "SELECT radio_system_id, talkgroup, audio_file, start_epoch, duration FROM call_records WHERE call_id = ?",
+            (call_id,),
+            fetch_mode="one"
+        )
+        call_row = call_res.get("result") if call_res.get("success") else None
+
         if not call_row:
             return jsonify({"error": "Call not found"}), 404
-        
+
         radio_system_id = call_row["radio_system_id"]
         audio_file = call_row["audio_file"]
-        
+
         audio_path = Path(audio_file)
         if not audio_path.is_absolute():
             audio_path = Path("static/audio") / audio_path
-        
+
         if not audio_path.exists():
             return jsonify({"error": "Audio file not found"}), 404
-        
+
         tone_cfg = _load_tone_cfg(db, radio_system_id)
         if not tone_cfg.get("tone_detection_enabled"):
             return jsonify({"error": "Tone detection not enabled for this system"}), 400
-        
+
         audio_segment = AudioSegment.from_file(str(audio_path))
-        
+
         detect_result = tone_detect(
             audio_segment,
             tone_cfg.get("sample_rate", 8000),
@@ -2339,23 +2342,21 @@ def reprocess_call_tones(call_id):
             tone_cfg.get("freq_min", 0),
             tone_cfg.get("freq_max", 4000),
         )
-        
-        db.execute("DELETE FROM call_tone_events WHERE call_id = ?", (call_id,))
-        db.execute("DELETE FROM tone_trigger_map WHERE call_id = ?", (call_id,))
-        
+
+        db.execute_commit("DELETE FROM call_tone_events WHERE call_id = ?", (call_id,))
+        db.execute_commit("DELETE FROM tone_trigger_map WHERE call_id = ?", (call_id,))
+
         for tone in detect_result.tones:
-            db.execute("""
-                INSERT INTO call_tone_events 
+            db.execute_commit("""
+                INSERT INTO call_tone_events
                 (call_id, start_time, end_time, frequency_a, frequency_b, tone_type, matched_trigger_id)
                 VALUES (?, ?, ?, ?, ?, ?, NULL)
             """, (call_id, tone.start_time, tone.end_time, tone.freq_a, tone.freq_b, tone.tone_type))
-        
-        db.execute(
-            "UPDATE calls SET tone_count = ? WHERE call_id = ?",
-            (len(detect_result.tones), call_id)
+
+        db.execute_commit(
+            "UPDATE call_records SET has_tone = 1 WHERE call_id = ?",
+            (call_id,)
         )
-        
-        db.commit()
         route_logger.info("Reprocessed %d tones for call_id=%s", len(detect_result.tones), call_id)
         
         return jsonify({
@@ -2367,5 +2368,3 @@ def reprocess_call_tones(call_id):
     except Exception as e:
         route_logger.error("Reprocess failed for call_id=%s: %s\n%s", call_id, e, traceback.format_exc())
         return jsonify({"error": str(e)}), 500
-    finally:
-        db.close()
