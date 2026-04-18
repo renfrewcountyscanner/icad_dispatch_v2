@@ -834,6 +834,7 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
       - system_name     (optional; updates if truthy)
       - stream_url      (optional; updates if provided, even blank)
       - api_key         (optional; updates if provided and changed)
+      - post_tone_delay (optional; seconds to skip after tone)
     """
     try:
         radio_system_id = int(system_data.get("radio_system_id") or 0)
@@ -848,6 +849,10 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
 
         stream_url = system_data.get("stream_url")
         # stream_url: keep None if missing; allow "" to clear
+
+        post_tone_delay = system_data.get("post_tone_delay")
+        if post_tone_delay is not None:
+            post_tone_delay = int(post_tone_delay) if post_tone_delay != "" else 0
 
         # api_key: only consider update if key was actually included in payload
         api_key_present = "api_key" in system_data
@@ -873,6 +878,7 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
     old_name    = cur_row.get("system_name") or ""
     old_stream  = cur_row.get("stream_url")
     old_key     = cur_row.get("api_key") or ""
+    old_post_tone_delay = int(cur_row.get("post_tone_delay") or 0)
 
     sets, params = [], []
 
@@ -907,6 +913,11 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
                 }
             sets.append("api_key = ?")
             params.append(api_key)
+
+    # post_tone_delay: update if provided
+    if post_tone_delay is not None and post_tone_delay != old_post_tone_delay:
+        sets.append("post_tone_delay = ?")
+        params.append(post_tone_delay)
 
     if not sets:
         return {"success": False, "message": "No fields to update", "result": []}

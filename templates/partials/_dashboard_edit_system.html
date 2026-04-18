@@ -178,6 +178,13 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="updatePostToneDelay" class="form-label">Post-Tone Delay (seconds)</label>
+                                <input id="updatePostToneDelay" class="form-control" type="number" min="0"
+                                       max="60" value="0" name="post_tone_delay">
+                                <div class="form-text">Skip first N seconds of audio before saving (to exclude pre-announcement tones). Default: 0</div>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="updateSystemStreamURL" class="form-label">Stream URL</label>
                                 <input id="updateSystemStreamURL" class="form-control" type="text" name="stream_url">
                                 <div class="form-text">Add a URL where the audio can be heard. (Optional)</div>
