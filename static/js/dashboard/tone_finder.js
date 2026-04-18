@@ -1197,20 +1197,28 @@ function initToneFinderPage() {
     }
 
     table = new DataTable("#callsTable", {
-        responsive: {               // ✅ enable responsive, but no child rows
-            details: false            // avoids conflict with our row drawer
-        },
+        responsive: { details: false },
+        autoWidth: false,
         order: [[COL.EPOCH, "desc"]],
         pageLength: 25,
         columnDefs: [
-            { targets: [COL.SEL, COL.ACTIONS], orderable: false, searchable: false },
+            // ── widths ───────────────────────────────────────────────
+            { targets: COL.SEL,         width: "28px",  orderable: false, searchable: false },
+            { targets: COL.TIME,        width: "140px" },
+            { targets: COL.TYPE,        width: "75px",  className: "text-center" },
+            { targets: COL.SYSTEM,      width: "130px" },
+            { targets: COL.TONES_TRIG,  width: "auto"  },   // takes remaining space
+            { targets: COL.TONES_COUNT, width: "55px",  className: "text-end" },
+            { targets: COL.TG,          width: "85px",  className: "text-end" },
+            { targets: COL.DUR,         width: "65px",  className: "text-end" },
+            { targets: COL.ACTIONS,     width: "105px", orderable: false, searchable: false },
             { targets: [COL.ID, COL.EPOCH], visible: false },
 
-            // ▼ Responsive priorities: lower number = kept visible longer on small screens
+            // ── responsive: lower = kept visible longer ───────────
             { targets: [COL.TIME, COL.TONES_TRIG, COL.ACTIONS], responsivePriority: 1 },
-            { targets: [COL.TYPE, COL.SYSTEM],                   responsivePriority: 2 },
-            { targets: [COL.TG, COL.TONES_COUNT],                responsivePriority: 3 },
-            { targets: [COL.DUR],                                responsivePriority: 4 },
+            { targets: [COL.SYSTEM],                             responsivePriority: 2 },
+            { targets: [COL.TYPE, COL.TG],                       responsivePriority: 3 },
+            { targets: [COL.TONES_COUNT, COL.DUR],               responsivePriority: 4 },
             { targets: [COL.SEL],                                responsivePriority: 5 }
         ]
     });
