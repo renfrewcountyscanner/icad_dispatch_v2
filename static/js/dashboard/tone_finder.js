@@ -3389,14 +3389,7 @@ function getCategoryBadgeClasses(category) {
 }
 
 /* ====================================================================
-   11) BOOTSTRAP: PAGE INIT
-   ==================================================================== */
-
-document.addEventListener("DOMContentLoaded", initToneFinderPage);
-
-
-/* ====================================================================
-   12) FOOTER “NOW PLAYING” PLAYER (custom; global API)
+   11) FOOTER “NOW PLAYING” PLAYER (custom; global API)
    ==================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3684,3 +3677,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     })();
 });
+
+/* ====================================================================
+   12) BOOTSTRAP: PAGE INIT
+   ==================================================================== */
+
+document.addEventListener("DOMContentLoaded", initToneFinderPage);
