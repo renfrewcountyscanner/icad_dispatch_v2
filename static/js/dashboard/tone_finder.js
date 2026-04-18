@@ -2361,6 +2361,13 @@ async function startPlayback(callId, src, label) {
         return;
     }
 
+    // Wait for audio player to initialize if needed
+    if (!window.nowPlaying) {
+        console.warn("Audio player not yet initialized, waiting...");
+        setTimeout(() => startPlayback(callId, finalSrc, label), 100);
+        return;
+    }
+
     window.nowPlaying({
         src: finalSrc,
         title: label || `Call ${callId}`,
