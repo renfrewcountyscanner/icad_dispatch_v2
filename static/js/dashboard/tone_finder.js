@@ -1765,6 +1765,7 @@ function initToneFinderPage() {
     fetchSystems().then(async () => {
         await refreshSystemTriggers();
         applyRefreshInterval();
+        maybeLoad();
     });
 
     // Tooltips (lazy delegate)

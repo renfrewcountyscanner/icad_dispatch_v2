@@ -90,16 +90,28 @@ console.log('Upload page JS loaded');
                 method: 'POST',
                 body: formData
             });
-            
-            const data = await response.json();
-            console.log('Response:', data);
-            
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseErr) {
+                console.error('Failed to parse response as JSON:', parseErr);
+                data = null;
+            }
+            console.log('Response:', data, 'Status:', response.status);
+
             if (response.ok) {
                 alertDiv.className = 'alert alert-success';
-                alertDiv.textContent = 'Upload successful! Call ID: ' + data.call_id;
+                alertDiv.textContent = 'Upload successful! Call ID: ' + (data?.call_id || 'Unknown');
             } else {
                 alertDiv.className = 'alert alert-danger';
-                alertDiv.textContent = 'Error: ' + (data.error || data.message || 'Unknown error');
+                let errorMsg = 'Unknown error';
+                if (data && typeof data === 'object') {
+                    errorMsg = data.message || data.error || JSON.stringify(data);
+                } else if (typeof data === 'string') {
+                    errorMsg = data;
+                }
+                alertDiv.textContent = 'Error: ' + errorMsg;
             }
         } catch (err) {
             console.error('Upload error:', err);
