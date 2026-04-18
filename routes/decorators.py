@@ -197,3 +197,62 @@ def token_required(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+def token_or_login_required(fn):
+    """
+    Hybrid authentication: accept either API token OR session login.
+    Useful for endpoints like upload that work with both SDRTrunk (tokens) and web UI (sessions).
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        # Try token authentication first
+        token = request.form.get("key") or request.values.get("key")
+        if token and request.headers.get("Authorization", "").lower().startswith("bearer "):
+            token = request.headers.get("Authorization")[7:].strip()
+
+        sys_dec_id = (
+            request.form.get("system") or
+            request.values.get("system") or
+            request.values.get("system_id") or
+            request.headers.get("X-System-ID")
+        )
+
+        if token and sys_dec_id:
+            # Try token authentication
+            try:
+                sys_dec_id = int(sys_dec_id)
+            except (TypeError, ValueError):
+                sys_dec_id = None
+
+            if sys_dec_id:
+                db = current_app.config["db"]
+                row = db.execute_query(
+                    "SELECT radio_system_id, system_decimal, api_key FROM radio_systems WHERE system_decimal = ?",
+                    (sys_dec_id,),
+                    fetch_mode="one"
+                )
+
+                if row.get("success") and row.get("result") and token == row["result"]["api_key"]:
+                    # Token authentication successful
+                    g.radio_system_id = row["result"]["radio_system_id"]
+                    g.system_decimal = row["result"]["system_decimal"]
+                    g.api_token = token
+                    g.radio_system = row["result"]
+                    return fn(*args, **kwargs)
+
+        # Fall back to session authentication
+        if "user_id" in session:
+            # User is logged in, use first system (or default)
+            db = current_app.config["db"]
+            systems = db.execute_query("SELECT radio_system_id, system_decimal FROM radio_systems LIMIT 1", fetch_mode="one")
+            if systems.get("success") and systems.get("result"):
+                g.radio_system_id = systems["result"]["radio_system_id"]
+                g.system_decimal = systems["result"]["system_decimal"]
+                g.api_token = None
+                return fn(*args, **kwargs)
+            return api_error(400, "No systems configured.", code="no_systems")
+
+        return api_error(401, "Missing authentication (API token or login session).", code="auth_required")
+
+    return wrapper

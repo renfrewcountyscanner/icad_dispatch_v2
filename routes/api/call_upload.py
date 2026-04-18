@@ -42,7 +42,7 @@ from lib.sqlite_module import SQLiteDatabase
 from lib.transcribe_module import transcribe_audio
 from lib.utility import _parse_to_float
 from lib.vad_module import vad_segments_webrtc_tone_tx
-from routes.decorators import token_required
+from routes.decorators import token_required, token_or_login_required
 from lib.alert_trigger_module import get_triggers_full
 
 from lib.address_extractor_module import (
@@ -131,7 +131,7 @@ def _log_tone_detect(route_logger, prefix: str, rsid: int, tg: Any, dur_s: float
         route_logger.debug("%s %s tone_detect=%s", LOG["tone"], prefix, _dump_json(td))
 
 @api_call_upload.route("", methods=["POST"])
-@token_required
+@token_or_login_required
 def call_upload():
     db = current_app.config["db"]
     route_logger = current_app.config["logger"]
