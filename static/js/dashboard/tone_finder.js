@@ -32,9 +32,9 @@ const callMeta = new Map();                 // call_id -> { src, label }
 const selectedIds = new Set();              // Selected call ids (string)
 
 const COL = {                               // DataTable column indices
-    SEL: 0, TIME: 1, SYSTEM: 2, TG: 3, DUR: 4,
-    TONES: 5, ICONS: 6, INFO: 7, ACTIONS: 8,
-    ID: 9, EPOCH: 10
+    SEL: 0, TIME: 1, TG: 2, DUR: 3,
+    TONES: 4, TRIGGERED: 5, ICONS: 6, ACTIONS: 7,
+    ID: 8, EPOCH: 9
 };
 
 const toneCache = new Map();                // call_id -> [{s,e,type,fa,fb,triggerId,fired}, ...]
@@ -936,14 +936,14 @@ async function loadCalls(ev) {
             const talkgroup = row.talkgroup ?? "";
             const toneCount = row.tone_count ?? 0;
             
-            // System badge
-            const systemBadge = systemName ? `<span class="badge bg-primary fs-6">${systemName}</span>` : "";
+            // System badge - NOT shown in table (keeping for modal reference)
+            // const systemBadge = systemName ? `<span class="badge bg-primary">${systemName}</span>` : "";
             
-            // Talkgroup - plain number, narrow, left-aligned
-            const talkgroupDisplay = talkgroup ? `<span style="color: #ccc; font-size: 0.8rem;">${talkgroup}</span>` : "";
+            // Talkgroup - plain number, narrow, RIGHT-aligned gray
+            const talkgroupDisplay = talkgroup ? `<span style="color: #aaa; font-size: 0.75rem; display: block; text-align: right; min-width: 40px;">${talkgroup}</span>` : "";
             
             // Tones - plain number, narrow
-            const tonesDisplay = toneCount > 0 ? `<span style="color: #fff; font-size: 0.8rem;">${toneCount}</span>` : `<span style="color: #888; font-size: 0.8rem;">0</span>`;
+            const tonesDisplay = toneCount > 0 ? `<span style="color: #fff; font-size: 0.75rem;">${toneCount}</span>` : `<span style="color: #888; font-size: 0.75rem;">0</span>`;
             
             // Trigger badges - dark gray charcoal pills with station name
             const hasTriggers = row.fired_triggers && row.fired_triggers.length > 0;
@@ -961,7 +961,6 @@ async function loadCalls(ev) {
             return [
                 checkboxCell(callId),
                 startLocal,
-                systemBadge,
                 talkgroupDisplay,
                 duration,
                 tonesDisplay,
