@@ -1,0 +1,169 @@
+.rule-item { border: 1px dashed var(--bs-border-color); border-radius: .5rem; padding: .75rem; margin-bottom: .5rem; }
+.rule-item .btn-icon { padding: .25rem .5rem; }
+.rule-grid .form-label { font-size: .8rem; }
+
+/* ────────────────────────────────────────────────────────────────
+   Tone Rules DataTables theme (scoped)
+   Uses your global.css vars:
+   --primary_brand, --primary_brand_light
+   --secondary_brand, --secondary_brand_light
+   --primary_light_text, --secondary_light_text
+   --primary_dark_text, --secondary_dark_text
+   ──────────────────────────────────────────────────────────────── */
+
+.dt-theme {
+    /* host card feel */
+    background: var(--secondary_back);
+    border-radius: .75rem;
+}
+
+/* Use BS5 table CSS vars to recolor inside this scope */
+.dt-theme .table {
+    --bs-table-color: var(--primary_light_text);
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(126, 125, 125, 0.08); /* from secondary_brand_light */
+    --bs-table-striped-color: var(--primary_light_text);
+    --bs-table-hover-bg: rgba(202, 28, 35, 0.08);     /* primary_brand w/ alpha */
+    --bs-table-hover-color: var(--primary_light_text);
+    --bs-border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Header: dark surface + subtle gradient + softer borders */
+.dt-theme table.dataTable > thead > tr > th {
+    background: linear-gradient(
+            180deg,
+            rgba(53, 53, 53, 0.96) 0%,
+            rgba(53, 53, 53, 0.88) 100%
+    ); /* secondary_brand */
+    color: var(--primary_light_text);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    font-weight: 600;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+
+/* Sticky header inside the .table-responsive scroller */
+.dt-theme table.dataTable > thead > tr > th {
+    position: sticky; top: 0; z-index: 2; background-clip: padding-box;
+}
+
+/* Body cells: slightly muted text, stronger emphasis on key data */
+.dt-theme table.dataTable tbody td {
+    color: var(--primary_light_text);
+    vertical-align: middle;
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Empty state row */
+.dt-theme .dt-empty, .dt-theme table.dataTable tbody tr td.dataTables_empty {
+    color: var(--secondary_light_text) !important;
+}
+
+/* Row hover */
+.dt-theme .table-hover > tbody > tr:hover > * {
+    color: var(--primary_light_text);
+}
+
+/* Responsive child rows */
+.dt-theme table.dataTable > tbody > tr.child {
+    background: rgba(53, 53, 53, 0.45); /* secondary_brand w/ alpha */
+}
+.dt-theme table.dataTable > tbody > tr.child ul.dtr-details > li {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.dt-theme table.dataTable > tbody > tr.child .dtr-title {
+    color: var(--secondary_light_text);
+}
+
+/* RowReorder handle + drag feedback */
+.dt-theme td.reorder-handle {
+    cursor: grab;
+    color: var(--secondary_light_text);
+    width: 1%;
+}
+.dt-theme td.reorder-handle:hover { color: var(--primary_light_text); }
+.dt-theme .dt-rowReorder-moving { opacity: .85; }
+.dt-theme .dt-rowReorder-float {
+    background: rgba(53, 53, 53, 0.95);
+    color: var(--primary_light_text);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+/* Action buttons inside table: soften outlines on dark */
+.dt-theme .btn-outline-secondary {
+    color: var(--primary_light_text);
+    border-color: rgba(255,255,255,.2);
+}
+.dt-theme .btn-outline-secondary:hover {
+    background: rgba(255,255,255,.06);
+    border-color: rgba(255,255,255,.3);
+}
+.dt-theme .btn-outline-danger {
+    color: #ff6b6b;
+    border-color: rgba(255,107,107,.35);
+}
+.dt-theme .btn-outline-danger:hover {
+    background: rgba(255,107,107,.08);
+    border-color: rgba(255,107,107,.5);
+}
+
+/* Compact the vertical rhythm a touch */
+.dt-theme .table.table-sm > :not(caption) > * > * {
+    padding-top: .45rem;
+    padding-bottom: .45rem;
+}
+
+/* Make the plus/minus control (if Responsive chooses one) match theme */
+.dt-theme td.dtr-control {
+    color: var(--secondary_light_text);
+}
+.dt-theme tr.parent td.dtr-control {
+    color: var(--primary_light_text);
+}
+
+/* Tone Rules accordion dark styling */
+.tone-acc .accordion-item {
+    background: rgb(53, 50, 50);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: .75rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.tone-acc .accordion-button {
+    background: linear-gradient(
+            180deg,
+            rgba(53, 53, 53, 0.96) 0%,
+            rgba(53, 53, 53, 0.88) 100%
+    );
+    color: var(--primary_light_text);
+    box-shadow: none;
+}
+.tone-acc .accordion-button:not(.collapsed) {
+    color: var(--primary_light_text);
+}
+
+.tone-acc .accordion-body {
+    background: rgba(53,53,53,.25);
+    color: var(--primary_light_text);
+}
+
+/* Keep the add button aligned and visible on all widths */
+.tone-acc .tone-acc-add {
+    margin-right: .75rem;
+}
+
+/* DTMF table: push Actions to the far right */
+#dtmfList_tbl th:last-child,
+#dtmfList_tbl td:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Optional: keep the grip column tight */
+#dtmfList_tbl th:first-child,
+#dtmfList_tbl td:first-child {
+    width: 1%;
+    white-space: nowrap;
+}

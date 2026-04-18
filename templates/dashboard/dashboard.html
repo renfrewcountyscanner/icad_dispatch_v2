@@ -1,0 +1,373 @@
+{# templates/tone_finder.html #}
+{% extends "dashboard/base.html" %}
+{% block title %}Dashboard - iCAD Dispatch{% endblock %}
+
+{% include "partials/_dashboard_trigger_modals.html" %}
+
+{# ───────────────────────────── Extra CSS ───────────────────────────── #}
+{% block extra_styles %}
+    <!-- DataTables Bootstrap 5 theme -->
+    <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.css" rel="stylesheet" integrity="sha384-wn0toyEaGbOiHLoVsGIbRhHaxw3FPoMRaO7YcrgSHlXTEf0rLvG/kOfM8lSi7LVj" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard/tone_finder.css') }}">
+
+{% endblock %}
+
+{# ───────────────────────────── Page body ───────────────────────────── #}
+{% block content %}
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
+    <h1 class="mt-4">Tone Hits</h1>
+
+    <!-- ── Filters row ─────────────────────────────────────────────────── -->
+    <form id="filterForm"
+          class="row gy-2 gx-3 align-items-center mb-3 needs-validation"
+          novalidate>
+        <div class="col-auto">
+            <select class="form-select" id="systemSelect" required>
+                <option value="">Select system…</option>
+                <!-- options inserted by JS -->
+            </select>
+            <div class="invalid-feedback">required</div>
+        </div>
+
+        <div class="col-auto">
+            <select class="form-select" id="toneType">
+                <option value="">All tones</option>
+                <option value="two_tone">Two-Tone</option>
+                <option value="long">Long</option>
+                <option value="hi_low">Hi/Low</option>
+                <option value="pulsed">Pulsed</option>  <!-- NEW -->
+                <option value="mdc">MDC</option>
+                <option value="dtmf">DTMF</option>
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="triggerOnly">
+                <label class="form-check-label" for="triggerOnly">Trigger Fire Only</label>
+            </div>
+        </div>
+        <div class="col-auto ms-auto mt-2 mt-md-0">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-arrow-repeat"></i></span>
+                <select class="form-select" id="autoRefresh">
+                    <option value="0">Live refresh … Off</option>
+                    <option value="15000">Every 15 s</option>
+                    <option value="30000">Every 30 s</option>
+                    <option value="60000">Every 60 s</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-auto d-none">
+            <button class="btn btn-primary" type="submit">Load</button>
+        </div>
+    </form>
+
+    <!-- ── Hits table ──────────────────────────────────────────────────── -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="small text-body-secondary" id="bulkSelHint">
+            <span id="bulkSelectedCount">0</span> selected
+        </div>
+        <div class="btn-group">
+            <button id="bulkDeleteBtn" type="button" class="btn btn-sm btn-danger" disabled>
+                <i class="bi bi-trash"></i> Delete selected
+            </button>
+        </div>
+    </div>
+
+    <table id="callsTable" class="table table-striped table-hover table-sm w-100">
+        <thead>
+        <tr>
+            <th style="width:2.25rem;">
+                <input type="checkbox" id="selectAllRows" aria-label="Select all visible"/>
+            </th>
+            <th>Time</th>
+            <th>Talkgroup</th>
+            <th>Duration</th>
+            <th>Tones</th>
+            <th>Type</th>
+            <th></th>
+            <th>Actions</th>
+            <th class="d-none">ID</th>
+            <th class="d-none">EPOCH</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- Bulk delete confirm modal -->
+    <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h5 class="modal-title fs-6">Delete selected calls?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0 small">
+                        This will permanently remove <strong><span id="bulkDeleteCount">0</span></strong> calls and all related tone data.
+                    </p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button id="bulkDeleteConfirmBtn" class="btn btn-danger btn-sm">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Call-details modal ──────────────────────────────────────────── -->
+    <div class="modal fade" id="callModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Call <span id="dCallId"></span>
+                        <small class="text-muted">(TG <span id="dTG"></span>)</small>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <!-- ── Call summary + controls ─────────────────────────── -->
+                    <div class="call-meta-card mb-3">
+                        <div class="row g-3 align-items-center">
+
+                            <!-- Left: call facts -->
+                            <div class="col-md">
+                                <div class="d-flex flex-wrap gap-4">
+
+                                    <div class="call-meta-item">
+                                        <div class="call-meta-label">Start (local)</div>
+                                        <div class="call-meta-value" id="dStart">—</div>
+                                    </div>
+
+                                    <div class="call-meta-item">
+                                        <div class="call-meta-label">Duration</div>
+                                        <div class="call-meta-value" id="dDur">—</div>
+                                    </div>
+
+                                    <div class="call-meta-item">
+                                        <div class="call-meta-label">Merged from stub</div>
+                                        <div class="call-meta-value" id="dMerged">—</div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- Right: player controls -->
+                            <div class="col-md-auto">
+                                <div class="d-flex justify-content-md-end gap-2">
+                                    <button class="btn btn-success btn-sm"
+                                            id="dPlayPauseBtn"
+                                            type="button"
+                                            title="Play">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm"
+                                            id="dStopBtn"
+                                            type="button"
+                                            title="Stop">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            id="dDeleteFromModalBtn"
+                                            type="button"
+                                            title="Delete call">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ── Transcript + inline Incident ─────────────────────── -->
+                    <div id="dTranscriptWrap" class="call-section mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <h6 class="mb-0 call-section-title">Transcript</h6>
+                            <small id="dTranscriptStatus" class="text-muted">Loading…</small>
+
+                            <div class="ms-auto d-flex gap-2">
+                                <button id="copyTranscriptBtn"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        type="button"
+                                        title="Copy transcript">
+                                    Copy
+                                </button>
+                                <button id="expandTranscriptBtn"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        type="button"
+                                        title="Expand/Collapse">
+                                    Expand
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Incident lives WITH the transcript, above the text -->
+                        <div id="dIncidentWrap" class="d-none mb-2">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <span class="call-section-label">Incident</span>
+
+                                <span id="dIncidentTypeBadge"
+                                      class="badge bg-secondary text-uppercase"></span>
+
+                                <small id="dIncidentMeta"
+                                       class="text-muted ms-1"></small>
+                            </div>
+                        </div>
+
+                        <!-- Actual transcript text -->
+                        <div id="dTranscriptBody"
+                             class="d-transcript mt-1"
+                             data-collapsed="1"></div>
+                    </div>
+
+                    <!-- ── Address (extracted + geocoded) ───────────────────── -->
+                    <div id="dAddressWrap" class="call-section mb-3 d-none">
+                        <div class="d-flex align-items-center mb-2">
+                            <h6 class="mb-0 call-section-title">Address</h6>
+
+                            <div class="ms-auto">
+                                <a id="dAddrMapLink"
+                                   href="#"
+                                   class="btn btn-sm btn-outline-primary d-none"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    Open in Maps
+                                </a>
+                            </div>
+                        </div>
+
+                        <dl class="row mb-0 small">
+                            <dt class="col-3 text-muted">Extracted</dt>
+                            <dd class="col-9" id="dAddrExtracted">—</dd>
+
+                            <dt class="col-3 text-muted">Geocoded</dt>
+                            <dd class="col-9" id="dAddrGeocoded">—</dd>
+                        </dl>
+                    </div>
+
+                    <!-- ── Triggers fired ───────────────────────────────────── -->
+                    <div class="call-section mt-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <h6 class="mb-0 call-section-title">Triggers fired</h6>
+                            <small class="text-muted ms-2 d-none d-sm-inline">
+                                Click a trigger to highlight its tone set below.
+                            </small>
+                        </div>
+
+                        <ul id="dTrigList" class="list-group mb-2"></ul>
+                        <p id="dNoTrig" class="text-muted small d-none mb-0">
+                            No triggers fired.
+                        </p>
+                    </div>
+
+                    <!-- ── tones table (UNCHANGED) ──────────────────────────── -->
+                    <h6 class="mt-4">Detected tone sets</h6>
+                    <div class="table-responsive tone-table-wrap">
+                        <table class="table table-sm align-middle tone-table"
+                               id="dTonesTable">
+                            <thead class="table-dark">
+                            <tr>
+                                <th>Type</th>
+                                <th>Set ID</th>
+                                <th>Freq A</th>
+                                <th>Freq B</th>
+                                <th>Start&nbsp;s</th>
+                                <th>End&nbsp;s</th>
+                                <th>Len&nbsp;s</th>
+                                <th>A&nbsp;Len&nbsp;s</th>      <!-- two-tone only -->
+                                <th>B&nbsp;Len&nbsp;s</th>      <!-- two-tone only -->
+                                <th>Alternations</th>           <!-- hi/low only -->
+                                <th>Cycles</th>                 <!-- pulsed only -->
+                                <th>ON&nbsp;ms</th>             <!-- pulsed only -->
+                                <th>OFF&nbsp;ms</th>            <!-- pulsed only -->
+                                <th>Trigger?</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="callDeleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h5 class="modal-title fs-6">Delete call?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0 small">This will permanently remove the call and all
+                        related tone data. Are you sure?</p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button id="deleteCallConfirmBtn" class="btn btn-danger btn-sm">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ── Now Playing bar (fixed) ───────────────────────────────── -->
+    <div id="nowPlayingBar"
+         class="position-fixed bottom-0 start-0 end-0 bg-body-tertiary border-top shadow-lg d-none"
+         style="z-index:2000;">
+        <div class="container py-2">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-soundwave fs-5"></i>
+
+                <!-- meta -->
+                <div class="flex-grow-1 min-w-0">
+                    <div id="npTitle" class="small fw-semibold text-truncate">No call selected</div>
+                    <div id="npSubtitle" class="small text-secondary text-truncate"></div>
+
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <button id="npPlayPause" type="button" class="btn btn-sm btn-success" aria-label="Play">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                        <button id="npStop" type="button" class="btn btn-sm btn-outline-secondary" aria-label="Stop">
+                            <i class="bi bi-stop-fill"></i>
+                        </button>
+
+                        <input id="npSeek" type="range" class="form-range flex-grow-1 np-range"
+                               min="0" value="0" step="0.01" aria-label="Seek">
+
+                        <div id="npTime" class="small font-monospace" style="min-width:110px;text-align:right;">
+                            00:00 / 00:00
+                        </div>
+
+                        <div class="d-none d-sm-flex align-items-center gap-2 ms-2">
+                            <i id="npVolIcon" class="bi bi-volume-up"></i>
+                            <input id="npVolume" type="range" class="form-range" min="0" max="1" step="0.01" value="1"
+                                   style="width:110px;" aria-label="Volume">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{# ───────────────────────────── Extra JS ────────────────────────────── #}
+{% block extra_js %}
+    <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.js" integrity="sha384-kn5u5NjXEa1i+r6gDHi8bJIMiZ6ZM+rMVdkxd4vpozUU8ZDmQkOwHjXjEpnH1Adi" crossorigin="anonymous"></script>
+
+    <!-- 3. Your page script -->
+    <script src="{{ url_for('static', filename='js/dashboard/tone_finder.js') }}"></script>
+
+{% endblock %}

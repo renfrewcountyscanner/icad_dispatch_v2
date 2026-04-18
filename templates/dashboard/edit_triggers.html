@@ -1,0 +1,77 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Edit Triggers – iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+
+    <!-- DataTables 2.0.3 + Bootstrap 5 skin -->
+    <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.css" rel="stylesheet" integrity="sha384-wn0toyEaGbOiHLoVsGIbRhHaxw3FPoMRaO7YcrgSHlXTEf0rLvG/kOfM8lSi7LVj" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard/edit_triggers.css') }}">
+
+{% endblock %}
+
+{% block content %}
+    {% include 'partials/_dashboard_trigger_modals.html' %}
+
+    <div class="row mb-3">
+        <div class="col-12 d-flex mt-3">
+            <div class="card border-0 flex-fill px-4 py-4">
+                <div class="card-body d-flex flex-column p-0">
+
+                    <div class="row g-2">
+                        <!-- System selector -->
+                        <div class="col-auto d-flex align-items-center gap-2">
+                            <label for="triggerSystemSelect" class="mb-0 fw-semibold">System:</label>
+                            <select id="triggerSystemSelect" class="form-select form-select-sm w-auto"></select>
+                        </div>
+
+                        <!-- Trigger selector -->
+                        <div class="col-auto d-flex align-items-center gap-2">
+                            <label for="triggerSelect" class="mb-0 fw-semibold">Trigger:</label>
+                            <div id="triggerSelectGroup">
+                            <select id="triggerSelect" class="form-select form-select-sm w-auto"></select>
+                            </div>
+                        </div>
+
+                        <!-- Add button -->
+                        <div class="col-auto d-flex align-items-center ms-auto">
+                            <button id="addTriggerBtn" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#triggerModal">
+                                Add Trigger
+                            </button>
+                        </div>
+                    </div>
+
+                </div><!-- /card-body -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty-state card -->
+    <div id="noTriggerCard" class="card border-0 px-4 py-4">
+        <div class="card-body text-center py-5">
+            <h3><i class="bi bi-x-octagon" style="color: var(--alertpage_red_light);"></i></h3>
+            <h5 class="fw-semibold mb-0">Select or add a Trigger</h5>
+        </div>
+    </div>
+
+    <!-- Editor card -->
+    <div id="triggerEditCard" class="card border-0 px-4 py-4 d-none">
+        <div class="card-body p-0">
+            {% include 'partials/_dashboard_edit_trigger.html' %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+
+
+    <!-- 1. DataTables Bootstrap 5 integration -->
+    <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.js" integrity="sha384-kn5u5NjXEa1i+r6gDHi8bJIMiZ6ZM+rMVdkxd4vpozUU8ZDmQkOwHjXjEpnH1Adi" crossorigin="anonymous"></script>
+
+
+
+    <script type="module" src="{{ url_for('static',
+                         filename='js/dashboard/edit_triggers.js') }}"></script>
+{% endblock %}

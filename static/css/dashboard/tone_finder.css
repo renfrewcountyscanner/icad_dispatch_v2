@@ -1,0 +1,524 @@
+/* ── Player theme (Dark mode, red) ───────────────────────────────── */
+/* Scope to the bar so other sliders in the app aren't affected */
+[data-bs-theme="dark"] #nowPlayingBar {
+    /* Base brand red */
+    --player-red: #ca1c23;
+
+    /* Seek (progress) colors */
+    --seek-played: var(--player-red);                 /* played portion */
+    --seek-buffered: rgba(202, 28, 35, 0.38);         /* buffered ahead of playhead */
+    --seek-track: rgba(255, 255, 255, 0.14);          /* unfilled track */
+    --seek-thumb: #ffffff;                             /* knob fill */
+    --seek-thumb-border: rgba(0, 0, 0, 0.35);          /* knob outline */
+
+    /* Volume colors */
+    --vol-fill: var(--player-red);                     /* filled volume */
+    --vol-track: rgba(255, 255, 255, 0.14);            /* unfilled volume track */
+    --vol-thumb: #ffffff;                               /* knob fill */
+    --vol-thumb-border: rgba(0, 0, 0, 0.35);           /* knob outline */
+
+    /* Focus ring (hover/focus around the knob) */
+    --player-focus-ring: rgba(202, 28, 35, 0.35);
+}
+
+/* Optional: slightly lighten the time text to complement the red */
+[data-bs-theme="dark"] #nowPlayingBar #npTime {
+    color: rgba(255,255,255,0.8);
+}
+
+/* Use the themed focus ring instead of the default blue */
+#nowPlayingBar .np-range:focus-visible::-webkit-slider-thumb,
+#nowPlayingBar .np-range:hover::-webkit-slider-thumb,
+#nowPlayingBar .np-range:focus-visible::-moz-range-thumb,
+#nowPlayingBar .np-range:hover::-moz-range-thumb,
+#nowPlayingBar #npVolume:focus-visible::-webkit-slider-thumb,
+#nowPlayingBar #npVolume:hover::-webkit-slider-thumb,
+#nowPlayingBar #npVolume:focus-visible::-moz-range-thumb,
+#nowPlayingBar #npVolume:hover::-moz-range-thumb {
+    box-shadow: 0 0 0 4px var(--player-focus-ring);
+}
+
+body.has-player { padding-bottom: 72px; }
+#callsTable tbody tr { cursor: pointer; }
+#callsTable tr.playing { background-color: rgba(255, 0, 0, 0.44) !important; }
+.np-range { height:.25rem; padding:0; }
+/* Modern range track with played + buffered fill behind the thumb */
+.np-range {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 8px;
+    border-radius: 999px;
+    background:
+            linear-gradient(to right,
+            var(--seek-played, var(--bs-primary)) 0 var(--played, 0%),
+            var(--seek-buffered, color-mix(in srgb, var(--bs-primary) 35%, transparent)) var(--played, 0%) var(--buffered, 0%),
+            var(--seek-track, rgba(255,255,255,.2)) var(--buffered, 0%) 100%
+            );
+    outline: none;
+    padding: 0;
+}
+
+/* WebKit track/thumb */
+.np-range::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 999px;
+    background:
+            linear-gradient(to right,
+            var(--seek-played, var(--bs-primary)) 0 var(--played, 0%),
+            var(--seek-buffered, color-mix(in srgb, var(--bs-primary) 35%, transparent)) var(--played, 0%) var(--buffered, 0%),
+            var(--seek-track, rgba(255,255,255,.2)) var(--buffered, 0%) 100%
+            );
+}
+.np-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -3px;              /* centers the thumb on the 8px track */
+    border-radius: 50%;
+    background: var(--seek-thumb, #fff);
+    border: 2px solid var(--seek-thumb-border, rgba(0,0,0,.25));
+    box-shadow: 0 0 0 2px rgba(0,0,0,.05);
+    cursor: pointer;
+}
+
+/* Firefox track/thumb */
+.np-range::-moz-range-track {
+    height: 8px;
+    border-radius: 999px;
+    background:
+            linear-gradient(to right,
+            var(--seek-played, var(--bs-primary)) 0 var(--played, 0%),
+            var(--seek-buffered, color-mix(in srgb, var(--bs-primary) 35%, transparent)) var(--played, 0%) var(--buffered, 0%),
+            var(--seek-track, rgba(255,255,255,.2)) var(--buffered, 0%) 100%
+            );
+}
+.np-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--seek-thumb, #fff);
+    border: 2px solid var(--seek-thumb-border, rgba(0,0,0,.25));
+    box-shadow: 0 0 0 2px rgba(0,0,0,.05);
+    cursor: pointer;
+}
+
+/* Focus/hover polish */
+.np-range:focus-visible::-webkit-slider-thumb,
+.np-range:hover::-webkit-slider-thumb,
+.np-range:focus-visible::-moz-range-thumb,
+.np-range:hover::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(13,110,253,.25); /* uses BS primary-ish */
+}
+
+/* Volume slider: modern filled track + nice thumb */
+#npVolume {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 110px;                 /* you already set this inline; here for clarity */
+    height: 8px;
+    border-radius: 999px;
+    background:
+            linear-gradient(to right,
+            var(--vol-fill, var(--bs-primary, #0d6efd)) 0 var(--vol, 100%),
+            var(--vol-track, rgba(255,255,255,.2)) var(--vol, 100%) 100%
+            );
+    outline: none;
+    padding: 0;
+}
+
+/* WebKit track/thumb */
+#npVolume::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 999px;
+    background:
+            linear-gradient(to right,
+            var(--vol-fill, var(--bs-primary, #0d6efd)) 0 var(--vol, 100%),
+            var(--vol-track, rgba(255,255,255,.2)) var(--vol, 100%) 100%
+            );
+}
+#npVolume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -3px;             /* centers on 8px track */
+    border-radius: 50%;
+    background: var(--vol-thumb, #fff);
+    border: 2px solid var(--vol-thumb-border, rgba(0,0,0,.25));
+    box-shadow: 0 0 0 2px rgba(0,0,0,.05);
+    cursor: pointer;
+}
+
+/* Firefox track/thumb */
+#npVolume::-moz-range-track {
+    height: 8px;
+    border-radius: 999px;
+    background:
+            linear-gradient(to right,
+            var(--vol-fill, var(--bs-primary, #0d6efd)) 0 var(--vol, 100%),
+            var(--vol-track, rgba(255,255,255,.2)) var(--vol, 100%) 100%
+            );
+}
+#npVolume::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--vol-thumb, #fff);
+    border: 2px solid var(--vol-thumb-border, rgba(0,0,0,.25));
+    box-shadow: 0 0 0 2px rgba(0,0,0,.05);
+    cursor: pointer;
+}
+
+/* Hover/focus ring for accessibility */
+#npVolume:focus-visible::-webkit-slider-thumb,
+#npVolume:hover::-webkit-slider-thumb,
+#npVolume:focus-visible::-moz-range-thumb,
+#npVolume:hover::-moz-range-thumb {
+    box-shadow: 0 0 0 4px rgba(13,110,253,.25);
+}
+
+#dTonesTable tbody tr.active-tone,
+#dTonesTable tbody tr.active-tone > * {
+    background-color: #ca1c2357; /* or #fff3cd */
+}
+
+:root { --np-height: 0px; }
+
+/* Push page layout up when the player is visible */
+.has-player { padding-bottom: var(--np-height); }
+
+/* Keep the modal itself above the player */
+.has-player .modal-dialog {
+    margin-bottom: calc(var(--np-height) + 0.5rem);
+}
+
+/* Extra breathing room inside the modal’s scroll area so content isn’t hidden under the bar */
+.has-player .modal-dialog-scrollable .modal-body {
+    padding-bottom: calc(var(--np-height) + 1rem);
+    /* Reduce max-height by the player height so it actually scrolls */
+    max-height: calc(100vh - var(--np-height) - 7rem); /* 7rem ≈ header+footer chrome; adjust if needed */
+}
+
+/* === Player metadata: color-coding types === */
+
+/* Default text */
+#nowPlayingBar #npTitle    { color: var(--np-title-color, inherit); }
+#nowPlayingBar #npSubtitle { color: var(--np-subtitle-color, inherit); }
+#nowPlayingBar #npTime     { color: var(--np-time-color, inherit); }
+
+/* Voice = green */
+.voice-meta   { color: #42c36d !important; } /* Bootstrap success green */
+
+/* Tone = yellow/orange */
+.tone-meta    { color: #f1c266 !important; } /* bright amber */
+
+/* Triggered tone = red */
+.trigger-meta { color: #ef717c !important; } /* your theme red */
+
+/* Dark mode defaults */
+[data-bs-theme="dark"] #nowPlayingBar {
+    --np-title-color:    #fff;
+    --np-subtitle-color: rgba(255,255,255,.85);
+    --np-time-color:     rgba(255,255,255,.80);
+}
+
+/* Light mode defaults */
+[data-bs-theme="light"] #nowPlayingBar {
+    --np-title-color:    #212529;
+    --np-subtitle-color: rgba(33,37,41,.70);
+    --np-time-color:     rgba(33,37,41,.65);
+}
+
+/* Custom active trigger styling for dark mode red theme */
+[data-bs-theme="dark"] #dTrigList .list-group-item.active {
+    background-color: rgba(202, 28, 35, 0.25) !important; /* semi-transparent red */
+    border-color: #ca1c23 !important;
+    color: #fff !important; /* make text white for contrast */
+}
+
+/* Make the badge still stand out against the active background */
+[data-bs-theme="dark"] #dTrigList .list-group-item.active .badge {
+    background-color: rgba(202, 28, 35, 0.5) !important;
+    color: #fff !important;
+}
+
+/* ===== Tone Finder Table – Modern Dark Theme ===== */
+[data-bs-theme="dark"] .tone-table-wrap {
+    --tbl-bg:           #0f1217;               /* surface */
+    --tbl-surface:      #131823;               /* rows */
+    --tbl-border:       #1f2736;               /* dividers */
+    --tbl-head-bg:      #0b1018;               /* header */
+    --tbl-head-fg:      rgba(255,255,255,.92);
+    --tbl-fg:           rgba(255,255,255,.86); /* body text */
+    --tbl-muted:        rgba(255,255,255,.60); /* “—”, subtle text */
+    --tbl-stripe:       rgba(255,255,255,.03); /* zebra */
+    --tbl-hover:        rgba(255,255,255,.06);
+    --tbl-active:       rgba(241,194,102,.14); /* active tone row bg */
+
+    --accent-voice:     #42c36d;               /* green */
+    --accent-tone:      #f1c266;               /* amber */
+    --accent-trigger:   #ca1c23;               /* brand red */
+}
+
+/* Card-ish wrapper */
+[data-bs-theme="dark"] .tone-table-wrap {
+    background: var(--tbl-bg);
+    border: 1px solid var(--tbl-border);
+    border-radius: .75rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    overflow: hidden;
+}
+
+/* Optional: subtle scroll edge fade in WebKit */
+@supports (-webkit-mask-image: linear-gradient(#000, #000)) {
+    [data-bs-theme="dark"] .tone-table-wrap {
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+        mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+    }
+}
+
+/* Table base */
+[data-bs-theme="dark"] .tone-table {
+    color: var(--tbl-fg);
+    border-color: var(--tbl-border);
+    background: var(--tbl-surface);
+    margin-bottom: 0; /* let wrapper own the radius/shadow */
+}
+
+/* Head: sticky, low-glare, subtle bottom border */
+[data-bs-theme="dark"] .tone-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--tbl-head-bg);
+    color: var(--tbl-head-fg);
+    border-bottom: 1px solid var(--tbl-border);
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+/* Body cells + borders */
+[data-bs-theme="dark"] .tone-table tbody td,
+[data-bs-theme="dark"] .tone-table thead th {
+    border-color: var(--tbl-border);
+}
+
+/* Zebra striping & hover */
+[data-bs-theme="dark"] .tone-table.table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: var(--tbl-stripe) !important;
+}
+[data-bs-theme="dark"] .tone-table tbody tr:hover > * {
+    background-color: var(--tbl-hover) !important;
+}
+
+/* Type accents: slim left bar + colored “Type” text */
+[data-bs-theme="dark"] .tone-table tbody tr {
+    border-left: 3px solid transparent;
+}
+/* Map each row's KIND to both the left bar and the first cell text */
+[data-bs-theme="dark"] .tone-table tbody tr {
+    --row-accent: transparent;
+    --row-accent-text: var(--tbl-fg);
+    border-left: 3px solid var(--row-accent);
+}
+[data-bs-theme="dark"] .tone-table tbody tr > td:first-child {
+    color: var(--row-accent-text);
+    font-weight: 600;
+}
+
+/* Voice = green */
+[data-bs-theme="dark"] .tone-table tbody tr.voice-row {
+    --row-accent: var(--accent-voice);         /* #42c36d */
+    --row-accent-text: color-mix(in srgb, var(--accent-voice) 85%, white 15%);
+}
+
+/* Tone (no fired trigger) = amber */
+[data-bs-theme="dark"] .tone-table tbody tr.tone-row:not(.trigger-row) {
+    --row-accent: var(--accent-tone);          /* #f1c266 */
+    --row-accent-text: color-mix(in srgb, var(--accent-tone) 85%, white 15%);
+}
+
+/* Trigger fired = red */
+[data-bs-theme="dark"] .tone-table tbody tr.tone-row.trigger-row {
+    --row-accent: var(--accent-trigger);       /* #ca1c23 */
+    --row-accent-text: color-mix(in srgb, var(--accent-trigger) 85%, white 15%);
+}
+
+/* Numbers: align right, tabular figures, slight monospace for readability */
+[data-bs-theme="dark"] .tone-table td:nth-child(3),
+[data-bs-theme="dark"] .tone-table td:nth-child(4),
+[data-bs-theme="dark"] .tone-table td:nth-child(5),
+[data-bs-theme="dark"] .tone-table td:nth-child(6),
+[data-bs-theme="dark"] .tone-table td:nth-child(7),
+[data-bs-theme="dark"] .tone-table td:nth-child(8),
+[data-bs-theme="dark"] .tone-table td:nth-child(9),
+[data-bs-theme="dark"] .tone-table td:nth-child(10),
+[data-bs-theme="dark"] .tone-table td:nth-child(11),
+[data-bs-theme="dark"] .tone-table td:nth-child(12),
+[data-bs-theme="dark"] .tone-table td:nth-child(13) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* Dim placeholder “—” a bit (keeps noise down) */
+[data-bs-theme="dark"] .tone-table td {
+    color: var(--tbl-fg);
+}
+[data-bs-theme="dark"] .tone-table td:has(> :where()) { /* noop hook for older browsers */
+}
+[data-bs-theme="dark"] .tone-table td {
+    /* lightweight trick: if cell is exactly '—', tone it down */
+}
+[data-bs-theme="dark"] .tone-table td::first-letter {
+    /* no-op fallback when it's not '—' */
+}
+[data-bs-theme="dark"] .tone-table td { /* pragmatic approach */
+    opacity: 0.96;
+}
+[data-bs-theme="dark"] .tone-table td:where(:not(:has(*))) {
+    /* If you want stronger dimming, you can JS-add a .muted-cell class when textContent === "—" */
+}
+
+/* Compact, breathable spacing */
+[data-bs-theme="dark"] .tone-table th,
+[data-bs-theme="dark"] .tone-table td {
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+}
+
+/* Trigger/Action column polish */
+[data-bs-theme="dark"] .tone-table td.align-middle .btn.btn-secondary {
+    --bs-btn-bg: #273042;
+    --bs-btn-border-color: #2c3648;
+    --bs-btn-hover-bg: #2f3950;
+    --bs-btn-hover-border-color: #35405a;
+    --bs-btn-color: rgba(255,255,255,.88);
+}
+[data-bs-theme="dark"] .tone-table td.align-middle span[title="Trigger fired"] {
+    filter: saturate(1.1) brightness(1.1);
+}
+
+/* Header shadow for depth when scrolling */
+[data-bs-theme="dark"] .tone-table thead {
+    box-shadow: 0 4px 0 rgba(0,0,0,.25);
+}
+
+.row-drawer{padding:12px 16px;background:#f8f9fa;border-top:1px solid rgba(0,0,0,.06)}
+.row-drawer .list-group-item{padding:.5rem .75rem}
+
+.d-transcript { line-height: 1.6; max-height: 4.5rem; overflow: hidden; position: relative; }
+.d-transcript[data-collapsed="0"] { max-height: none; }
+.d-transcript .seg { display:block; margin-bottom:.35rem; }
+.d-transcript .timechip { font-size:.75rem; color:#6c757d; margin-right:.5rem; user-select:none; cursor:pointer; }
+.d-transcript .w { cursor:pointer; border-radius:.25rem; }
+.d-transcript .w:hover { background: rgba(0,0,0,.06); }
+.d-transcript .active-seg { background: rgba(13,110,253,.08); }
+.d-transcript .active-word { background: rgba(13,110,253,.18); }
+.d-transcript .empty { color:#6c757d; font-style:italic; }
+
+/* ── Call modal summary card ─────────────────────────────── */
+#callModal .call-meta-card {
+    border-radius: .75rem;
+    padding: .75rem 1rem;
+    border: 1px solid;
+}
+
+[data-bs-theme="dark"] #callModal .call-meta-card {
+    background: #0f1217;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="light"] #callModal .call-meta-card {
+    background: #f8f9fa;
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+#callModal .call-meta-item {
+    min-width: 160px;
+}
+
+#callModal .call-meta-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--bs-secondary-color);
+    margin-bottom: .1rem;
+}
+
+#callModal .call-meta-value {
+    font-weight: 500;
+    font-size: .95rem;
+}
+
+/* ── Generic section styling (Transcript/Address/Triggers) ─ */
+#callModal .call-section {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    border-top: 1px solid;
+}
+
+#callModal .call-section:first-of-type {
+    border-top: 0;
+}
+
+[data-bs-theme="dark"] #callModal .call-section {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="light"] #callModal .call-section {
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+#callModal .call-section-title {
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--bs-secondary-color);
+}
+
+#callModal .call-section-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--bs-secondary-color);
+}
+
+/* ── Transcript box inside modal ─────────────────────────── */
+#callModal .d-transcript {
+    border-radius: .5rem;
+    padding: .5rem .75rem;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-bs-theme="dark"] #callModal .d-transcript {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Address tweaks ──────────────────────────────────────── */
+#callModal #dAddressWrap dt {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--bs-secondary-color);
+}
+
+#callModal #dAddressWrap dd {
+    font-size: .9rem;
+}
+
+/* ── Trigger list compact but readable ───────────────────── */
+#callModal #dTrigList .list-group-item {
+    padding: .35rem .5rem;
+    font-size: .85rem;
+}
+.d-transcript .seg {
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.25rem;
+    transition: background-color 120ms ease-out;
+}
+
+.d-transcript .seg.is-active {
+    background-color: rgba(255, 193, 7, 0.18); /* bs-warning-ish */
+}

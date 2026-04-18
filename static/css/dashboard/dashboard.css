@@ -1,0 +1,123 @@
+:root{
+    --ap-topbar-h: 56px;
+    --ap-sidebar-collapsed: 64px;  /* icon rail */
+    --ap-sidebar-expanded: 240px;  /* full drawer */
+}
+
+/* Make icons a consistent “slot” */
+body.ap-sidebar-hover #sidebarMenu .nav-link i{
+    width: 1.5rem;
+    text-align: center;
+    line-height: 1;
+}
+
+/* COLLAPSED rail: truly icon-only */
+body.ap-sidebar-hover #sidebarMenu.offcanvas-md:not(:hover):not(:focus-within) .nav-link{
+    justify-content: center;
+    gap: 0 !important;
+    font-size: 0 !important;        /* KEY: removes label width completely */
+}
+
+/* Ensure icon size + kill Bootstrap's me-1 (uses logical margin) */
+body.ap-sidebar-hover #sidebarMenu.offcanvas-md:not(:hover):not(:focus-within) .nav-link i{
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+    margin-inline-end: 0 !important; /* beats .me-1 */
+    color: var(--primary_light_text) !important;
+}
+
+/* Only on pages that opt in */
+@media (min-width: 768px){
+
+    /* Remove the bootstrap column width so main content can use the space */
+    body.ap-sidebar-hover .sidebar{
+        flex: 0 0 0 !important;
+        width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
+        height: auto !important; /* overrides your 86vh */
+        overflow: visible !important;
+    }
+
+    /* Reserve space for the icon-rail so it doesn't cover content */
+    body.ap-sidebar-hover main.main-content{
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: calc(var(--ap-sidebar-collapsed) + 1.25rem) !important;
+    }
+
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md{
+        /* Bootstrap offcanvas bg variable */
+        --bs-offcanvas-bg: var(--primary_back);
+
+        background-color: var(--primary_back) !important;
+        background-image: none !important;
+    }
+
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md .offcanvas-body{
+        background-color: var(--primary_back) !important;
+        background-image: none !important;
+    }
+
+    /* Turn the global sidebar into a fixed left rail that expands */
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md{
+        position: fixed !important;
+        top: var(--ap-topbar-h);
+        left: 0 !important;
+        right: auto !important;
+        height: calc(100vh - var(--ap-topbar-h));
+
+        width: var(--ap-sidebar-collapsed);
+        transform: none !important;              /* IMPORTANT: no translate-peek */
+        transition: width .18s ease;
+
+        overflow: hidden;                         /* clean rail (no clipped text) */
+        z-index: 1050;
+        background: var(--primary_back);
+        border-right: 1px solid rgba(255,255,255,.10);
+        border-top-right-radius: 14px;
+        border-bottom-right-radius: 14px;
+        box-shadow: 0 .75rem 1.75rem rgba(0,0,0,.35);
+    }
+
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md:hover,
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md:focus-within{
+        width: var(--ap-sidebar-expanded);
+    }
+
+    /* Hide the offcanvas header on desktop */
+    body.ap-sidebar-hover #sidebarMenu .offcanvas-header{ display:none; }
+
+    /* Links look good in both states */
+    body.ap-sidebar-hover #sidebarMenu .nav-link{
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        white-space: nowrap;
+        border-radius: 12px;
+    }
+
+    /* COLLAPSED = icon-only rail (no weird half-text showing) */
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md:not(:hover):not(:focus-within) .nav-link{
+        justify-content: center;
+        padding-left: .75rem;
+        padding-right: .75rem;
+        color: transparent;                 /* hides the label text node */
+    }
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md:not(:hover):not(:focus-within) .nav-link i{
+        color: var(--primary_light_text);
+        margin-right: 0 !important;         /* cancels me-1 visually */
+        font-size: 1.1rem;
+    }
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md:not(:hover):not(:focus-within) hr{
+        opacity: .12;
+        margin: .5rem .75rem;
+    }
+
+    /* EXPANDED = restore normal text color */
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md:hover .nav-link,
+    body.ap-sidebar-hover #sidebarMenu.offcanvas-md:focus-within .nav-link{
+        color: var(--primary_light_text);
+    }
+}

@@ -1,0 +1,114 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Upload Test - iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+    <link href="{{ url_for('static', filename='css/dashboard/dashboard.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mt-3">
+    <div class="col-12">
+        <div class="card ap-toolbar-card border-0">
+            <div class="card-body py-3 px-4">
+                <span class="fw-semibold">Upload Test Audio</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card ap-content-card border-0 px-4 py-4">
+            <div class="card-body">
+                <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="systemSelect" class="form-label">Radio System</label>
+                        <select class="form-select" id="systemSelect" name="system_id" required>
+                            <option value="">Select a system...</option>
+                            {% for system in systems.result %}
+                            <option value="{{ system.radio_system_id }}">{{ system.system_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="talkgroup" class="form-label">Talkgroup ID</label>
+                        <input type="number" class="form-control" id="talkgroup" name="talkgroup" placeholder="e.g., 101" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="audioFile" class="form-label">Audio File</label>
+                        <input type="file" class="form-control" id="audioFile" name="audio_file" accept="audio/*" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="deleteAfter" name="delete_after">
+                            <label class="form-check-label" for="deleteAfter">
+                                Delete audio file after processing
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Upload & Process</button>
+                </form>
+
+                <div id="uploadResult" class="mt-3 d-none">
+                    <div class="alert" role="alert"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('Upload page JS loaded');
+(function() {
+    const form = document.getElementById('uploadForm');
+    console.log('Form element:', form);
+    if (!form) {
+        console.error('Form not found!');
+        return;
+    }
+    
+    form.addEventListener('submit', async function(e) {
+        console.log('Form submit intercepted');
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const resultDiv = document.getElementById('uploadResult');
+        const alertDiv = resultDiv.querySelector('.alert');
+        
+        resultDiv.classList.remove('d-none');
+        alertDiv.className = 'alert alert-info';
+        alertDiv.textContent = 'Uploading and processing...';
+        
+        try {
+            console.log('Sending upload request...');
+            const response = await fetch('/api/call-upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            console.log('Response:', data);
+            
+            if (response.ok) {
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = 'Upload successful! Call ID: ' + data.call_id;
+            } else {
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.textContent = 'Error: ' + (data.error || data.message || 'Unknown error');
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            alertDiv.className = 'alert alert-danger';
+            alertDiv.textContent = 'Upload failed: ' + err.message;
+        }
+    });
+    
+    console.log('Event listener attached');
+})();
+</script>
+{% endblock extra_js %}

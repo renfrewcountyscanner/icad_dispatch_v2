@@ -1,13 +1,17 @@
 services:
   icad_dispatch:
-    image: thegreatcodeholio/icad_dispatch:latest
-    user: "icad_dispatch"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "9911:9911"
+    environment:
+      - LOG_LEVEL=2
     env_file:
       - .env
     ports:
       - "9911:9911"
     volumes:
-      - ./log:/app/log        # ensure host perms: chown -R 9911:9911 log var
+      - ./log:/app/log
       - ./var:/app/var
       - ./audio:/app/static/audio
     restart: unless-stopped

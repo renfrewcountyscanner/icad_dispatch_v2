@@ -1,0 +1,101 @@
+html, body {
+    background-blend-mode: multiply;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif !important;
+}
+
+.card {
+    border: 1px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.56);
+    border-width: 2px;
+}
+
+.card-header {
+    font-weight: 500;
+    font-size: 1.25rem;
+}
+
+.form-inner {
+    max-width: 444px;
+}
+
+.registration-login-btn {
+    padding: 10px;
+    width: 90%;
+    font-weight: 600;
+    transition: .4s;
+    border-radius: 8px;
+}
+
+.footerRegistrationLogin {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+}
+
+.footerRegistrationLogin a {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+    color: var(--primary_brand);
+    text-decoration: none;
+}
+
+.footerRegistrationLogin a:hover {
+    color: var(--primary_brand_light);
+}
+
+.checkLabel {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+    margin-bottom: 0;
+}
+.checkLabel a {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+    color: var(--primary_brand);
+    text-decoration: none;
+}
+
+#forgotPassLink {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+    color: var(--primary_brand);
+    text-decoration: none;
+}
+
+#forgotPassLink:hover{
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+    color: var(--primary_brand_light);
+    text-decoration: none;
+}
+
+.loginRegisterErrorSuccess {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    margin: 0 auto 1rem;
+    max-width: 100%;
+}
+
+.loginRegisterErrorSuccess p {
+    margin: 0;
+}
+
+.login-logo {
+    max-width: 300px;
+}

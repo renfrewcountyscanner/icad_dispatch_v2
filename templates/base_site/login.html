@@ -1,0 +1,89 @@
+{# templates/base_site/login.html #}
+{% extends "base_site/base.html" %}
+{% block title %}Login - iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+    <!-- Link to our login.css file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base_site/login.css') }}">
+
+{% endblock extra_styles %}
+
+{% block content %}
+
+
+
+    <div class="container-fluid d-flex justify-content-center">
+        <!-- Center the col on larger screens with responsive sizes -->
+        <div div class="form-inner w-100" style="max-width:444px">
+            <div class="card text-center">
+                <div class="card-header">
+                    <img class="login-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="logo"
+                         style="max-width:150px;">
+                </div>
+
+                <div class="card-body">
+                    <h6 class="small">Login</h6>
+                    <form id="loginForm" class="needs-validation mt-4 text-center" novalidate>
+                        <div id="loginError"
+                             class="alert alert-danger text-center d-none loginRegisterErrorSuccess"
+                             role="alert">
+                        </div>
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                        <div class="row g-3 mb-2">
+                            <div class="col-10 mx-auto form-floating">
+                                <input type="text" class="form-control" id="loginEmail" name="loginEmail"
+                                       required>
+                                <label for="loginEmail" class="form-label">Username</label>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-10 mx-auto position-relative form-floating">
+                                <input type="password" class="form-control" id="loginPassword"
+                                       name="loginPassword" required>
+                                <label for="loginPassword" class="form-label">Password</label>
+                                <button
+                                        type="button"
+                                        class="btn p-0 border-0 bg-transparent position-absolute top-50 end-0 translate-middle-y me-4"
+                                        id="togglePassword"
+                                        aria-label="Show Password"
+                                        style="cursor: pointer;"
+                                >
+                                    <i class="bi bi-eye-fill" style="font-size: 1.40rem"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-10 mx-auto text-start">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="form-check form-check-inline">
+                                        <input type="checkbox" class="form-check-input" id="loginRememberMe"
+                                               name="rememberMe">
+                                        <label id="checkRememberLabel" class="form-check-label checkLabel"
+                                               for="loginRememberMe">Remember Me</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-10 mx-auto text-center">
+                            <button id="submitLoginBtn" type="submit"
+                                    class="btn primary-button registration-login-btn">
+                                Login
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-body-secondary">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/base_site/login.js') }}"></script>
+{% endblock extra_js %}
