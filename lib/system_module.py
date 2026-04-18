@@ -382,6 +382,7 @@ def get_systems(
                    rs.system_name,
                    rs.stream_url,
                    rs.api_key,
+                   rs.mute_notifications,
 
                    -- upload
                    rsus.split_enabled,
