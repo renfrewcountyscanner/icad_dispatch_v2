@@ -1,8 +1,6 @@
 services:
   icad_dispatch:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/renfrewcountyscanner/icad_dispatch_v2:latest
     user: "9911:9911"
     environment:
       - LOG_LEVEL=2
