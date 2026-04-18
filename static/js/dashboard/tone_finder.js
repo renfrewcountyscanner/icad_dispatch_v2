@@ -717,7 +717,7 @@ async function fetchSystems() {
         const {success, result, message} = await resp.json();
         if (!success) throw new Error(message || "API error");
 
-        els.sysSel.innerHTML = '<option value="">Select system…</option>';
+        els.sysSel.innerHTML = '<option value="">All Systems</option>';
         result.forEach(sys => {
             const opt = document.createElement("option");
             opt.value = sys.radio_system_id;
@@ -1011,10 +1011,10 @@ async function onRowClick(e) {
    7) PAGE-LEVEL ORCHESTRATION (filters, timers, validation)
    ==================================================================== */
 
-/** Load calls if a system is selected; else clear table. */
+/** Load calls for selected system (or all if none selected). */
 function maybeLoad() {
     if (!table) return;
-    els.sysSel.value ? loadCalls() : table.clear().draw();
+    loadCalls(); // Load all systems if no selection
     applyRefreshInterval();
 }
 
@@ -1027,7 +1027,7 @@ function applyRefreshInterval() {
     const ms = Number(els.autoRef.value) || 0;
     if (ms > 0) {
         refreshTimer = setInterval(() => {
-            if (els.sysSel.value) loadCalls();
+            loadCalls(); // Works with all systems too
         }, ms);
     }
 }
