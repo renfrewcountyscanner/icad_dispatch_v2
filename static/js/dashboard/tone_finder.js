@@ -724,11 +724,44 @@ async function fetchSystems() {
             opt.textContent = sys.system_name || `ID ${sys.radio_system_id}`;
             els.sysSel.appendChild(opt);
         });
+
+        // Also populate trigger modal system dropdown
+        if (els.trigSystemId) {
+            els.trigSystemId.innerHTML = '';
+            result.forEach(sys => {
+                const opt = document.createElement("option");
+                opt.value = sys.radio_system_id;
+                opt.textContent = sys.system_name || `ID ${sys.radio_system_id}`;
+                els.trigSystemId.appendChild(opt);
+            });
+        }
     } catch (err) {
         console.error(err);
         showAlert("Failed to load systems list", "danger");
     } finally {
         els.loader.style.display = "none";
+    }
+}
+
+/** Fetch triggers list → populate trigger selector. */
+async function fetchTriggers() {
+    try {
+        const resp = await fetch("/api/trigger-calls?limit=500");
+        const data = await resp.json();
+        if (!data.success) return;
+
+        const triggers = data.result || [];
+        if (els.triggerSel) {
+            els.triggerSel.innerHTML = '<option value="">All Triggers</option>';
+            triggers.forEach(t => {
+                const opt = document.createElement("option");
+                opt.value = t.alert_trigger_id;
+                opt.textContent = t.alert_trigger_name || `ID ${t.alert_trigger_id}`;
+                els.triggerSel.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error('Failed to load triggers:', err);
     }
 }
 
@@ -874,12 +907,14 @@ async function loadCalls(ev) {
     
     const selectedToneType = els.toneSel.value;
     const triggerId = els.triggerSel?.value;
+    const incidentType = els.incidentSel?.value;
     const dateFrom = els.dateFrom?.value;
     const dateTo = els.dateTo?.value;
     const triggerOnly = els.trigChk.checked;
     
     if (selectedToneType) params.append("tone_type", selectedToneType);
     if (triggerId) params.append("trigger_id", triggerId);
+    if (incidentType) params.append("incident", incidentType);
     if (dateFrom) params.append("date_from", dateFrom);
     if (dateTo) params.append("date_to", dateTo);
     if (triggerOnly) params.append("trigger_only", "1");
@@ -1060,7 +1095,13 @@ function initToneFinderPage() {
         loader: document.querySelector(".page-loader"),
         sysSel: document.getElementById("systemSelect"),
         toneSel: document.getElementById("toneType"),
+        triggerSel: document.getElementById("triggerSelect"),
+        incidentSel: document.getElementById("incidentSelect"),
+        dateFrom: document.getElementById("dateFrom"),
+        dateTo: document.getElementById("dateTo"),
         trigChk: document.getElementById("triggerOnly"),
+        clearFilters: document.getElementById("clearFilters"),
+        refreshBtn: document.getElementById("refreshBtn"),
 
         callModal: document.getElementById("callModal"),
         delModal: document.getElementById("callDeleteModal"),
@@ -1165,6 +1206,57 @@ function initToneFinderPage() {
     });
 
     els.autoRef.addEventListener("change", applyRefreshInterval);
+
+    // New filter event listeners
+    if (els.triggerSel) {
+        els.triggerSel.addEventListener("change", () => {
+            clearMainSelection();
+            stopAndResetPlayer();
+            maybeLoad();
+        });
+    }
+    if (els.incidentSel) {
+        els.incidentSel.addEventListener("change", () => {
+            clearMainSelection();
+            stopAndResetPlayer();
+            maybeLoad();
+        });
+    }
+    if (els.dateFrom) {
+        els.dateFrom.addEventListener("change", () => {
+            clearMainSelection();
+            stopAndResetPlayer();
+            maybeLoad();
+        });
+    }
+    if (els.dateTo) {
+        els.dateTo.addEventListener("change", () => {
+            clearMainSelection();
+            stopAndResetPlayer();
+            maybeLoad();
+        });
+    }
+    if (els.clearFilters) {
+        els.clearFilters.addEventListener("click", () => {
+            if (els.sysSel) els.sysSel.value = "";
+            if (els.toneSel) els.toneSel.value = "";
+            if (els.triggerSel) els.triggerSel.value = "";
+            if (els.incidentSel) els.incidentSel.value = "";
+            if (els.dateFrom) els.dateFrom.value = "";
+            if (els.dateTo) els.dateTo.value = "";
+            if (els.trigChk) els.trigChk.checked = false;
+            clearMainSelection();
+            stopAndResetPlayer();
+            maybeLoad();
+        });
+    }
+    if (els.refreshBtn) {
+        els.refreshBtn.addEventListener("click", () => {
+            clearMainSelection();
+            stopAndResetPlayer();
+            maybeLoad();
+        });
+    }
 
     const tbody = document.querySelector("#callsTable tbody");
 
