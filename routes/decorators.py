@@ -243,15 +243,26 @@ def token_or_login_required(fn):
 
         # Fall back to session authentication
         if "user_id" in session:
-            # User is logged in, use first system (or default)
+            # User is logged in - use the requested system or first system
             db = current_app.config["db"]
-            systems = db.execute_query("SELECT radio_system_id, system_decimal FROM radio_systems LIMIT 1", fetch_mode="one")
+
+            # If a specific system was requested, use it
+            if sys_dec_id:
+                systems = db.execute_query(
+                    "SELECT radio_system_id, system_decimal FROM radio_systems WHERE system_decimal = ?",
+                    (sys_dec_id,),
+                    fetch_mode="one"
+                )
+            else:
+                # Otherwise use first system
+                systems = db.execute_query("SELECT radio_system_id, system_decimal FROM radio_systems LIMIT 1", fetch_mode="one")
+
             if systems.get("success") and systems.get("result"):
                 g.radio_system_id = systems["result"]["radio_system_id"]
                 g.system_decimal = systems["result"]["system_decimal"]
                 g.api_token = None
                 return fn(*args, **kwargs)
-            return api_error(400, "No systems configured.", code="no_systems")
+            return api_error(400, "No systems configured or system not found.", code="no_systems")
 
         return api_error(401, "Missing authentication (API token or login session).", code="auth_required")
 
