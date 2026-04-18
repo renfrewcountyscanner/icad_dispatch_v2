@@ -1134,7 +1134,7 @@ function initToneFinderPage() {
         refreshBtn: document.getElementById("refreshBtn"),
 
         callModal: document.getElementById("callModal"),
-        delModal: document.getElementById("callDeleteModal"),
+        delModal: document.getElementById("deleteModal"),
         delConfirmBtn: document.getElementById("deleteCallConfirmBtn"),
 
         autoRef: document.getElementById("autoRefresh"),

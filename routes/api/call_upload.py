@@ -2299,7 +2299,7 @@ def _maybe_classify_incident_for_call(
 
 
 @api_call_upload.route("/reprocess/<int:call_id>", methods=["POST"])
-@token_required
+@token_or_login_required
 def reprocess_call_tones(call_id):
     """Reprocess tones for an existing call."""
     import traceback
