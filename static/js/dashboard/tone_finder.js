@@ -1156,7 +1156,7 @@ function initToneFinderPage() {
         bulkBtn: document.getElementById("bulkDeleteBtn"),
         bulkCount: document.getElementById("bulkSelectedCount"),
         bulkModal: document.getElementById("bulkDeleteModal"),
-        bulkCountInModal: document.getElementById("bulkDeleteCount"),
+        bulkCountInModal: document.getElementById("bulkCountInModal"),
         bulkConfirmBtn: document.getElementById("bulkDeleteConfirmBtn"),
 
         // “Create Trigger” modal (lightweight)

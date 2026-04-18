@@ -318,8 +318,11 @@
                             <div class="small text-muted mb-1">
                                 <strong>Started:</strong> <span id="dStart"></span>
                             </div>
-                            <div class="small text-muted">
+                            <div class="small text-muted mb-1">
                                 <strong>Duration:</strong> <span id="dDur"></span>
+                            </div>
+                            <div class="small text-muted">
+                                <strong>Merged:</strong> <span id="dMerged"></span>
                             </div>
                         </div>
                     </div>
@@ -347,6 +350,7 @@
                     <ul class="nav nav-tabs mb-3" role="tablist">
                         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabTones" type="button">Tones</button></li>
                         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTranscript" type="button">Transcript</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabIncident" type="button">Incident</button></li>
                         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabLocation" type="button">Location</button></li>
                     </ul>
 
@@ -356,6 +360,7 @@
                                 <span id="dNoTrig" class="text-muted small d-none mb-0">No triggers configured.</span>
                                 <button id="addTriggerBtn" class="btn btn-primary btn-sm">Add Trigger</button>
                             </div>
+                            <div id="dTrigList" class="mb-3"></div>
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle" id="dTonesTable">
                                     <thead class="table-dark">
@@ -368,9 +373,28 @@
                             </div>
                         </div>
                         <div id="tabTranscript" class="tab-pane fade">
-                            <small id="dTranscriptStatus" class="text-muted">Loading…</small>
-                            <div id="dTranscriptBody" class="bg-secondary bg-opacity-25 p-3 rounded small mt-2" style="max-height: 200px; overflow-y: auto;"></div>
-                            <button id="copyTranscriptBtn" class="btn btn-outline-secondary btn-sm mt-2">Copy</button>
+                            <div id="dTranscriptWrap">
+                                <small id="dTranscriptStatus" class="text-muted">Loading…</small>
+                                <div id="dTranscriptBody" class="bg-secondary bg-opacity-25 p-3 rounded small mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                                <div class="mt-2">
+                                    <button id="expandTranscriptBtn" class="btn btn-outline-secondary btn-sm">Expand</button>
+                                    <button id="copyTranscriptBtn" class="btn btn-outline-secondary btn-sm">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tabIncident" class="tab-pane fade">
+                            <div id="dIncidentWrap">
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <div id="dIncidentTypeBadge"></div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div id="dIncidentSeverityBadge"></div>
+                                    </div>
+                                </div>
+                                <div id="dIncidentMeta" class="text-muted small"></div>
+                                <div id="dIncidentSummary" class="mt-2"></div>
+                            </div>
                         </div>
                         <div id="tabLocation" class="tab-pane fade">
                             <div id="dAddressWrap">
