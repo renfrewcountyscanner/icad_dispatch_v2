@@ -931,7 +931,7 @@ async function loadCalls(ev) {
             const label = row.talkgroup ?? "Unknown TG";
             const labelAttr = String(label).replace(/"/g, "&quot;");
             const startLocal = new Date(row.start_epoch * 1000).toLocaleString();
-            const duration = Number(row.duration_s ?? 0).toFixed(1) + " s";
+            const duration = Number(row.duration_s ?? 0).toFixed(1) + "s";
             const systemName = row.system_name ?? "";
             const talkgroup = row.talkgroup ?? "";
             const toneCount = row.tone_count ?? 0;
@@ -939,11 +939,11 @@ async function loadCalls(ev) {
             // System badge
             const systemBadge = systemName ? `<span class="badge bg-primary fs-6">${systemName}</span>` : "";
             
-            // Talkgroup - smaller/slimmer display
-            const talkgroupDisplay = talkgroup ? `<span class="text-muted small">${talkgroup}</span>` : "";
+            // Talkgroup - smaller, gray, right-aligned
+            const talkgroupDisplay = talkgroup ? `<span class="text-muted" style="font-size: 0.7rem; min-width: 45px; display: inline-block; text-align: right;">${talkgroup}</span>` : "";
             
-            // Tones - smaller display
-            const tonesDisplay = toneCount > 0 ? `<span class="badge bg-success">${toneCount}</span>` : `<span class="text-muted small">0</span>`;
+            // Tones - smaller display, narrow column
+            const tonesDisplay = toneCount > 0 ? `<span class="badge bg-success" style="font-size: 0.7rem;">${toneCount}</span>` : `<span class="text-muted" style="font-size: 0.7rem;">0</span>`;
             
             // Trigger badges - check if this call has triggers
             const hasTriggers = row.fired_triggers && row.fired_triggers.length > 0;
