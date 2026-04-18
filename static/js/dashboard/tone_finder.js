@@ -939,22 +939,21 @@ async function loadCalls(ev) {
             // System badge
             const systemBadge = systemName ? `<span class="badge bg-primary fs-6">${systemName}</span>` : "";
             
-            // Talkgroup - smaller, gray, right-aligned
-            const talkgroupDisplay = talkgroup ? `<span class="text-muted" style="font-size: 0.7rem; min-width: 45px; display: inline-block; text-align: right;">${talkgroup}</span>` : "";
+            // Talkgroup - plain number, narrow, left-aligned
+            const talkgroupDisplay = talkgroup ? `<span style="color: #ccc; font-size: 0.8rem;">${talkgroup}</span>` : "";
             
-            // Tones - smaller display, narrow column
-            const tonesDisplay = toneCount > 0 ? `<span class="badge bg-success" style="font-size: 0.7rem;">${toneCount}</span>` : `<span class="text-muted" style="font-size: 0.7rem;">0</span>`;
+            // Tones - plain number, narrow
+            const tonesDisplay = toneCount > 0 ? `<span style="color: #fff; font-size: 0.8rem;">${toneCount}</span>` : `<span style="color: #888; font-size: 0.8rem;">0</span>`;
             
-            // Trigger badges - check if this call has triggers
+            // Trigger badges - dark gray charcoal pills with station name
             const hasTriggers = row.fired_triggers && row.fired_triggers.length > 0;
             let triggerBadges = "";
             if (hasTriggers) {
-                triggerBadges = row.fired_triggers.slice(0, 3).map(t => 
-                    `<span class="badge bg-warning text-dark me-1">${t.trigger_name || t.alert_trigger_id}</span>`
-                ).join("");
-                if (row.fired_triggers.length > 3) {
-                    triggerBadges += `<span class="badge bg-secondary">+${row.fired_triggers.length - 3}</span>`;
-                }
+                triggerBadges = row.fired_triggers.slice(0, 5).map(t => {
+                    const type = t.trigger_type ? t.trigger_type.toUpperCase() : 'FIRE';
+                    const name = t.trigger_name || t.alert_trigger_id || '';
+                    return `<div class="trigger-pill" title="${type} – ${name}">${type} – ${name}</div>`;
+                }).join("");
             }
 
             callMeta.set(String(callId), {src: audioSrc, label});

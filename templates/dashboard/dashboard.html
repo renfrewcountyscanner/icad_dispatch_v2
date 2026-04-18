@@ -6,11 +6,121 @@
 
 {# ───────────────────────────── Extra CSS ───────────────────────────── #}
 {% block extra_styles %}
-    <!-- DataTables Bootstrap 5 theme -->
     <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.css" rel="stylesheet" integrity="sha384-wn0toyEaGbOiHLoVsGIbRhHaxw3FPoMRaO7YcrgSHlXTEf0rLvG/kOfM8lSi7LVj" crossorigin="anonymous">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard/tone_finder.css') }}">
-
+    <style>
+        /* Stats inline row */
+        .stats-inline {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            padding: 0.5rem 0;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .stats-inline .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.85rem;
+        }
+        .stats-inline .stat-label { color: #888; }
+        .stats-inline .stat-value { color: #fff; font-weight: 600; }
+        
+        /* Incident type badges */
+        .badge-other { background-color: #6c757d; }
+        .badge-fire { background-color: #dc3545; }
+        .badge-medical { background-color: #0d6efd; }
+        .badge-traffic { background-color: #ffc107; color: #000; }
+        .badge-rescue { background-color: #20c997; color: #000; }
+        .badge-utilities { background-color: #343a40; }
+        .badge-hazmat { background-color: #d4a017; color: #000; }
+        
+        /* Filter rows */
+        .filter-row-top {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .filter-row-bottom {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .filter-row-top select,
+        .filter-row-top input {
+            background: #2d2d44;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 0.3rem 0.5rem;
+        }
+        .filter-row-top select:focus,
+        .filter-row-top input:focus {
+            background: #3d3d54;
+            border-color: #666;
+            color: #fff;
+            outline: none;
+        }
+        
+        /* Live pill */
+        .live-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: #27ae60;
+            color: #fff;
+            padding: 0.2rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .live-pill::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        /* Table */
+        .table-dark-custom {
+            --bs-table-bg: #1a1a2e;
+            --bs-table-striped-bg: #252540;
+            --bs-table-hover-bg: #2d2d4a;
+            color: #fff;
+        }
+        
+        /* Narrow columns */
+        .col-narrow { width: fit-content; white-space: nowrap; }
+        
+        /* Trigger badges - dark gray charcoal */
+        .trigger-pill {
+            display: inline-block;
+            background: #3d3d4d;
+            color: #fff;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.7rem;
+            margin: 0.1rem 0;
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Action buttons */
+        .action-btn { padding: 0.15rem 0.35rem; font-size: 0.75rem; }
+    </style>
 {% endblock %}
 
 {# ───────────────────────────── Page body ───────────────────────────── #}
@@ -18,146 +128,120 @@
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
     <h1 class="mt-4">Tone Hits</h1>
 
-    <!-- ── Stats row ─────────────────────────────────────────────────── -->
-    <div class="row g-3 mb-3" id="statsRow">
-        <div class="col-6 col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small">Calls Today</div>
-                            <div class="fs-4 fw-bold" id="statTotalCalls">-</div>
-                        </div>
-                        <i class="bi bi-phone fs-1 opacity-50"></i>
-                    </div>
-                </div>
-            </div>
+    <!-- ── Stats inline row ─────────────────────────────────────────── -->
+    <div class="stats-inline" id="statsRow">
+        <div class="stat">
+            <span class="stat-label">Total Calls:</span>
+            <span class="stat-value" id="statTotalCalls">-</span>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small">With Tones</div>
-                            <div class="fs-4 fw-bold" id="statWithTones">-</div>
-                        </div>
-                        <i class="bi bi-soundwave fs-1 opacity-50"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="stat">
+            <span class="stat-label">Triggered:</span>
+            <span class="stat-value" id="statTriggered">-</span>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small">Triggers Fired</div>
-                            <div class="fs-4 fw-bold" id="statTriggersFired">-</div>
-                        </div>
-                        <i class="bi bi-bell-fill fs-1 opacity-50"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="stat">
+            <span class="stat-label">Transcribed:</span>
+            <span class="stat-value" id="statTranscribed">-</span>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small">Active Systems</div>
-                            <div class="fs-4 fw-bold" id="statActiveSystems">-</div>
-                        </div>
-                        <i class="bi bi-broadcast fs-1 opacity-50"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="stat">
+            <span class="stat-label">Avg Duration:</span>
+            <span class="stat-value" id="statAvgDuration">-</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Incidents:</span>
+            <span id="incidentBadges">
+                <span class="badge badge-other">Other: 0</span>
+                <span class="badge badge-fire">Fire: 0</span>
+                <span class="badge badge-medical">Medical: 0</span>
+                <span class="badge badge-traffic">Traffic: 0</span>
+                <span class="badge badge-rescue">Rescue: 0</span>
+                <span class="badge badge-utilities">Utilities: 0</span>
+                <span class="badge badge-hazmat">HazMat: 0</span>
+            </span>
         </div>
     </div>
 
-    <!-- ── Filters row ─────────────────────────────────────────────────── -->
-    <form id="filterForm"
-          class="row gy-2 gx-3 align-items-center mb-3 needs-validation"
-          novalidate>
-        <div class="col-auto">
-            <select class="form-select" id="systemSelect">
-                <option value="">All Systems</option>
-                <!-- options inserted by JS -->
-            </select>
+    <!-- ── Filter row top ───────────────────────────────────────────── -->
+    <div class="filter-row-top">
+        <select class="form-select form-select-sm" id="systemSelect" style="width: auto; min-width: 120px;">
+            <option value="">All Systems</option>
+        </select>
+        
+        <select class="form-select form-select-sm" id="toneType" style="width: auto; min-width: 100px;">
+            <option value="">All Types</option>
+            <option value="two_tone">Two-Tone</option>
+            <option value="long">Long</option>
+            <option value="hi_low">Hi/Low</option>
+            <option value="pulsed">Pulsed</option>
+            <option value="mdc">MDC</option>
+            <option value="dtmf">DTMF</option>
+        </select>
+        
+        <select class="form-select form-select-sm" id="triggerSelect" style="width: auto; min-width: 140px;">
+            <option value="">All Triggers</option>
+        </select>
+        
+        <select class="form-select form-select-sm" id="incidentSelect" style="width: auto; min-width: 100px;">
+            <option value="">All Incidents</option>
+            <option value="Fire">Fire</option>
+            <option value="Medical">Medical</option>
+            <option value="Traffic">Traffic</option>
+            <option value="Rescue">Rescue</option>
+            <option value="Utilities">Utilities</option>
+            <option value="HazMat">HazMat</option>
+            <option value="Other">Other</option>
+        </select>
+        
+        <input type="date" class="form-control form-control-sm" id="dateFrom" style="width: 120px;" placeholder="From">
+        <input type="date" class="form-control form-control-sm" id="dateTo" style="width: 120px;" placeholder="To">
+        
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="triggerOnly">
+            <label class="form-check-label text-muted small" for="triggerOnly">Trigger Fire Only</label>
         </div>
+        
+        <button class="btn btn-sm btn-outline-secondary" id="clearFilters">Clear</button>
+    </div>
 
-        <div class="col-auto">
-            <select class="form-select" id="toneType">
-                <option value="">All tones</option>
-                <option value="two_tone">Two-Tone</option>
-                <option value="long">Long</option>
-                <option value="hi_low">Hi/Low</option>
-                <option value="pulsed">Pulsed</option>
-                <option value="mdc">MDC</option>
-                <option value="dtmf">DTMF</option>
-            </select>
-        </div>
+    <!-- ── Filter row bottom ───────────────────────────────────────── -->
+    <div class="filter-row-bottom">
+        <span class="live-pill">LIVE</span>
+        
+        <button class="btn btn-sm btn-link text-white p-0" id="refreshBtn" title="Refresh">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        
+        <select class="form-select form-select-sm" id="autoRefresh" style="width: auto;">
+            <option value="0">Off</option>
+            <option value="15000">Every 15s</option>
+            <option value="30000">Every 30s</option>
+            <option value="60000">Every 60s</option>
+        </select>
+    </div>
 
-        <div class="col-auto">
-            <select class="form-select" id="triggerSelect">
-                <option value="">All Triggers</option>
-                <!-- options inserted by JS -->
-            </select>
-        </div>
-
-        <div class="col-auto">
-            <input type="date" class="form-control" id="dateFrom" placeholder="From">
-        </div>
-
-        <div class="col-auto">
-            <input type="date" class="form-control" id="dateTo" placeholder="To">
-        </div>
-
-        <div class="col-auto">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="triggerOnly">
-                <label class="form-check-label" for="triggerOnly">Trigger Fire Only</label>
-            </div>
-        </div>
-        <div class="col-auto ms-auto mt-2 mt-md-0">
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-arrow-repeat"></i></span>
-                <select class="form-select" id="autoRefresh">
-                    <option value="0">Live refresh … Off</option>
-                    <option value="15000">Every 15 s</option>
-                    <option value="30000">Every 30 s</option>
-                    <option value="60000">Every 60 s</option>
-                </select>
-            </div>
-        </div>
-        <div class="col-auto d-none">
-            <button class="btn btn-primary" type="submit">Load</button>
-        </div>
-    </form>
-
-    <!-- ── Hits table ──────────────────────────────────────────────────── -->
+    <!-- ── Hits table ──────────────────────────────────────────────── -->
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="small text-body-secondary" id="bulkSelHint">
+        <div class="small text-muted" id="bulkSelHint">
             <span id="bulkSelectedCount">0</span> selected
         </div>
         <div class="btn-group">
             <button id="bulkDeleteBtn" type="button" class="btn btn-sm btn-danger" disabled>
-                <i class="bi bi-trash"></i> Delete selected
+                <i class="bi bi-trash"></i> Delete
             </button>
         </div>
     </div>
 
-    <table id="callsTable" class="table table-striped table-hover table-sm w-100">
+    <table id="callsTable" class="table table-dark-custom table-striped table-hover table-sm w-100">
         <thead>
         <tr>
-            <th style="width:2.25rem;">
+            <th style="width: 1.5rem;">
                 <input type="checkbox" id="selectAllRows" aria-label="Select all visible"/>
             </th>
             <th>Time</th>
-            <th>Talkgroup</th>
-            <th>Duration</th>
-            <th>Tones</th>
+            <th class="col-narrow">Talkgroup</th>
+            <th class="col-narrow">Duration</th>
+            <th class="col-narrow">Tones</th>
+            <th>Triggered</th>
             <th>Type</th>
-            <th></th>
             <th>Actions</th>
             <th class="d-none">ID</th>
             <th class="d-none">EPOCH</th>
@@ -166,21 +250,18 @@
         <tbody></tbody>
     </table>
 
-    <!-- Bulk delete confirm modal -->
-    <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <!-- Delete modals and other modals... -->
+    <div id="bulkDeleteModal" class="modal fade" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header py-2">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header py-2 border-secondary">
                     <h5 class="modal-title fs-6">Delete selected calls?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <p class="mb-0 small">
-                        This will permanently remove <strong><span id="bulkDeleteCount">0</span></strong> calls and all related tone data.
-                    </p>
+                <div class="modal-body py-2">
+                    <p class="mb-0 small">This will permanently remove <span id="bulkCountInModal">0</span> calls.</p>
                 </div>
-                <div class="modal-footer py-2">
+                <div class="modal-footer py-2 border-secondary">
                     <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                     <button id="bulkDeleteConfirmBtn" class="btn btn-danger btn-sm">Delete</button>
                 </div>
@@ -188,271 +269,158 @@
         </div>
     </div>
 
-    <!-- ── Call-details modal ──────────────────────────────────────────── -->
-    <div class="modal fade" id="callModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        Call <span id="dCallId"></span>
-                        <small class="text-muted">(TG <span id="dTG"></span>)</small>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body">
-
-                    <!-- ── Call summary + controls ─────────────────────────── -->
-                    <div class="call-meta-card mb-3">
-                        <div class="row g-3 align-items-center">
-
-                            <!-- Left: call facts -->
-                            <div class="col-md">
-                                <div class="d-flex flex-wrap gap-4">
-
-                                    <div class="call-meta-item">
-                                        <div class="call-meta-label">Start (local)</div>
-                                        <div class="call-meta-value" id="dStart">—</div>
-                                    </div>
-
-                                    <div class="call-meta-item">
-                                        <div class="call-meta-label">Duration</div>
-                                        <div class="call-meta-value" id="dDur">—</div>
-                                    </div>
-
-                                    <div class="call-meta-item">
-                                        <div class="call-meta-label">Merged from stub</div>
-                                        <div class="call-meta-value" id="dMerged">—</div>
-                                    </div>
-
-                                </div>
-                            </div>
-
-                            <!-- Right: player controls -->
-                            <div class="col-md-auto">
-                                <div class="d-flex justify-content-md-end gap-2">
-                                    <button class="btn btn-success btn-sm"
-                                            id="dPlayPauseBtn"
-                                            type="button"
-                                            title="Play">
-                                        <i class="bi bi-play-fill"></i>
-                                    </button>
-                                    <button class="btn btn-outline-secondary btn-sm"
-                                            id="dStopBtn"
-                                            type="button"
-                                            title="Stop">
-                                        <i class="bi bi-stop-fill"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger btn-sm"
-                                            id="dDeleteFromModalBtn"
-                                            type="button"
-                                            title="Delete call">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <!-- ── Transcript + inline Incident ─────────────────────── -->
-                    <div id="dTranscriptWrap" class="call-section mb-3">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <h6 class="mb-0 call-section-title">Transcript</h6>
-                            <small id="dTranscriptStatus" class="text-muted">Loading…</small>
-
-                            <div class="ms-auto d-flex gap-2">
-                                <button id="copyTranscriptBtn"
-                                        class="btn btn-sm btn-outline-secondary"
-                                        type="button"
-                                        title="Copy transcript">
-                                    Copy
-                                </button>
-                                <button id="expandTranscriptBtn"
-                                        class="btn btn-sm btn-outline-secondary"
-                                        type="button"
-                                        title="Expand/Collapse">
-                                    Expand
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Incident lives WITH the transcript, above the text -->
-                        <div id="dIncidentWrap" class="d-none mb-2">
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                <span class="call-section-label">Incident</span>
-
-                                <span id="dIncidentTypeBadge"
-                                      class="badge bg-secondary text-uppercase"></span>
-
-                                <small id="dIncidentMeta"
-                                       class="text-muted ms-1"></small>
-                            </div>
-                        </div>
-
-                        <!-- Actual transcript text -->
-                        <div id="dTranscriptBody"
-                             class="d-transcript mt-1"
-                             data-collapsed="1"></div>
-                    </div>
-
-                    <!-- ── Address (extracted + geocoded) ───────────────────── -->
-                    <div id="dAddressWrap" class="call-section mb-3 d-none">
-                        <div class="d-flex align-items-center mb-2">
-                            <h6 class="mb-0 call-section-title">Address</h6>
-
-                            <div class="ms-auto">
-                                <a id="dAddrMapLink"
-                                   href="#"
-                                   class="btn btn-sm btn-outline-primary d-none"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    Open in Maps
-                                </a>
-                            </div>
-                        </div>
-
-                        <dl class="row mb-0 small">
-                            <dt class="col-3 text-muted">Extracted</dt>
-                            <dd class="col-9" id="dAddrExtracted">—</dd>
-
-                            <dt class="col-3 text-muted">Geocoded</dt>
-                            <dd class="col-9" id="dAddrGeocoded">—</dd>
-                        </dl>
-                    </div>
-
-                    <!-- ── Triggers fired ───────────────────────────────────── -->
-                    <div class="call-section mt-2">
-                        <div class="d-flex align-items-center mb-2">
-                            <h6 class="mb-0 call-section-title">Triggers fired</h6>
-                            <small class="text-muted ms-2 d-none d-sm-inline">
-                                Click a trigger to highlight its tone set below.
-                            </small>
-                        </div>
-
-                        <ul id="dTrigList" class="list-group mb-2"></ul>
-                        <p id="dNoTrig" class="text-muted small d-none mb-0">
-                            No triggers fired.
-                        </p>
-                    </div>
-
-                    <!-- ── tones table (UNCHANGED) ──────────────────────────── -->
-                    <h6 class="mt-4">Detected tone sets</h6>
-                    <div class="table-responsive tone-table-wrap">
-                        <table class="table table-sm align-middle tone-table"
-                               id="dTonesTable">
-                            <thead class="table-dark">
-                            <tr>
-                                <th>Type</th>
-                                <th>Set ID</th>
-                                <th>Freq A</th>
-                                <th>Freq B</th>
-                                <th>Start&nbsp;s</th>
-                                <th>End&nbsp;s</th>
-                                <th>Len&nbsp;s</th>
-                                <th>A&nbsp;Len&nbsp;s</th>      <!-- two-tone only -->
-                                <th>B&nbsp;Len&nbsp;s</th>      <!-- two-tone only -->
-                                <th>Alternations</th>           <!-- hi/low only -->
-                                <th>Cycles</th>                 <!-- pulsed only -->
-                                <th>ON&nbsp;ms</th>             <!-- pulsed only -->
-                                <th>OFF&nbsp;ms</th>            <!-- pulsed only -->
-                                <th>Trigger?</th>
-                                <th>Action</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal fade" id="callDeleteModal" tabindex="-1" aria-hidden="true">
+    <div id="deleteModal" class="modal fade" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header py-2">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header py-2 border-secondary">
                     <h5 class="modal-title fs-6">Delete call?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-0 small">This will permanently remove the call and all
-                        related tone data. Are you sure?</p>
+                    <p class="mb-0 small">This will permanently remove the call and all related tone data.</p>
                 </div>
-                <div class="modal-footer py-2">
-                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-                    <button id="deleteCallConfirmBtn" class="btn btn-danger btn-sm">
-                        Delete
-                    </button>
+                <div class="modal-footer py-2 border-secondary">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button id="deleteCallConfirmBtn" class="btn btn-danger btn-sm">Delete</button>
                 </div>
             </div>
         </div>
     </div>
-    <!-- ── Now Playing bar (fixed) ───────────────────────────────── -->
-    <div id="nowPlayingBar"
-         class="position-fixed bottom-0 start-0 end-0 bg-body-tertiary border-top shadow-lg d-none"
-         style="z-index:2000;">
-        <div class="container py-2">
-            <div class="d-flex align-items-center gap-3">
-                <i class="bi bi-soundwave fs-5"></i>
 
-                <!-- meta -->
-                <div class="flex-grow-1 min-w-0">
-                    <div id="npTitle" class="small fw-semibold text-truncate">No call selected</div>
-                    <div id="npSubtitle" class="small text-secondary text-truncate"></div>
-
-                    <div class="d-flex align-items-center gap-2 mt-1">
-                        <button id="npPlayPause" type="button" class="btn btn-sm btn-success" aria-label="Play">
-                            <i class="bi bi-play-fill"></i>
-                        </button>
-                        <button id="npStop" type="button" class="btn btn-sm btn-outline-secondary" aria-label="Stop">
-                            <i class="bi bi-stop-fill"></i>
-                        </button>
-
-                        <input id="npSeek" type="range" class="form-range flex-grow-1 np-range"
-                               min="0" value="0" step="0.01" aria-label="Seek">
-
-                        <div id="npTime" class="small font-monospace" style="min-width:110px;text-align:right;">
-                            00:00 / 00:00
+    <!-- Call details modal -->
+    <div id="callModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header py-2 border-secondary">
+                    <h5 class="modal-title">Call Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div class="row mb-3">
+                        <div class="col-12 col-md-6">
+                            <h4 class="mb-1" id="dTitle">Call #<span id="dCallId"></span></h4>
+                            <p class="text-muted mb-0">
+                                <span id="dSystemName" class="badge bg-primary"></span>
+                                <small class="text-muted">(TG <span id="dTG"></span>)</small>
+                            </p>
                         </div>
-
-                        <div class="d-none d-sm-flex align-items-center gap-2 ms-2">
-                            <i id="npVolIcon" class="bi bi-volume-up"></i>
-                            <input id="npVolume" type="range" class="form-range" min="0" max="1" step="0.01" value="1"
-                                   style="width:110px;" aria-label="Volume">
+                        <div class="col-12 col-md-6 text-md-end">
+                            <small class="text-muted" id="dTime"></small>
                         </div>
                     </div>
+
+                    <div class="bg-secondary bg-opacity-25 rounded p-3 mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <button id="dPlayPauseBtn" class="btn btn-success btn-sm">
+                                <i class="bi bi-play-fill"></i>
+                            </button>
+                            <div class="flex-grow-1">
+                                <div id="npTitle" class="small fw-semibold text-truncate">No call selected</div>
+                                <div id="npSubtitle" class="small text-muted text-truncate"></div>
+                            </div>
+                            <div id="npTime" class="small font-monospace" style="min-width: 90px; text-align: right;">00:00 / 00:00</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <i id="npVolIcon" class="bi bi-volume-up"></i>
+                                <input id="npVolume" type="range" class="form-range" min="0" max="1" step="0.01" value="1" style="width: 80px;" aria-label="Volume">
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabTones" type="button">Tones</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTranscript" type="button">Transcript</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabLocation" type="button">Location</button></li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div id="tabTones" class="tab-pane fade show active">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span id="dNoTrig" class="text-muted small d-none mb-0">No triggers configured.</span>
+                                <button id="addTriggerBtn" class="btn btn-primary btn-sm">Add Trigger</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle" id="dTonesTable">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Time</th><th>Type</th><th>Freq A</th><th>Freq B</th><th>Matched</th><th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="tabTranscript" class="tab-pane fade">
+                            <small id="dTranscriptStatus" class="text-muted">Loading…</small>
+                            <div id="dTranscriptBody" class="bg-secondary bg-opacity-25 p-3 rounded small mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                            <button id="copyTranscriptBtn" class="btn btn-outline-secondary btn-sm mt-2">Copy</button>
+                        </div>
+                        <div id="tabLocation" class="tab-pane fade">
+                            <div id="dAddressWrap">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>Extracted:</strong>
+                                        <div id="dAddrExtracted" class="text-muted">—</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>Geocoded:</strong>
+                                        <div><span id="dAddrGeocoded" class="text-muted">—</span> <a id="dAddrMapLink" href="#" target="_blank" class="small">Map</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trigger modal -->
+    <div id="triggerModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header py-2 border-secondary">
+                    <h5 class="modal-title fs-6">Add New Trigger</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="triggerForm" class="modal-body py-3">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <label class="form-label small">System</label>
+                            <select name="radio_system_id" id="trigSystemId" class="form-select form-select-sm" required></select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small">Talkgroup</label>
+                            <input type="text" name="talkgroup_pattern" id="trigTalkgroup" class="form-control form-control-sm" placeholder="e.g. 101,203-209">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small">Trigger Name</label>
+                            <input type="text" name="alert_trigger_name" id="trigName" class="form-control form-control-sm" placeholder="e.g. Station 1">
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer py-2 border-secondary">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="triggerForm" id="trigSaveBtn" class="btn btn-primary btn-sm">Save</button>
                 </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
-{# ───────────────────────────── Extra JS ────────────────────────────── #}
 {% block extra_js %}
     <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.js" integrity="sha384-kn5u5NjXEa1i+r6gDHi8bJIMiZ6ZM+rMVdkxd4vpozUU8ZDmQkOwHjXjEpnH1Adi" crossorigin="anonymous"></script>
-
     <script>
-    // Fetch stats on page load
     document.addEventListener('DOMContentLoaded', function() {
         fetch('/api/systems/stats')
             .then(r => r.json())
             .then(data => {
                 document.getElementById('statTotalCalls').textContent = data.total_calls_today || 0;
-                document.getElementById('statWithTones').textContent = data.calls_with_tones || 0;
-                document.getElementById('statTriggersFired').textContent = data.triggers_fired_today || 0;
-                document.getElementById('statActiveSystems').textContent = data.active_systems || 0;
-            })
-            .catch(err => console.error('Failed to load stats:', err));
+                document.getElementById('statTriggered').textContent = data.triggers_fired_today || 0;
+                document.getElementById('statTranscribed').textContent = data.calls_with_tones || 0;
+                document.getElementById('statAvgDuration').textContent = '-';
+            });
     });
     </script>
-
-    <!-- 3. Your page script -->
     <script src="{{ url_for('static', filename='js/dashboard/tone_finder.js') }}"></script>
-
 {% endblock %}
