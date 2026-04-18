@@ -17,6 +17,7 @@ New capabilities
 """
 import json
 import os
+import datetime
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlparse
@@ -40,24 +41,46 @@ def list_calls():
     db     = current_app.config["db"]
     logger = current_app.config["logger"]
 
-    # ── required & validated params ──────────────────────────────
-    try:
-        rsid = int(request.args["radio_system_id"])
-    except (KeyError, ValueError):
-        return _err("radio_system_id (int) is required", 400)
+    # ── params ──────────────────────────────
+    rsid_arg = request.args.get("radio_system_id")
+    rsid = None
+    if rsid_arg:
+        try:
+            rsid = int(rsid_arg)
+        except ValueError:
+            pass
 
     tone_type = request.args.get("tone_type")
     if tone_type and tone_type not in ALLOWED_TONE_TYPES:
         return _err("invalid tone_type", 400)
 
     trigger_only = request.args.get("trigger_only") in ("1", "true", "yes")
+    trigger_id = request.args.get("trigger_id")
+
+    # Date filters
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
 
     limit  = max(1, min(int(request.args.get("limit", 100)), 500))
     offset = max(0, int(request.args.get("offset", 0)))
 
     # ── SQL build ────────────────────────────────────────────────
     tone_filter  = []
-    params       = [rsid]
+    params       = []
+
+    if rsid:
+        tone_filter.append("cr.radio_system_id = ?")
+        params.append(rsid)
+
+    # Filter by specific trigger
+    if trigger_id:
+        tone_filter.append("""
+            cr.call_id IN (
+                SELECT DISTINCT ttm.call_id FROM tone_trigger_map ttm
+                WHERE ttm.alert_trigger_id = ?
+            )
+        """)
+        params.append(int(trigger_id))
 
     if tone_type:
         tone_filter.append("cte.tone_type = ?")
@@ -65,7 +88,16 @@ def list_calls():
     if trigger_only:
         tone_filter.append("cte.matches_trigger = 1")
 
-    where_extra = f"AND {' AND '.join(tone_filter)}" if tone_filter else ""
+    # Date filters
+    if date_from:
+        tone_filter.append("cr.start_epoch_s >= ?")
+        params.append(datetime.strptime(date_from, "%Y-%m-%d").timestamp())
+    if date_to:
+        # Include the entire day
+        tone_filter.append("cr.start_epoch_s < ?")
+        params.append(datetime.strptime(date_to, "%Y-%m-%d").timestamp() + 86400)
+
+    where_extra = f"WHERE {' AND '.join(tone_filter)}" if tone_filter else "WHERE 1=1"
 
     sql = f"""
         SELECT cr.call_id,
@@ -73,6 +105,8 @@ def list_calls():
                cr.duration_s,
                cr.talkgroup,
                cr.file_path,
+               cr.radio_system_id,
+               rs.system_name,
                MAX(cte.matches_trigger) AS has_trigger,
                COUNT(cte.tone_event_id) AS tone_count,
                CASE
@@ -93,16 +127,14 @@ def list_calls():
                        ELSE 0
                    END
                ) AS has_address_geocoded,
-    
-               -- simple summary fields for the list
                MAX(ct.text_full)                AS transcript_text,
                MAX(ct.address_geocoded_json)    AS address_geocoded_json,
                MAX(ct.incident_category)        AS incident_category
-    
+     
         FROM   call_records      cr
         JOIN   call_tone_events  cte USING(call_id)
         LEFT   JOIN call_transcripts ct USING(call_id)
-        WHERE  cr.radio_system_id = ?
+        LEFT   JOIN radio_systems rs ON cr.radio_system_id = rs.radio_system_id
         {where_extra}
         GROUP  BY cr.call_id
         ORDER  BY cr.start_epoch_s DESC
@@ -162,8 +194,9 @@ def list_calls():
                 "has_transcript": bool(r["has_transcript"]),
                 "has_address_extracted": bool(r["has_address_extracted"]),
                 "has_address_geocoded" : bool(r["has_address_geocoded"]),
+                "system_name" : r.get("system_name") or "",
 
-                # new “simple” fields for the table
+                # new "simple" fields for the table
                 "transcript_simple": transcript_simple,
                 "location_label"   : location_label,
                 "location_lat"     : location_lat,

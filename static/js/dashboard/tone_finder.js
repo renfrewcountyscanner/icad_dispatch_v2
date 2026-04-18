@@ -898,17 +898,40 @@ async function loadCalls(ev) {
             const startLocal = new Date(row.start_epoch * 1000).toLocaleString();
             const duration = Number(row.duration_s ?? 0).toFixed(1) + " s";
             const systemName = row.system_name ?? "";
+            const talkgroup = row.talkgroup ?? "";
+            const toneCount = row.tone_count ?? 0;
+            
+            // System badge
+            const systemBadge = systemName ? `<span class="badge bg-primary fs-6">${systemName}</span>` : "";
+            
+            // Talkgroup - smaller/slimmer display
+            const talkgroupDisplay = talkgroup ? `<span class="text-muted small">${talkgroup}</span>` : "";
+            
+            // Tones - smaller display
+            const tonesDisplay = toneCount > 0 ? `<span class="badge bg-success">${toneCount}</span>` : `<span class="text-muted small">0</span>`;
+            
+            // Trigger badges - check if this call has triggers
+            const hasTriggers = row.fired_triggers && row.fired_triggers.length > 0;
+            let triggerBadges = "";
+            if (hasTriggers) {
+                triggerBadges = row.fired_triggers.slice(0, 3).map(t => 
+                    `<span class="badge bg-warning text-dark me-1">${t.trigger_name || t.alert_trigger_id}</span>`
+                ).join("");
+                if (row.fired_triggers.length > 3) {
+                    triggerBadges += `<span class="badge bg-secondary">+${row.fired_triggers.length - 3}</span>`;
+                }
+            }
 
             callMeta.set(String(callId), {src: audioSrc, label});
 
             return [
                 checkboxCell(callId),
                 startLocal,
-                systemName,
-                row.talkgroup ?? "",
+                systemBadge,
+                talkgroupDisplay,
                 duration,
-                row.tone_count,
-                buildStatusIcons(row),
+                tonesDisplay,
+                triggerBadges,
                 "",
                 `<div class="btn-group btn-group-sm" role="group">
                   <button class="btn btn-success js-play"
