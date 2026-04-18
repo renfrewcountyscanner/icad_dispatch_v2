@@ -100,8 +100,12 @@
             color: #fff;
         }
         
-        /* Narrow columns */
-        .col-narrow { width: fit-content; white-space: nowrap; }
+        /* Narrow numeric columns — sized to max character count */
+        .col-tones    { width: 4ch;  min-width: 4ch;  max-width: 10ch; white-space: nowrap; text-align: right; }
+        .col-talkgroup{ width: 7ch;  min-width: 5ch;  max-width: 10ch; white-space: nowrap; text-align: right; }
+        .col-duration { width: 5ch;  min-width: 4ch;  max-width: 6ch;  white-space: nowrap; text-align: right; }
+        /* Badge columns — flexible width */
+        .col-badge    { min-width: 80px; }
         
         /* Trigger badges - dark gray charcoal */
         .trigger-pill {
@@ -200,6 +204,9 @@
         </div>
         
         <button class="btn btn-sm btn-outline-secondary" id="clearFilters">Clear</button>
+        <button class="btn btn-sm btn-outline-warning" id="reprocessAllBtn" title="Re-match all stored tone events against current triggers">
+            <i class="bi bi-arrow-repeat"></i> Reprocess All
+        </button>
     </div>
 
     <!-- ── Filter row bottom ───────────────────────────────────────── -->
@@ -237,10 +244,12 @@
                 <input type="checkbox" id="selectAllRows" aria-label="Select all visible"/>
             </th>
             <th>Time</th>
-            <th class="col-narrow">Talkgroup</th>
-            <th class="col-narrow">Duration</th>
-            <th>Tones Triggered</th>
-            <th>Type</th>
+            <th class="col-badge">Type</th>
+            <th class="col-badge">Radio System</th>
+            <th class="col-badge">Tones Triggered</th>
+            <th class="col-tones text-end">#</th>
+            <th class="col-talkgroup text-end">Talkgroup</th>
+            <th class="col-duration text-end">Duration</th>
             <th>Actions</th>
             <th class="d-none">ID</th>
             <th class="d-none">EPOCH</th>

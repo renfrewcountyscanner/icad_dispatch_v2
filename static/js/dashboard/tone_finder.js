@@ -32,9 +32,9 @@ const callMeta = new Map();                 // call_id -> { src, label }
 const selectedIds = new Set();              // Selected call ids (string)
 
 const COL = {                               // DataTable column indices
-    SEL: 0, TIME: 1, TG: 2, DUR: 3,
-    TONES: 4, ICONS: 5, ACTIONS: 6,
-    ID: 7, EPOCH: 8
+    SEL: 0, TIME: 1, TYPE: 2, SYSTEM: 3,
+    TONES_TRIG: 4, TONES_COUNT: 5, TG: 6, DUR: 7,
+    ACTIONS: 8, ID: 9, EPOCH: 10
 };
 
 const toneCache = new Map();                // call_id -> [{s,e,type,fa,fb,triggerId,fired}, ...]
@@ -931,22 +931,10 @@ async function loadCalls(ev) {
             const label = row.talkgroup ?? "Unknown TG";
             const labelAttr = String(label).replace(/"/g, "&quot;");
             const startLocal = new Date(row.start_epoch * 1000).toLocaleString();
-            const duration = Number(row.duration_s ?? 0).toFixed(1) + "s";
-            const talkgroup = row.talkgroup ?? "";
-            const tgLabel = row.talkgroup_name || "";
+            const talkgroup = String(row.talkgroup ?? "");
+            const systemName = row.system_name || "";
             const toneCount = row.tone_count ?? 0;
-
-            // Talkgroup cell: number + label below in smaller gray text
-            const talkgroupDisplay = `<span style="color:#aaa;font-size:0.75rem;display:block;text-align:right;min-width:40px">${esc(String(talkgroup))}</span>${tgLabel ? `<span style="color:#666;font-size:0.65rem;display:block;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px" title="${esc(tgLabel)}">${esc(tgLabel)}</span>` : ""}`;
-
-            // Tones Triggered cell: count + fired trigger pills
-            const toneCountHtml = toneCount > 0
-                ? `<span style="color:#fff;font-size:0.75rem;margin-right:0.3rem">${toneCount}</span>`
-                : `<span style="color:#888;font-size:0.75rem;margin-right:0.3rem">0</span>`;
-            const trigPills = (row.fired_triggers || []).slice(0, 5)
-                .map(t => `<div class="trigger-pill" title="${esc(t.trigger_name)}">${esc(t.trigger_name)}</div>`)
-                .join("");
-            const toneTrigCell = toneCountHtml + trigPills;
+            const durSec = Number(row.duration_s ?? 0).toFixed(1) + "s";
 
             // Type cell: incident type badge
             const incidentColors = {
@@ -954,19 +942,36 @@ async function loadCalls(ev) {
                 Rescue: "#20c997", HazMat: "#d4a017", Utilities: "#343a40", Other: "#6c757d"
             };
             const inc = row.incident;
-            const iconsCell = inc
-                ? `<span class="badge" style="background:${incidentColors[inc] || "#6c757d"};font-size:0.65rem">${esc(inc)}</span>`
+            const typeCell = inc
+                ? `<span class="badge" style="background:${incidentColors[inc] || "#6c757d"};font-size:0.7rem">${esc(inc)}</span>`
                 : "";
+
+            // Radio System badge
+            const systemCell = systemName
+                ? `<span class="badge" style="background:#2c3e50;color:#ccc;font-size:0.7rem;font-weight:500">${esc(systemName)}</span>`
+                : "";
+
+            // Tones Triggered: fired trigger pills only (count is its own column)
+            const trigPills = (row.fired_triggers || []).slice(0, 5)
+                .map(t => `<div class="trigger-pill" title="${esc(t.trigger_name)}">${esc(t.trigger_name)}</div>`)
+                .join("");
+
+            // Narrow numeric cells
+            const tonesCountCell = `<span style="font-size:0.8rem;font-variant-numeric:tabular-nums">${toneCount}</span>`;
+            const talkgroupCell  = `<span style="font-size:0.8rem;font-variant-numeric:tabular-nums">${esc(talkgroup)}</span>`;
+            const durationCell   = `<span style="font-size:0.8rem;font-variant-numeric:tabular-nums">${durSec}</span>`;
 
             callMeta.set(String(callId), {src: audioSrc, label});
 
             return [
                 checkboxCell(callId),
                 startLocal,
-                talkgroupDisplay,
-                duration,
-                toneTrigCell,
-                iconsCell,
+                typeCell,
+                systemCell,
+                trigPills,
+                tonesCountCell,
+                talkgroupCell,
+                durationCell,
                 `<div class="btn-group btn-group-sm" role="group">
                   <button class="btn btn-success js-play"
                           data-id="${callId}" data-src="${audioSrc}" data-label="${labelAttr}" title="Play">
@@ -1125,6 +1130,7 @@ function initToneFinderPage() {
         dateTo: document.getElementById("dateTo"),
         trigChk: document.getElementById("triggerOnly"),
         clearFilters: document.getElementById("clearFilters"),
+        reprocessAllBtn: document.getElementById("reprocessAllBtn"),
         refreshBtn: document.getElementById("refreshBtn"),
 
         callModal: document.getElementById("callModal"),
@@ -1197,15 +1203,15 @@ function initToneFinderPage() {
         order: [[COL.EPOCH, "desc"]],
         pageLength: 25,
         columnDefs: [
-            { targets: [COL.SEL, COL.INFO, COL.ACTIONS], orderable: false, searchable: false },
+            { targets: [COL.SEL, COL.ACTIONS], orderable: false, searchable: false },
             { targets: [COL.ID, COL.EPOCH], visible: false },
 
-            // ▼ Responsive priorities: lower number = keep visible longer
-            { targets: [COL.TIME, COL.TG, COL.ACTIONS], responsivePriority: 1 },
-            { targets: [COL.TONES],                           responsivePriority: 2 },
-            { targets: [COL.DUR],                             responsivePriority: 3 },
-            { targets: [COL.ICONS],                           responsivePriority: 4 },
-            { targets: [COL.SEL, COL.INFO],                   responsivePriority: 5 }
+            // ▼ Responsive priorities: lower number = kept visible longer on small screens
+            { targets: [COL.TIME, COL.TONES_TRIG, COL.ACTIONS], responsivePriority: 1 },
+            { targets: [COL.TYPE, COL.SYSTEM],                   responsivePriority: 2 },
+            { targets: [COL.TG, COL.TONES_COUNT],                responsivePriority: 3 },
+            { targets: [COL.DUR],                                responsivePriority: 4 },
+            { targets: [COL.SEL],                                responsivePriority: 5 }
         ]
     });
 
@@ -1279,6 +1285,35 @@ function initToneFinderPage() {
             clearMainSelection();
             stopAndResetPlayer();
             maybeLoad();
+        });
+    }
+
+    if (els.reprocessAllBtn) {
+        els.reprocessAllBtn.addEventListener("click", async () => {
+            const btn = els.reprocessAllBtn;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Reprocessing…';
+            try {
+                const rsid = els.sysSel?.value || null;
+                const body = rsid ? JSON.stringify({ radio_system_id: rsid }) : "{}";
+                const resp = await fetch("/api/tone-finder/reprocess-triggers", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrf() },
+                    body
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showAlert(`Reprocessed ${data.result.updated} calls (${data.result.errors} errors)`, "success");
+                    maybeLoad();
+                } else {
+                    showAlert("Reprocess failed: " + (data.message || "unknown error"), "danger");
+                }
+            } catch (err) {
+                showAlert("Reprocess request failed: " + err.message, "danger");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Reprocess All';
+            }
         });
     }
 

@@ -496,6 +496,124 @@ def bulk_delete_calls():
     })
 
 # ───────────────────────────────────────────────────────────────
+#  POST /api/tone-finder/reprocess-triggers
+# ───────────────────────────────────────────────────────────────
+@bp_tone.route("/reprocess-triggers", methods=["POST"])
+@csrf_protect
+@login_required
+def reprocess_triggers():
+    """
+    Re-evaluate all stored tone events against current triggers without
+    re-running audio processing.  Useful after adding new triggers so that
+    historical calls get properly flagged.
+    """
+    import json as _json
+    import time as _time
+    from collections import defaultdict
+    from routes.api.call_upload import _load_triggers, _tones_matching_trigger
+
+    db     = current_app.config["db"]
+    logger = current_app.config["logger"]
+
+    body   = request.get_json(force=True) or {} if request.is_json else {}
+    rsid   = body.get("radio_system_id")
+    if rsid:
+        try:
+            rsid = int(rsid)
+        except (TypeError, ValueError):
+            rsid = None
+
+    # ── fetch all calls that have tone events ───────────────────
+    where  = "WHERE cr.radio_system_id = ?" if rsid else ""
+    params = [rsid] if rsid else []
+    calls_res = db.execute_query(
+        f"""
+        SELECT DISTINCT cr.call_id, cr.radio_system_id, cr.talkgroup, cr.start_epoch_s
+        FROM   call_records cr
+        JOIN   call_tone_events cte USING(call_id)
+        {where}
+        ORDER  BY cr.call_id
+        """,
+        params, fetch_mode="all"
+    )
+    if not calls_res["success"]:
+        return _err("DB error fetching calls", 500)
+
+    updated = 0
+    errors  = 0
+    now_ts  = int(_time.time())
+
+    for call in (calls_res["result"] or []):
+        cid = call["call_id"]
+        sid = call["radio_system_id"]
+        tg  = str(call["talkgroup"] or "")
+
+        try:
+            # ── fetch & reconstruct stored tone events ──────────
+            tones_res = db.execute_query(
+                "SELECT tone_type, json_payload FROM call_tone_events WHERE call_id = ?",
+                (cid,), fetch_mode="all"
+            )
+            if not tones_res["success"]:
+                errors += 1
+                continue
+
+            groups = defaultdict(list)
+            for t in (tones_res["result"] or []):
+                try:
+                    payload = _json.loads(t.get("json_payload") or "{}")
+                except Exception:
+                    payload = {}
+                groups[t["tone_type"]].append(payload)
+
+            class _Det:
+                two_tone_result = groups.get("two_tone", [])
+                long_result     = groups.get("long", [])
+                hi_low_result   = groups.get("hi_low", [])
+                pulsed_result   = groups.get("pulsed", [])
+                dtmf_result     = groups.get("dtmf", [])
+
+            det = _Det()
+
+            # ── match against current triggers ──────────────────
+            triggers   = _load_triggers(db, sid)
+            fired_ids  = []
+            for trig in triggers:
+                tg_pat = str(trig.get("alert_trigger_talkgroup") or "")
+                if tg_pat and tg_pat != tg:
+                    continue
+                hits = _tones_matching_trigger(trig, det)
+                if hits:
+                    fired_ids.append(trig["alert_trigger_id"])
+
+            # ── update trigger_fires ────────────────────────────
+            db.execute_commit("DELETE FROM trigger_fires WHERE call_id = ?", (cid,))
+            for tid in fired_ids:
+                db.execute_commit(
+                    """
+                    INSERT INTO trigger_fires (call_id, alert_trigger_id, fired_at_epoch_s)
+                    VALUES (?, ?, ?)
+                    """,
+                    (cid, tid, now_ts)
+                )
+
+            # ── update matches_trigger flag on tone events ──────
+            db.execute_commit(
+                "UPDATE call_tone_events SET matches_trigger = ? WHERE call_id = ?",
+                (1 if fired_ids else 0, cid)
+            )
+
+            updated += 1
+
+        except Exception as exc:
+            logger.warning("reprocess-triggers: error on call_id=%s: %s", cid, exc)
+            errors += 1
+
+    logger.info("reprocess-triggers complete: updated=%d errors=%d", updated, errors)
+    return jsonify(success=True, result={"updated": updated, "errors": errors})
+
+
+# ───────────────────────────────────────────────────────────────
 #  helper
 # ───────────────────────────────────────────────────────────────
 def _err(msg, code=400):
