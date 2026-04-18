@@ -515,8 +515,10 @@ def reprocess_triggers():
     db     = current_app.config["db"]
     logger = current_app.config["logger"]
 
+    logger.info("reprocess-triggers: endpoint called")
     body   = request.get_json(force=True) or {} if request.is_json else {}
     rsid   = body.get("radio_system_id")
+    logger.info("reprocess-triggers: radio_system_id=%s", rsid)
     if rsid:
         try:
             rsid = int(rsid)

@@ -1204,14 +1204,14 @@ function initToneFinderPage() {
         columnDefs: [
             // ── widths ───────────────────────────────────────────────
             { targets: COL.SEL,         width: "28px",  orderable: false, searchable: false },
-            { targets: COL.TIME,        width: "140px" },
-            { targets: COL.TYPE,        width: "75px",  className: "text-center" },
-            { targets: COL.SYSTEM,      width: "130px" },
-            { targets: COL.TONES_TRIG,  width: "auto"  },   // takes remaining space
-            { targets: COL.TONES_COUNT, width: "55px",  className: "text-end" },
-            { targets: COL.TG,          width: "85px",  className: "text-end" },
-            { targets: COL.DUR,         width: "65px",  className: "text-end" },
-            { targets: COL.ACTIONS,     width: "105px", orderable: false, searchable: false },
+            { targets: COL.TIME,        width: "120px" },
+            { targets: COL.TYPE,        width: "70px",  className: "text-center" },
+            { targets: COL.SYSTEM,      width: "120px" },
+            { targets: COL.TONES_TRIG,  width: "240px" },
+            { targets: COL.TONES_COUNT, width: "50px",  className: "text-end" },
+            { targets: COL.TG,          width: "80px",  className: "text-end" },
+            { targets: COL.DUR,         width: "60px",  className: "text-end" },
+            { targets: COL.ACTIONS,     width: "100px", orderable: false, searchable: false },
             { targets: [COL.ID, COL.EPOCH], visible: false },
 
             // ── responsive: lower = kept visible longer ───────────
@@ -1301,15 +1301,19 @@ function initToneFinderPage() {
             const btn = els.reprocessAllBtn;
             btn.disabled = true;
             btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Reprocessing…';
+            console.log("[Reprocess] Button clicked, starting reprocess...");
             try {
                 const rsid = els.sysSel?.value || null;
                 const body = rsid ? JSON.stringify({ radio_system_id: rsid }) : "{}";
+                console.log("[Reprocess] Sending POST to /api/tone-finder/reprocess-triggers with body:", body);
                 const resp = await fetch("/api/tone-finder/reprocess-triggers", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrf() },
                     body
                 });
+                console.log("[Reprocess] Response status:", resp.status);
                 const data = await resp.json();
+                console.log("[Reprocess] Response data:", data);
                 if (data.success) {
                     showAlert(`Reprocessed ${data.result.updated} calls (${data.result.errors} errors)`, "success");
                     maybeLoad();
@@ -1317,6 +1321,7 @@ function initToneFinderPage() {
                     showAlert("Reprocess failed: " + (data.message || "unknown error"), "danger");
                 }
             } catch (err) {
+                console.error("[Reprocess] Error:", err);
                 showAlert("Reprocess request failed: " + err.message, "danger");
             } finally {
                 btn.disabled = false;
