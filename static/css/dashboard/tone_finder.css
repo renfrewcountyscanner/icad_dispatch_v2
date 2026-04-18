@@ -522,3 +522,57 @@ body.has-player { padding-bottom: 72px; }
 .d-transcript .seg.is-active {
     background-color: rgba(255, 193, 7, 0.18); /* bs-warning-ish */
 }
+
+/* ── Now Playing Footer Bar ──────────────────────────────────── */
+.now-playing-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #1a1a1a;
+    border-top: 1px solid #333;
+    padding: 0.75rem 1rem;
+    z-index: 1050;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.now-playing-bar .container-fluid {
+    max-width: 100%;
+}
+
+.np-info {
+    min-width: 0;
+}
+
+.np-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.np-subtitle {
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.np-timeline input {
+    cursor: pointer;
+}
+
+.np-controls button {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.9rem;
+}
+
+.np-volume input {
+    cursor: pointer;
+}
+
+body.has-player {
+    padding-bottom: 72px;
+}
