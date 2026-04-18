@@ -32,9 +32,9 @@ const callMeta = new Map();                 // call_id -> { src, label }
 const selectedIds = new Set();              // Selected call ids (string)
 
 const COL = {                               // DataTable column indices
-    SEL: 0, TIME: 1, TG: 2, DUR: 3,
-    TONES: 4, ICONS: 5, INFO: 6, ACTIONS: 7,
-    ID: 8, EPOCH: 9
+    SEL: 0, TIME: 1, SYSTEM: 2, TG: 3, DUR: 4,
+    TONES: 5, ICONS: 6, INFO: 7, ACTIONS: 8,
+    ID: 9, EPOCH: 10
 };
 
 const toneCache = new Map();                // call_id -> [{s,e,type,fa,fb,triggerId,fired}, ...]
@@ -868,14 +868,20 @@ async function loadCalls(ev) {
     if (ev) ev.preventDefault();
     if (!table) return;
     const systemId = els.sysSel.value;
-    if (!systemId) return;
 
-    const params = new URLSearchParams({
-        radio_system_id: systemId, limit: "200", offset: "0",
-    });
+    const params = new URLSearchParams({ limit: "200", offset: "0" });
+    if (systemId) params.append("radio_system_id", systemId);
+    
     const selectedToneType = els.toneSel.value;
+    const triggerId = els.triggerSel?.value;
+    const dateFrom = els.dateFrom?.value;
+    const dateTo = els.dateTo?.value;
     const triggerOnly = els.trigChk.checked;
+    
     if (selectedToneType) params.append("tone_type", selectedToneType);
+    if (triggerId) params.append("trigger_id", triggerId);
+    if (dateFrom) params.append("date_from", dateFrom);
+    if (dateTo) params.append("date_to", dateTo);
     if (triggerOnly) params.append("trigger_only", "1");
 
     try {
@@ -891,12 +897,14 @@ async function loadCalls(ev) {
             const labelAttr = String(label).replace(/"/g, "&quot;");
             const startLocal = new Date(row.start_epoch * 1000).toLocaleString();
             const duration = Number(row.duration_s ?? 0).toFixed(1) + " s";
+            const systemName = row.system_name ?? "";
 
             callMeta.set(String(callId), {src: audioSrc, label});
 
             return [
                 checkboxCell(callId),
                 startLocal,
+                systemName,
                 row.talkgroup ?? "",
                 duration,
                 row.tone_count,

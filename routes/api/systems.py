@@ -2815,3 +2815,36 @@ def toggle_mute():
     
     message = "All notifications muted" if new_muted else "Notifications resumed"
     return jsonify({"muted": new_muted, "message": message})
+
+
+@api_systems.route("/stats", methods=["GET"])
+def get_stats():
+    import sqlite3
+    db_path = current_app.config.get("DATABASE_PATH", "/app/var/icad_dispatch.db")
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    today = datetime.date.today()
+    today_start = datetime.datetime.combine(today, datetime.time(0, 0, 0)).timestamp()
+    
+    cursor.execute("SELECT COUNT(*) as total FROM calls WHERE start_epoch >= ?", (today_start,))
+    total_calls_today = cursor.fetchone()["total"] or 0
+    
+    cursor.execute("SELECT COUNT(*) as total FROM calls WHERE tone_count > 0 AND start_epoch >= ?", (today_start,))
+    calls_with_tones = cursor.fetchone()["total"] or 0
+    
+    cursor.execute("SELECT COUNT(DISTINCT call_id) as total FROM tone_trigger_map WHERE call_id IN (SELECT call_id FROM calls WHERE start_epoch >= ?)", (today_start,))
+    triggers_fired = cursor.fetchone()["total"] or 0
+    
+    cursor.execute("SELECT COUNT(*) as total FROM radio_systems")
+    active_systems = cursor.fetchone()["total"] or 0
+    
+    conn.close()
+    
+    return jsonify({
+        "total_calls_today": total_calls_today,
+        "calls_with_tones": calls_with_tones,
+        "triggers_fired_today": triggers_fired,
+        "active_systems": active_systems
+    })

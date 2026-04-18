@@ -18,16 +18,71 @@
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
     <h1 class="mt-4">Tone Hits</h1>
 
+    <!-- ── Stats row ─────────────────────────────────────────────────── -->
+    <div class="row g-3 mb-3" id="statsRow">
+        <div class="col-6 col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Calls Today</div>
+                            <div class="fs-4 fw-bold" id="statTotalCalls">-</div>
+                        </div>
+                        <i class="bi bi-phone fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">With Tones</div>
+                            <div class="fs-4 fw-bold" id="statWithTones">-</div>
+                        </div>
+                        <i class="bi bi-soundwave fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Triggers Fired</div>
+                            <div class="fs-4 fw-bold" id="statTriggersFired">-</div>
+                        </div>
+                        <i class="bi bi-bell-fill fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Active Systems</div>
+                            <div class="fs-4 fw-bold" id="statActiveSystems">-</div>
+                        </div>
+                        <i class="bi bi-broadcast fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ── Filters row ─────────────────────────────────────────────────── -->
     <form id="filterForm"
           class="row gy-2 gx-3 align-items-center mb-3 needs-validation"
           novalidate>
         <div class="col-auto">
-            <select class="form-select" id="systemSelect" required>
-                <option value="">Select system…</option>
+            <select class="form-select" id="systemSelect">
+                <option value="">All Systems</option>
                 <!-- options inserted by JS -->
             </select>
-            <div class="invalid-feedback">required</div>
         </div>
 
         <div class="col-auto">
@@ -36,10 +91,25 @@
                 <option value="two_tone">Two-Tone</option>
                 <option value="long">Long</option>
                 <option value="hi_low">Hi/Low</option>
-                <option value="pulsed">Pulsed</option>  <!-- NEW -->
+                <option value="pulsed">Pulsed</option>
                 <option value="mdc">MDC</option>
                 <option value="dtmf">DTMF</option>
             </select>
+        </div>
+
+        <div class="col-auto">
+            <select class="form-select" id="triggerSelect">
+                <option value="">All Triggers</option>
+                <!-- options inserted by JS -->
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <input type="date" class="form-control" id="dateFrom" placeholder="From">
+        </div>
+
+        <div class="col-auto">
+            <input type="date" class="form-control" id="dateTo" placeholder="To">
         </div>
 
         <div class="col-auto">
@@ -366,6 +436,21 @@
 {# ───────────────────────────── Extra JS ────────────────────────────── #}
 {% block extra_js %}
     <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.js" integrity="sha384-kn5u5NjXEa1i+r6gDHi8bJIMiZ6ZM+rMVdkxd4vpozUU8ZDmQkOwHjXjEpnH1Adi" crossorigin="anonymous"></script>
+
+    <script>
+    // Fetch stats on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/systems/stats')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('statTotalCalls').textContent = data.total_calls_today || 0;
+                document.getElementById('statWithTones').textContent = data.calls_with_tones || 0;
+                document.getElementById('statTriggersFired').textContent = data.triggers_fired_today || 0;
+                document.getElementById('statActiveSystems').textContent = data.active_systems || 0;
+            })
+            .catch(err => console.error('Failed to load stats:', err));
+    });
+    </script>
 
     <!-- 3. Your page script -->
     <script src="{{ url_for('static', filename='js/dashboard/tone_finder.js') }}"></script>
