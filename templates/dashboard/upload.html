@@ -22,10 +22,10 @@
                 <form id="uploadForm" method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="systemSelect" class="form-label">Radio System</label>
-                        <select class="form-select" id="systemSelect" name="system_id" required>
+                        <select class="form-select" id="systemSelect" name="system" required>
                             <option value="">Select a system...</option>
                             {% for system in systems.result %}
-                            <option value="{{ system.radio_system_id }}">{{ system.system_name }}</option>
+                            <option value="{{ system.system_decimal }}">{{ system.system_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -37,7 +37,7 @@
 
                     <div class="mb-3">
                         <label for="audioFile" class="form-label">Audio File</label>
-                        <input type="file" class="form-control" id="audioFile" name="audio_file" accept="audio/*" required>
+                        <input type="file" class="form-control" id="audioFile" name="audio" accept="audio/*" required>
                     </div>
 
                     <div class="mb-3">
