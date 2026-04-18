@@ -104,6 +104,7 @@ def list_calls():
                cr.start_epoch_s,
                cr.duration_s,
                cr.talkgroup,
+               cr.talkgroup_name,
                cr.file_path,
                cr.radio_system_id,
                rs.system_name,
@@ -129,12 +130,15 @@ def list_calls():
                ) AS has_address_geocoded,
                MAX(ct.text_full)                AS transcript_text,
                MAX(ct.address_geocoded_json)    AS address_geocoded_json,
-               MAX(ct.incident_category)        AS incident_category
-     
+               MAX(ct.incident_category)        AS incident_category,
+               GROUP_CONCAT(DISTINCT at.alert_trigger_name) AS fired_trigger_names
+
         FROM   call_records      cr
         JOIN   call_tone_events  cte USING(call_id)
         LEFT   JOIN call_transcripts ct USING(call_id)
         LEFT   JOIN radio_systems rs ON cr.radio_system_id = rs.radio_system_id
+        LEFT   JOIN trigger_fires tf ON cr.call_id = tf.call_id
+        LEFT   JOIN alert_triggers at ON tf.alert_trigger_id = at.alert_trigger_id
         {where_extra}
         GROUP  BY cr.call_id
         ORDER  BY cr.start_epoch_s DESC
@@ -182,12 +186,20 @@ def list_calls():
         # ----- simple classification (just the category) -----
         incident_category = r.get("incident_category")
 
+        fired_trigger_names = r.get("fired_trigger_names") or ""
+        fired_triggers = [
+            {"trigger_name": n.strip()}
+            for n in fired_trigger_names.split(",")
+            if n.strip()
+        ]
+
         rows.append(
             {
                 "call_id"      : r["call_id"],
                 "start_epoch"  : r["start_epoch_s"],
                 "duration_s"   : r["duration_s"],
                 "talkgroup"    : r["talkgroup"],
+                "talkgroup_name": r.get("talkgroup_name") or "",
                 "audio_url"    : r["file_path"],
                 "tone_count"   : r["tone_count"],
                 "has_trigger"  : bool(r["has_trigger"]),
@@ -195,6 +207,7 @@ def list_calls():
                 "has_address_extracted": bool(r["has_address_extracted"]),
                 "has_address_geocoded" : bool(r["has_address_geocoded"]),
                 "system_name" : r.get("system_name") or "",
+                "fired_triggers": fired_triggers,
 
                 # new "simple" fields for the table
                 "transcript_simple": transcript_simple,

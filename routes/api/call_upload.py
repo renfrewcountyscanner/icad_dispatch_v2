@@ -477,6 +477,7 @@ def call_upload():
             audio_duration,
             int(start_epoch),
             merged,
+            talkgroup_name=call_data.get("talkgroupLabel") or call_data.get("talkgroup_name"),
         )
 
 
@@ -1623,15 +1624,16 @@ def _set_trigger_fired(db, trig_id: int, ts: float) -> None:
     )
 
 def _insert_call_record(db, radio_system_id: int, talkgroup: str, local_audio_path: str,
-                        local_debug_audio_path, audio_duration: float, start_time: int, merged: bool) -> int:
+                        local_debug_audio_path, audio_duration: float, start_time: int, merged: bool,
+                        talkgroup_name: str = None) -> int:
     ins = db.execute_commit(
         """
         INSERT INTO call_records
-        (radio_system_id, talkgroup, file_path, debug_file_path,
+        (radio_system_id, talkgroup, talkgroup_name, file_path, debug_file_path,
          duration_s, start_epoch_s, merged_from_stub)
-        VALUES (?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?)
         """,
-        (radio_system_id, talkgroup, local_audio_path, local_debug_audio_path, audio_duration, start_time, int(merged)),
+        (radio_system_id, talkgroup, talkgroup_name, local_audio_path, local_debug_audio_path, audio_duration, start_time, int(merged)),
         return_row_id=True
     )
     if not ins["success"]:

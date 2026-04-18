@@ -131,11 +131,11 @@
     <!-- ── Stats inline row ─────────────────────────────────────────── -->
     <div class="stats-inline" id="statsRow">
         <div class="stat">
-            <span class="stat-label">Total Calls:</span>
+            <span class="stat-label">Subscribers:</span>
             <span class="stat-value" id="statTotalCalls">-</span>
         </div>
         <div class="stat">
-            <span class="stat-label">Triggered:</span>
+            <span class="stat-label">Triggers:</span>
             <span class="stat-value" id="statTriggered">-</span>
         </div>
         <div class="stat">
@@ -239,8 +239,7 @@
             <th>Time</th>
             <th class="col-narrow">Talkgroup</th>
             <th class="col-narrow">Duration</th>
-            <th class="col-narrow">Tones</th>
-            <th>Triggered</th>
+            <th>Tones Triggered</th>
             <th>Type</th>
             <th>Actions</th>
             <th class="d-none">ID</th>
@@ -410,17 +409,5 @@
 
 {% block extra_js %}
     <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.js" integrity="sha384-kn5u5NjXEa1i+r6gDHi8bJIMiZ6ZM+rMVdkxd4vpozUU8ZDmQkOwHjXjEpnH1Adi" crossorigin="anonymous"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        fetch('/api/systems/stats')
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('statTotalCalls').textContent = data.total_calls_today || 0;
-                document.getElementById('statTriggered').textContent = data.triggers_fired_today || 0;
-                document.getElementById('statTranscribed').textContent = data.calls_with_tones || 0;
-                document.getElementById('statAvgDuration').textContent = '-';
-            });
-    });
-    </script>
     <script src="{{ url_for('static', filename='js/dashboard/tone_finder.js') }}"></script>
 {% endblock %}

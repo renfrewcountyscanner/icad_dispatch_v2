@@ -33,8 +33,8 @@ const selectedIds = new Set();              // Selected call ids (string)
 
 const COL = {                               // DataTable column indices
     SEL: 0, TIME: 1, TG: 2, DUR: 3,
-    TONES: 4, TRIGGERED: 5, ICONS: 6, ACTIONS: 7,
-    ID: 8, EPOCH: 9
+    TONES: 4, ICONS: 5, ACTIONS: 6,
+    ID: 7, EPOCH: 8
 };
 
 const toneCache = new Map();                // call_id -> [{s,e,type,fa,fb,triggerId,fired}, ...]
@@ -932,29 +932,31 @@ async function loadCalls(ev) {
             const labelAttr = String(label).replace(/"/g, "&quot;");
             const startLocal = new Date(row.start_epoch * 1000).toLocaleString();
             const duration = Number(row.duration_s ?? 0).toFixed(1) + "s";
-            const systemName = row.system_name ?? "";
             const talkgroup = row.talkgroup ?? "";
+            const tgLabel = row.talkgroup_name || "";
             const toneCount = row.tone_count ?? 0;
-            
-            // System badge - NOT shown in table (keeping for modal reference)
-            // const systemBadge = systemName ? `<span class="badge bg-primary">${systemName}</span>` : "";
-            
-            // Talkgroup - plain number, narrow, RIGHT-aligned gray
-            const talkgroupDisplay = talkgroup ? `<span style="color: #aaa; font-size: 0.75rem; display: block; text-align: right; min-width: 40px;">${talkgroup}</span>` : "";
-            
-            // Tones - plain number, narrow
-            const tonesDisplay = toneCount > 0 ? `<span style="color: #fff; font-size: 0.75rem;">${toneCount}</span>` : `<span style="color: #888; font-size: 0.75rem;">0</span>`;
-            
-            // Trigger badges - dark gray charcoal pills with station name
-            const hasTriggers = row.fired_triggers && row.fired_triggers.length > 0;
-            let triggerBadges = "";
-            if (hasTriggers) {
-                triggerBadges = row.fired_triggers.slice(0, 5).map(t => {
-                    const type = t.trigger_type ? t.trigger_type.toUpperCase() : 'FIRE';
-                    const name = t.trigger_name || t.alert_trigger_id || '';
-                    return `<div class="trigger-pill" title="${type} – ${name}">${type} – ${name}</div>`;
-                }).join("");
-            }
+
+            // Talkgroup cell: number + label below in smaller gray text
+            const talkgroupDisplay = `<span style="color:#aaa;font-size:0.75rem;display:block;text-align:right;min-width:40px">${esc(String(talkgroup))}</span>${tgLabel ? `<span style="color:#666;font-size:0.65rem;display:block;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px" title="${esc(tgLabel)}">${esc(tgLabel)}</span>` : ""}`;
+
+            // Tones Triggered cell: count + fired trigger pills
+            const toneCountHtml = toneCount > 0
+                ? `<span style="color:#fff;font-size:0.75rem;margin-right:0.3rem">${toneCount}</span>`
+                : `<span style="color:#888;font-size:0.75rem;margin-right:0.3rem">0</span>`;
+            const trigPills = (row.fired_triggers || []).slice(0, 5)
+                .map(t => `<div class="trigger-pill" title="${esc(t.trigger_name)}">${esc(t.trigger_name)}</div>`)
+                .join("");
+            const toneTrigCell = toneCountHtml + trigPills;
+
+            // Type cell: incident type badge
+            const incidentColors = {
+                Fire: "#dc3545", Medical: "#0d6efd", Traffic: "#ffc107",
+                Rescue: "#20c997", HazMat: "#d4a017", Utilities: "#343a40", Other: "#6c757d"
+            };
+            const inc = row.incident;
+            const iconsCell = inc
+                ? `<span class="badge" style="background:${incidentColors[inc] || "#6c757d"};font-size:0.65rem">${esc(inc)}</span>`
+                : "";
 
             callMeta.set(String(callId), {src: audioSrc, label});
 
@@ -963,9 +965,8 @@ async function loadCalls(ev) {
                 startLocal,
                 talkgroupDisplay,
                 duration,
-                tonesDisplay,
-                triggerBadges,
-                "",
+                toneTrigCell,
+                iconsCell,
                 `<div class="btn-group btn-group-sm" role="group">
                   <button class="btn btn-success js-play"
                           data-id="${callId}" data-src="${audioSrc}" data-label="${labelAttr}" title="Play">
@@ -986,6 +987,31 @@ async function loadCalls(ev) {
         table.clear();
         if (rows.length) table.rows.add(rows);
         table.draw(false);
+
+        // Update stats from current filtered data
+        const allRows = data.result;
+        const totalCalls = allRows.length;
+        const triggered = allRows.filter(r => r.has_trigger).length;
+        const transcribed = allRows.filter(r => r.has_transcript).length;
+        const avgDur = allRows.length
+            ? (allRows.reduce((s, r) => s + (Number(r.duration_s) || 0), 0) / allRows.length).toFixed(1) + " s"
+            : "-";
+        const incCounts = {};
+        allRows.forEach(r => { if (r.incident) incCounts[r.incident] = (incCounts[r.incident] || 0) + 1; });
+
+        const elTotalCalls = document.getElementById("statTotalCalls");
+        const elTriggered  = document.getElementById("statTriggered");
+        const elTranscribed = document.getElementById("statTranscribed");
+        const elAvgDur     = document.getElementById("statAvgDuration");
+        if (elTotalCalls)  elTotalCalls.textContent  = totalCalls;
+        if (elTriggered)   elTriggered.textContent   = triggered;
+        if (elTranscribed) elTranscribed.textContent = transcribed;
+        if (elAvgDur)      elAvgDur.textContent      = avgDur;
+
+        ["Fire","Medical","Traffic","Rescue","Utilities","HazMat","Other"].forEach(type => {
+            const el = document.querySelector(`.badge-${type.toLowerCase()}`);
+            if (el) el.textContent = `${type}: ${incCounts[type] || 0}`;
+        });
 
         syncHeaderCheckbox();
         updateBulkUI();
