@@ -2820,7 +2820,9 @@ def toggle_mute():
 @api_systems.route("/stats", methods=["GET"])
 def get_stats():
     import sqlite3
-    db_path = current_app.config.get("DATABASE_PATH", "/app/var/icad_dispatch.db")
+    db_path = current_app.config.get("SQLITE_DATABASE_PATH", "var/icad_dispatch.db")
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(os.getcwd(), db_path)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -2828,14 +2830,19 @@ def get_stats():
     today = datetime.date.today()
     today_start = datetime.datetime.combine(today, datetime.time(0, 0, 0)).timestamp()
     
-    cursor.execute("SELECT COUNT(*) as total FROM calls WHERE start_epoch >= ?", (today_start,))
-    total_calls_today = cursor.fetchone()["total"] or 0
-    
-    cursor.execute("SELECT COUNT(*) as total FROM calls WHERE tone_count > 0 AND start_epoch >= ?", (today_start,))
-    calls_with_tones = cursor.fetchone()["total"] or 0
-    
-    cursor.execute("SELECT COUNT(DISTINCT call_id) as total FROM tone_trigger_map WHERE call_id IN (SELECT call_id FROM calls WHERE start_epoch >= ?)", (today_start,))
-    triggers_fired = cursor.fetchone()["total"] or 0
+    try:
+        cursor.execute("SELECT COUNT(*) as total FROM calls WHERE start_epoch >= ?", (today_start,))
+        total_calls_today = cursor.fetchone()["total"] or 0
+        
+        cursor.execute("SELECT COUNT(*) as total FROM calls WHERE tone_count > 0 AND start_epoch >= ?", (today_start,))
+        calls_with_tones = cursor.fetchone()["total"] or 0
+        
+        cursor.execute("SELECT COUNT(DISTINCT call_id) as total FROM tone_trigger_map WHERE call_id IN (SELECT call_id FROM calls WHERE start_epoch >= ?)", (today_start,))
+        triggers_fired = cursor.fetchone()["total"] or 0
+    except sqlite3.OperationalError:
+        total_calls_today = 0
+        calls_with_tones = 0
+        triggers_fired = 0
     
     cursor.execute("SELECT COUNT(*) as total FROM radio_systems")
     active_systems = cursor.fetchone()["total"] or 0
