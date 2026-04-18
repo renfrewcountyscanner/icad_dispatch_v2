@@ -903,7 +903,7 @@ async function loadCalls(ev) {
     const systemId = els.sysSel.value;
 
     const params = new URLSearchParams({ limit: "200", offset: "0" });
-    if (systemId) params.append("radio_system_id", systemId);
+    if (systemId) params.append("system", systemId);
     
     const selectedToneType = els.toneSel.value;
     const triggerId = els.triggerSel?.value;

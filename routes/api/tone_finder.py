@@ -42,13 +42,31 @@ def list_calls():
     logger = current_app.config["logger"]
 
     # ── params ──────────────────────────────
-    rsid_arg = request.args.get("radio_system_id")
     rsid = None
+
+    # Try "radio_system_id" first, then fall back to "system" (system_decimal)
+    rsid_arg = request.args.get("radio_system_id")
     if rsid_arg:
         try:
             rsid = int(rsid_arg)
         except ValueError:
             pass
+
+    # If not found, try "system" which is system_decimal and convert to radio_system_id
+    if not rsid:
+        system_arg = request.args.get("system")
+        if system_arg:
+            try:
+                system_decimal = int(system_arg)
+                sys_row = db.execute_query(
+                    "SELECT radio_system_id FROM radio_systems WHERE system_decimal = ?",
+                    (system_decimal,),
+                    fetch_mode="one"
+                )
+                if sys_row.get("success") and sys_row.get("result"):
+                    rsid = sys_row["result"]["radio_system_id"]
+            except ValueError:
+                pass
 
     tone_type = request.args.get("tone_type")
     if tone_type and tone_type not in ALLOWED_TONE_TYPES:

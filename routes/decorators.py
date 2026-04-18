@@ -218,13 +218,15 @@ def token_or_login_required(fn):
             request.headers.get("X-System-ID")
         )
 
-        if token and sys_dec_id:
-            # Try token authentication
+        # Convert sys_dec_id to int if present
+        if sys_dec_id:
             try:
                 sys_dec_id = int(sys_dec_id)
             except (TypeError, ValueError):
                 sys_dec_id = None
 
+        if token and sys_dec_id:
+            # Try token authentication
             if sys_dec_id:
                 db = current_app.config["db"]
                 row = db.execute_query(
