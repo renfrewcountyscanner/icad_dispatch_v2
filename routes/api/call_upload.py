@@ -2310,7 +2310,7 @@ def reprocess_call_tones(call_id):
     db = current_app.config["db"]
     try:
         call_res = db.execute_query(
-            "SELECT radio_system_id, talkgroup, audio_file, start_epoch, duration FROM call_records WHERE call_id = ?",
+            "SELECT radio_system_id, talkgroup, file_path, start_epoch_s, duration_s FROM call_records WHERE call_id = ?",
             (call_id,),
             fetch_mode="one"
         )
@@ -2320,7 +2320,7 @@ def reprocess_call_tones(call_id):
             return jsonify({"error": "Call not found"}), 404
 
         radio_system_id = call_row["radio_system_id"]
-        audio_file = call_row["audio_file"]
+        audio_file = call_row["file_path"]
 
         audio_path = Path(audio_file)
         if not audio_path.is_absolute():
