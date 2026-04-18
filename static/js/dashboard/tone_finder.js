@@ -720,8 +720,8 @@ async function fetchSystems() {
         els.sysSel.innerHTML = '<option value="">All Systems</option>';
         result.forEach(sys => {
             const opt = document.createElement("option");
-            opt.value = sys.radio_system_id;
-            opt.textContent = sys.system_name || `ID ${sys.radio_system_id}`;
+            opt.value = sys.system_decimal;
+            opt.textContent = sys.system_name || `ID ${sys.system_decimal}`;
             els.sysSel.appendChild(opt);
         });
 
@@ -730,8 +730,8 @@ async function fetchSystems() {
             els.trigSystemId.innerHTML = '';
             result.forEach(sys => {
                 const opt = document.createElement("option");
-                opt.value = sys.radio_system_id;
-                opt.textContent = sys.system_name || `ID ${sys.radio_system_id}`;
+                opt.value = sys.system_decimal;
+                opt.textContent = sys.system_name || `ID ${sys.system_decimal}`;
                 els.trigSystemId.appendChild(opt);
             });
         }
