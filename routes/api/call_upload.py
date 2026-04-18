@@ -102,6 +102,31 @@ def _tone_counts(td: Dict[str, Any]) -> Dict[str, int]:
     }
 
 
+def _load_system_name(db, radio_system_id: int) -> str:
+    """Load system name from database."""
+    try:
+        res = db.execute_query(
+            "SELECT system_name FROM radio_systems WHERE radio_system_id = ?",
+            (radio_system_id,),
+            fetch_mode="one"
+        )
+        if res.get("success") and res.get("result"):
+            return res["result"].get("system_name", "Unknown")
+    except Exception:
+        pass
+    return "Unknown"
+
+
+def _count_tone_types(detect_result) -> Dict[str, int]:
+    """Count tones by type from ToneDetectionResult."""
+    counts = {}
+    if detect_result and hasattr(detect_result, 'tones'):
+        for tone in detect_result.tones:
+            tone_type = tone.tone_type or "unknown"
+            counts[tone_type] = counts.get(tone_type, 0) + 1
+    return counts
+
+
 def _dump_json(obj: Any) -> str:
     """
     JSON stringify for logs. Uses default=str to avoid crashing on Decimals, etc.
@@ -608,9 +633,17 @@ def call_upload():
         success=True,
         message="Merged call imported" if merged else "Call imported successfully",
         result={
+            "call_id": call_id,
             "radio_system_id": radio_system_id,
+            "system_name": _load_system_name(db, radio_system_id),
+            "talkgroup": talkgroup,
+            "duration_s": audio_duration,
             "merged": merged,
-            "triggers_fired": [trig['alert_trigger_name'] for trig in fired_trigger_data]
+            "tones_detected": len(detect_result.tones) if detect_has_tones else 0,
+            "tone_types": _count_tone_types(detect_result) if detect_has_tones else {},
+            "triggers_fired": [trig['alert_trigger_name'] for trig in fired_trigger_data],
+            "transcript": transcript_text[:200] if transcript_text else None,
+            "persisted": must_persist,
         },
     ), 200
 
