@@ -12,6 +12,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from lib.sqlite_module import SQLiteDatabase
 from lib.utility import env_bool, choose_cookie_domain
 from routes import base_site, auth, dashboard, bp_admin, api_systems, api_call_upload, bp_trig, bp_tone, register_middlewares
+from routes.api.map import bp_map_api
 
 from lib.logging_module import CustomLogger
 
@@ -154,6 +155,8 @@ app.register_blueprint(api_call_upload, url_prefix='/api/call-upload')
 app.register_blueprint(bp_tone, url_prefix='/api/tone-finder')
 
 app.register_blueprint(bp_trig, url_prefix='/api/trigger-calls')
+
+app.register_blueprint(bp_map_api, url_prefix='/api/map')
 
 
 # Register Middleware

@@ -34,7 +34,12 @@ def debug_page():
 def dashboard_upload():
     from lib.sqlite_module import SQLiteDatabase
     from lib.system_module import get_systems
-    
+
     db = SQLiteDatabase()
     systems = get_systems(db)
     return render_template("dashboard/upload.html", systems=systems)
+
+@dashboard.route("/map", methods=["GET"])
+@login_required
+def dashboard_map():
+    return render_template("dashboard/map.html")
