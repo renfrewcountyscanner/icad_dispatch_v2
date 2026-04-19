@@ -524,7 +524,7 @@ function gatherGeneralFormData () {
         system_name     : q("#updateSystemName").trim(),
         stream_url      : q("#updateSystemStreamURL").trim(),
         api_key         : q("#updateSystemApiKey").trim(),
-        post_tone_delay : Number(q("[name=post_tone_delay]")) || 0,
+        post_tone_delay : Number(document.getElementById("updatePostToneDelay").value) || 0,
     };
 }
 
