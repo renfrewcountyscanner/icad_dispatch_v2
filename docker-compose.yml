@@ -1,7 +1,6 @@
 services:
   icad_dispatch:
-    build: .
-    image: icad_dispatch_v2:local
+    image: ghcr.io/renfrewcountyscanner/icad_dispatch_v2:latest
     user: "9911:9911"
     environment:
       - LOG_LEVEL=2
