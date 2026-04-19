@@ -1,27 +1,52 @@
+// CAD Map JavaScript
+// Dynamic call map with auto-fit, live refresh, and collapsible sidebar
+
 let map;
 let markersLayer;
 let callsData = [];
 let refreshTimer = null;
+let sidebarCollapsed = false;
+
+// Renfrew County, Ontario coordinates
+const RENFREW_COUNTY_CENTER = [45.45, -77.15];
+const DEFAULT_ZOOM = 10;
 
 function initMap() {
-    // Initialize Leaflet map
-    map = L.map('map').setView([43.0, -71.5], 10);
+    // Check saved sidebar state
+    sidebarCollapsed = localStorage.getItem('mapSidebarCollapsed') === 'true';
+    if (sidebarCollapsed) {
+        document.getElementById('mapSidebar').classList.add('collapsed');
+    }
+    
+    // Initialize Leaflet map centered on Renfrew County
+    map = L.map('map', {
+        center: RENFREW_COUNTY_CENTER,
+        zoom: DEFAULT_ZOOM,
+        zoomControl: true
+    });
     
     // Add OpenStreetMap tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+        subdomains: ['a', 'b', 'c']
+    }).addTo(map);
+    
+    // Add zoom control to top-right
+    L.control.zoom({
+        position: 'topright'
     }).addTo(map);
     
     // Initialize marker cluster group
     markersLayer = L.markerClusterGroup({
-        maxClusterRadius: 50,
+        maxClusterRadius: 60,
         spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true
     });
     map.addLayer(markersLayer);
     
-    // Set default dates
+    // Set default dates to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('startDate').value = today;
     document.getElementById('endDate').value = today;
@@ -29,144 +54,224 @@ function initMap() {
     // Add event listeners
     document.getElementById('startDate').addEventListener('change', loadCalls);
     document.getElementById('endDate').addEventListener('change', loadCalls);
-    document.getElementById('categoryFilter').addEventListener('change', filterCalls);
+    document.getElementById('categoryFilter').addEventListener('change', filterAndRender);
     document.getElementById('liveMode').addEventListener('change', toggleLiveMode);
     document.getElementById('refreshInterval').addEventListener('change', updateRefreshInterval);
     
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        map.invalidateSize();
+    });
+    
     // Initial load
     loadCalls();
+    
+    console.log('CAD Map initialized - Centered on Renfrew County');
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('mapSidebar');
+    sidebarCollapsed = !sidebarCollapsed;
+    
+    if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+    } else {
+        sidebar.classList.remove('collapsed');
+    }
+    
+    // Save state
+    localStorage.setItem('mapSidebarCollapsed', sidebarCollapsed);
+    
+    // Resize map after transition
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 350);
 }
 
 async function loadCalls() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value || startDate;
-    const category = document.getElementById('categoryFilter').value;
     
-    let url = `/api/map/calls?start_date=${startDate}&end_date=${endDate}`;
-    if (category) {
-        url += `&category=${category}`;
-    }
+    if (!startDate) return;
+    
+    // Show loading state
+    document.getElementById('callList').innerHTML = '<li class="empty-state"><i class="bi bi-hourglass-split"></i><div>Loading calls...</div></li>';
     
     try {
+        const url = `/api/map/calls?start_date=${startDate}&end_date=${endDate}`;
         const resp = await fetch(url);
         const data = await resp.json();
         
         if (data.success) {
             callsData = data.result || [];
-            renderMarkers();
-            renderCallList();
-            updateStats();
+            filterAndRender();
+        } else {
+            console.error('API error:', data.message);
+            document.getElementById('callList').innerHTML = `<li class="empty-state"><i class="bi bi-exclamation-triangle"></i><div>Error: ${data.message}</div></li>`;
         }
     } catch (err) {
         console.error('Error loading calls:', err);
+        document.getElementById('callList').innerHTML = `<li class="empty-state"><i class="bi bi-exclamation-triangle"></i><div>Failed to load calls</div></li>`;
     }
 }
 
-function renderMarkers() {
+function filterAndRender() {
+    const category = document.getElementById('categoryFilter').value;
+    
+    let filtered = callsData;
+    if (category) {
+        filtered = callsData.filter(c => {
+            const cat = (c.category || '').toLowerCase();
+            if (category === 'fire') return cat.includes('fire');
+            if (category === 'medical') return cat.includes('medical') || cat.includes('ems');
+            return true;
+        });
+    }
+    
+    renderMarkers(filtered);
+    renderCallList(filtered);
+    updateStats(filtered.length);
+}
+
+function renderMarkers(calls) {
     markersLayer.clearLayers();
     
     const bounds = [];
+    let hasMarkers = false;
     
-    callsData.forEach(call => {
+    calls.forEach(call => {
         if (call.lat && call.lng) {
             const color = getCategoryColor(call.category);
             
+            // Create custom icon
             const icon = L.divIcon({
                 className: 'custom-marker',
                 html: `<div style="
                     background: ${color};
-                    width: 24px;
-                    height: 24px;
+                    width: 28px;
+                    height: 28px;
                     border-radius: 50%;
-                    border: 2px solid #fff;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                "></div>`,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
+                    border: 3px solid #fff;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 12px;
+                ">${getCategoryShort(call.category)}</div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+                popupAnchor: [0, -14]
             });
             
             const marker = L.marker([call.lat, call.lng], { icon })
-                .bindPopup(`
-                    <strong>${call.category}</strong><br>
-                    ${call.address || 'Unknown'}<br>
-                    ${call.time} - ${call.talkgroup}<br>
-                    System: ${call.system}
-                `);
+                .bindPopup(createPopupContent(call));
             
             marker.on('click', () => {
-                document.querySelectorAll('.call-item').forEach(el => el.classList.remove('active'));
-                const item = document.querySelector(`[data-call-id="${call.call_id}"]`);
-                if (item) item.classList.add('active');
+                highlightCall(call.call_id);
             });
             
             markersLayer.addLayer(marker);
             bounds.push([call.lat, call.lng]);
+            hasMarkers = true;
         }
     });
     
     // Auto-fit map to show all markers
-    if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+    if (hasMarkers) {
+        if (bounds.length === 1) {
+            map.setView(bounds[0], 15);
+        } else {
+            map.fitBounds(bounds, { 
+                padding: [50, 50], 
+                maxZoom: 16,
+                animate: true,
+                duration: 0.5
+            });
+        }
+    } else {
+        // No calls - center on Renfrew County
+        map.setView(RENFREW_COUNTY_CENTER, DEFAULT_ZOOM);
     }
 }
 
-function renderCallList() {
+function createPopupContent(call) {
+    const colorClass = getCategoryClass(call.category);
+    return `
+        <div style="min-width: 200px;">
+            <div style="font-weight: bold; margin-bottom: 5px;">
+                <span class="badge-${colorClass}">${call.category}</span>
+            </div>
+            <div style="font-size: 0.9rem; margin-bottom: 3px;">${call.address || 'Unknown address'}</div>
+            <div style="font-size: 0.8rem; color: #666;">
+                ${call.time} | ${call.talkgroup}<br>
+                ${call.system}
+            </div>
+        </div>
+    `;
+}
+
+function renderCallList(calls) {
     const list = document.getElementById('callList');
-    list.innerHTML = '';
     
-    callsData.forEach(call => {
-        const li = document.createElement('li');
-        li.className = `call-item ${getCategoryClass(call.category)}`;
-        li.dataset.callId = call.call_id;
-        li.innerHTML = `
+    if (calls.length === 0) {
+        list.innerHTML = `
+            <li class="empty-state">
+                <i class="bi bi-map"></i>
+                <div>No calls with location data</div>
+            </li>
+        `;
+        return;
+    }
+    
+    list.innerHTML = calls.map(call => `
+        <li class="call-item ${getCategoryClass(call.category)}" 
+            data-call-id="${call.call_id}"
+            onclick="focusOnCall(${call.call_id}, ${call.lat}, ${call.lng})">
             <div class="call-time">${call.time}</div>
-            <div class="call-category">${call.category}</div>
+            <div class="call-category">
+                <span class="badge badge-${getCategoryClass(call.category)}">${call.category}</span>
+            </div>
             <div class="call-address">${call.address || 'No address'}</div>
             <div class="call-system">${call.system} - ${call.talkgroup}</div>
-        `;
+        </li>
+    `).join('');
+}
+
+function focusOnCall(callId, lat, lng) {
+    if (lat && lng) {
+        map.setView([lat, lng], 16);
+        highlightCall(callId);
         
-        li.addEventListener('click', () => {
-            // Highlight in list
-            document.querySelectorAll('.call-item').forEach(el => el.classList.remove('active'));
-            li.classList.add('active');
-            
-            // Pan to marker on map
-            if (call.lat && call.lng) {
-                map.setView([call.lat, call.lng], 14);
+        // Find and open marker popup
+        markersLayer.eachLayer(layer => {
+            const markerLat = layer.getLatLng().lat;
+            const markerLng = layer.getLatLng().lng;
+            if (Math.abs(markerLat - lat) < 0.0001 && Math.abs(markerLng - lng) < 0.0001) {
+                layer.openPopup();
             }
         });
-        
-        list.appendChild(li);
+    }
+}
+
+function highlightCall(callId) {
+    document.querySelectorAll('.call-item').forEach(el => {
+        el.classList.remove('active');
+        if (parseInt(el.dataset.callId) === callId) {
+            el.classList.add('active');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     });
 }
 
-function filterCalls() {
-    const category = document.getElementById('categoryFilter').value;
-    
-    if (!category) {
-        renderMarkers();
-        renderCallList();
-    } else {
-        const filtered = callsData.filter(c => 
-            c.category.toLowerCase().includes(category.toLowerCase()) ||
-            (category === 'medical' && c.category.toLowerCase().includes('ems'))
-        );
-        const tempData = callsData;
-        callsData = filtered;
-        renderMarkers();
-        renderCallList();
-        callsData = tempData;
-    }
-    updateStats();
-}
-
-function updateStats() {
-    document.getElementById('callCount').textContent = `${callsData.length} calls`;
+function updateStats(count) {
+    document.getElementById('callCount').textContent = `${count} call${count !== 1 ? 's' : ''}`;
 }
 
 function getCategoryColor(category) {
     const cat = (category || '').toLowerCase();
-    if (cat.includes('fire') || cat.includes('fire')) return '#dc3545';
+    if (cat.includes('fire')) return '#dc3545';
     if (cat.includes('medical') || cat.includes('ems')) return '#0d6efd';
     return '#6c757d';
 }
@@ -176,6 +281,13 @@ function getCategoryClass(category) {
     if (cat.includes('fire')) return 'fire';
     if (cat.includes('medical') || cat.includes('ems')) return 'ems';
     return 'other';
+}
+
+function getCategoryShort(category) {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('fire')) return 'F';
+    if (cat.includes('medical') || cat.includes('ems')) return 'E';
+    return 'C';
 }
 
 function toggleLiveMode() {
