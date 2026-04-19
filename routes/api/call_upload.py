@@ -336,7 +336,7 @@ def call_upload():
         )
 
     must_persist = bool(tone_cfg["tone_finder_enabled"] and detect_has_tones)
-
+    call_id = None  # Initialize in case not persisting
 
     # 6) ---------- evaluate triggers ---------------------------------------------------
     fired_trigger_data: List[dict] = []
