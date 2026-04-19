@@ -16,7 +16,7 @@ from routes import base_site, auth, dashboard, bp_admin, api_systems, api_call_u
 from lib.logging_module import CustomLogger
 
 app_name = "icad_dispatch"
-__version__ = "1.0.1"
+__version__ = "2.3.1"
 DEFAULT_TIMEZONE = "America/New_York"
 
 load_dotenv()
@@ -158,6 +158,10 @@ app.register_blueprint(bp_trig, url_prefix='/api/trigger-calls')
 
 # Register Middleware
 register_middlewares(app)
+
+@app.context_processor
+def inject_version():
+    return dict(app_version=__version__)
 
 main_logger.info("+++++++++====================++++++++++++")
 main_logger.info(f"iCAD Dispatch")

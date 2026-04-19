@@ -83,20 +83,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- User Profile Dropdown on the Far Right -->
             <ul class="navbar-nav ms-auto mb-lg-0">
                 {% if session.get("authenticated") %}
-                    <!-- Mute Notifications Toggle -->
-                    <li class="nav-item">
-                        <button
-                                class="btn btn-success d-flex align-items-center gap-1"
-                                type="button"
-                                id="muteToggle"
-                                title="Toggle all notifications"
-                                onclick="toggleMuteNotifications()"
-                        >
-                            <i id="muteIcon" class="bi bi-bell-fill"></i>
-                            <span id="muteText">Mute notifications</span>
-                        </button>
-                    </li>
-
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.2rem;font-weight: 500;">
                             <i class="bi bi-person-fill me-1"></i>
@@ -124,6 +110,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </a>
                             </li>
                         </ul>
+                    </li>
+
+                    <!-- Mute Notifications Toggle -->
+                    <li class="nav-item">
+                        <button
+                                class="btn btn-success d-flex align-items-center gap-1"
+                                type="button"
+                                id="muteToggle"
+                                title="Toggle all notifications"
+                                onclick="toggleMuteNotifications()"
+                        >
+                            <i id="muteIcon" class="bi bi-bell-fill"></i>
+                            <span id="muteText">Mute notifications</span>
+                        </button>
                     </li>
                 {% else %}
                     <li class="nav-item">
