@@ -517,6 +517,9 @@ function populateUpdateGeneral(system_data) {
 function gatherGeneralFormData () {
     const f = document.getElementById("updateSystemGeneralForm");
     const q = sel => f.querySelector(sel)?.value ?? "";
+    const postToneDelayEl = document.getElementById("updatePostToneDelay");
+    console.log("Input element value:", postToneDelayEl.value);
+    console.log("Input element raw:", document.querySelector("[name=post_tone_delay]")?.value);
     return {
         _csrf_token     : q("[name=_csrf_token]"),
         radio_system_id : Number(q("#updateSystemId")),
