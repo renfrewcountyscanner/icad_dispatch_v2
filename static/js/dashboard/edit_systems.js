@@ -494,6 +494,7 @@ function populateDeleteSystem(system_data) {
  * Populate The Update General System Form
  */
 function populateUpdateGeneral(system_data) {
+    console.log("Repopulating form with data:", JSON.stringify(system_data));
     const generalTabTitle = document.getElementById("generalTabTitle");
     const updateSystemId = document.getElementById("updateSystemId");
     const updateSystemDecimal = document.getElementById("updateSystemDecimal");
