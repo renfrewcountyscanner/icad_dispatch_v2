@@ -499,6 +499,7 @@ function populateUpdateGeneral(system_data) {
     const updateSystemDecimal = document.getElementById("updateSystemDecimal");
     const updateSystemName = document.getElementById("updateSystemName");
     const updateSystemStreamURL = document.getElementById("updateSystemStreamURL");
+    const updatePostToneDelay = document.getElementById("updatePostToneDelay");
     const apiKeyEl = document.getElementById("updateSystemApiKey");
 
     generalTabTitle.innerHTML = `General Settings - ${system_data.system_name}`;
@@ -510,6 +511,7 @@ function populateUpdateGeneral(system_data) {
     updateSystemDecimal.value = system_data.system_decimal;
     updateSystemName.value = system_data.system_name;
     updateSystemStreamURL.value = system_data.stream_url;
+    updatePostToneDelay.value = system_data.post_tone_delay || 0;
 }
 
 function gatherGeneralFormData () {
