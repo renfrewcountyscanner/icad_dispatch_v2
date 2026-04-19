@@ -590,18 +590,19 @@ def call_upload():
         except Exception as e:
             route_logger.warning("Transcript persistence skipped: %s", e)
 
+    # Extract transcript for dispatch and response
+    transcript_text = None
+    transcript_segments = None
+    if isinstance(transcribe_response, dict) and transcribe_response:
+        transcript_text = transcribe_response.get("text") or None
+        transcript_segments = transcribe_response.get("segments") or None
+
     if len(fired_trigger_data) > 0:
         route_logger.info("%s dispatching %d triggers on tg=%s",
                       LOG["trigger"], len(fired_trigger_data), talkgroup)
 
         payload = _make_payload(audio_url, call_data, talkgroup,
                                 radio_system_id, audio_duration)
-
-        transcript_text = None
-        transcript_segments = None
-        if isinstance(transcribe_response, dict) and transcribe_response:
-            transcript_text = transcribe_response.get("text") or None
-            transcript_segments = transcribe_response.get("segments") or None
 
         # dispatch triggers
         _dispatch_triggers(
