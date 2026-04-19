@@ -517,9 +517,6 @@ function populateUpdateGeneral(system_data) {
 function gatherGeneralFormData () {
     const f = document.getElementById("updateSystemGeneralForm");
     const q = sel => f.querySelector(sel)?.value ?? "";
-    const postToneDelayEl = document.getElementById("updatePostToneDelay");
-    console.log("Input element value:", postToneDelayEl.value);
-    console.log("Input element raw:", document.querySelector("[name=post_tone_delay]")?.value);
     return {
         _csrf_token     : q("[name=_csrf_token]"),
         radio_system_id : Number(q("#updateSystemId")),
@@ -533,11 +530,13 @@ function gatherGeneralFormData () {
 
 async function saveGeneralSettings () {
     const data = gatherGeneralFormData();
-    console.log("Sending post_tone_delay:", data.post_tone_delay);
     const url  = `/api/systems/${data.radio_system_id}`;
     const resp = await apiJson(url, {method:"PATCH", body:data});
 
-    if (!resp.success) { showAlert(resp.message,"danger"); return; }
+    if (!resp.success) { 
+        showAlert(resp.message,"danger"); 
+        return; 
+    }
 
     /* update the drop-down label immediately */
     const opt = systemSelect.querySelector(`option[value="${data.radio_system_id}"]`);
