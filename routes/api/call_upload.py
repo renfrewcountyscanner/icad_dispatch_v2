@@ -191,16 +191,6 @@ def call_upload():
         route_logger.warning("Audio validation failed: %s", e)
         return _err(str(e), 422)
 
-    # Apply post-tone delay (skip first N seconds of audio before saving/processing)
-    system_res = db.execute_query("SELECT post_tone_delay FROM radio_systems WHERE radio_system_id = ?", (radio_system_id,), fetch_mode="one")
-    system_row = system_res.get("result") if system_res.get("success") else None
-    post_tone_delay = int(system_row["post_tone_delay"]) if system_row else 0
-    if post_tone_delay > 0 and len(audio_segment) > post_tone_delay * 1000:
-        delay_ms = post_tone_delay * 1000
-        audio_segment = audio_segment[delay_ms:]
-        audio_duration = len(audio_segment) / 1000.0
-        route_logger.info("Post-tone delay applied: %d seconds trimmed, new duration: %.2fs", post_tone_delay, audio_duration)
-
     # 2) ---------- call-data ---------------------------------------------------------
     skip_keys = {"key", "system", "radio_system_id", "audio"}
     call_data = {k: v for k, v in request.values.items() if k not in skip_keys}
@@ -476,7 +466,16 @@ def call_upload():
                 route_logger.error(f"Unexpected error transcribing audio: {e}")
                 transcribe_response = None
 
-
+        # Apply post-tone delay AFTER tone detection (only if tones were detected)
+        if detect_has_tones:
+            system_res = db.execute_query("SELECT post_tone_delay FROM radio_systems WHERE radio_system_id = ?", (radio_system_id,), fetch_mode="one")
+            system_row = system_res.get("result") if system_res.get("success") else None
+            post_tone_delay = int(system_row["post_tone_delay"]) if system_row else 0
+            if post_tone_delay > 0 and len(audio_segment) > post_tone_delay * 1000:
+                delay_ms = post_tone_delay * 1000
+                audio_segment = audio_segment[delay_ms:]
+                audio_duration = len(audio_segment) / 1000.0
+                route_logger.info("Post-tone delay applied: %d seconds trimmed, new duration: %.2fs", post_tone_delay, audio_duration)
 
         # Save audio based on storage settings (LOCAL / SFTP / S3)
         try:
