@@ -161,7 +161,7 @@ start_container() {
     if docker ps | grep -q icad_dispatch; then
         echo ""
         print_status "============================================"
-        print_status "iCAD Dispatch v2.1.0 is running!"
+        print_status "iCAD Dispatch v2.5 is running!"
         print_status "============================================"
         echo ""
         print_status "Access at: $BASE_URL"

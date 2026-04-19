@@ -1,224 +1,251 @@
-# iCAD Dispatch
+# iCAD Dispatch v2.5
+
+[![Docker Image Version](https://img.shields.io/docker/v/renfrewcountyscanner/icad_dispatch_v2/latest)](https://github.com/renfrewcountyscanner/icad_dispatch_v2/pkgs/container/icad_dispatch_v2)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/renfrewcountyscanner/icad_dispatch_v2)](https://github.com/renfrewcountyscanner/icad_dispatch_v2)
 
 iCAD Dispatch is a Progressive Web Application (PWA) that processes audio inputs from a police scanner application and triggers alerts based on tones found in the audio.
 
 ---
 
+## Quick Start
+
+### Option 1: One-Command Setup (Recommended)
+
+```bash
+curl -sL https://raw.githubusercontent.com/renfrewcountyscanner/icad_dispatch_v2/main/setup.sh | bash
+```
+
+This script will:
+- Create the required user/group
+- Set up directory structure
+- Create configuration
+- Start the container
+
+### Option 2: Manual Docker Compose
+
+```bash
+# Clone the repository
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
+cd icad_dispatch_v2
+
+# Copy and edit environment file
+cp .env_example .env
+nano .env  # Edit with your settings
+
+# Start the application
+docker compose up -d
+
+# Access at http://localhost:9911
+# Default login: root / changeme123
+```
+
+---
+
+## Features
+
+### v2.5 Highlights
+
+- **User System Access Control** - Create users with per-system permissions (read/write)
+- **Tone Hits: Up to 1000 Entries** - Increased page size for large datasets
+- **Version Display** - Current version shown in footer
+
+### Core Features
+
+- **Tone Detection** - Two-tone, long tone, hi/low, pulsed, DTMF, and MDC support
+- **Trigger System** - Custom alerts based on detected tones
+- **Audio Processing** - WebRTC VAD, transcriber, and audio normalization
+- **Multiple Radio Systems** - Support for multiple scanner systems
+- **Notifications** - Pushover, Discord, Telegram, Email, n8n webhooks
+- **Post-Tone Delay** - Trim audio after tones are detected
+- **Live Audio Streaming** - Real-time audio playback
+
+### Security
+
+- Session-based authentication
+- Role-based access control (admin, user)
+- Non-root Docker container
+- CSRF protection
+
+---
+
 ## Requirements
-- **Linux**: This software is mean to be run on a Linux Server of some sort. I developed it running on a debian based distro. Windows make work in some cases, but is not directly supported.
-- **Docker**: Ensure Docker is installed on your system. [Install Docker](https://docs.docker.com/get-docker/)
-- **Git**: Required to clone the repository. [Install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+
+- **Linux**: Developed on Debian. Other distros should work.
+- **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
+- **Git**: [Install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
 ---
 
-## Deployment Guide
+## Deployment
 
-Follow these steps to deploy the application from scratch:
+### Using GitHub Container Registry (GHCR)
 
-### 1. **Create a Non-root User**
-For security and compatibility with the Docker image, create a non-root user on your host system. The user will not have login access to the host.
+The recommended way to deploy:
 
-Run the following commands:
 ```bash
-# Create a group with GID 9911
-sudo groupadd -g 9911 icad_dispatch
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
+cd icad_dispatch_v2
 
-# Create a user with UID 9911, assign to the group, and disable login
-sudo useradd -M -s /usr/sbin/nologin -u 9911 -g icad_dispatch icad_dispatch
-```
+# Edit configuration
+cp .env_example .env
+nano .env
 
-**Explanation**:
-- **`-M`**: Prevents creating a home directory for the user (the user won't own files outside the application scope).
-- **`-s /usr/sbin/nologin`**: Sets the shell to `/usr/sbin/nologin`, disabling the user from logging into the system interactively.
-
----
-
-### 2. **Grant Group Access to Your User**
-To allow your regular user to manage files owned by the `icad_dispatch` group (e.g., for logs and configuration files), add your user to the `icad_dispatch` group.
-
-Run the following command:
-```bash
-# Add your user to the icad_dispatch group
-sudo usermod -aG icad_dispatch your_user
-```
-
-**Explanation**:
-- **`usermod`**: Modifies the properties of an existing user.
-- **`-aG`**: Appends the user to the specified group without removing them from existing groups.
-- Replace `your_user` with your current username.
-
-After running this command, you may need to log out and log back in for the changes to take effect. Once added to the group, your user will have read and write access to files owned by `icad_dispatch`.
-
----
-
-### 3. **Clone the Repository**
-Choose a directory where you want to deploy the application and clone this repository:
-```bash
-git clone https://github.com/TheGreatCodeholio/icad_dispatch.git
-cd icad_dispatch
-```
-
----
-
-### 4. **Set Up the Directory Structure**
-Ensure the directory has the required structure for the application to function correctly. The `.env` file specifies the working path for mounting volumes.
-
-#### Create and Adjust Permissions for Directories:
-Run the following commands:
-```bash
-# Create the required directories
-mkdir -p log var audio
-
-# Change ownership to the non-root docker user
-sudo chown -R icad_dispatch:icad_dispatch log var audio
-```
-
-The `log` directory will store logs `audio` will hold saved audio if storing audio locally, and the `var` directory will store a sqlite database and other variables.
-
----
-
-### 5. **Configure the `.env` File**
-
-Update your `.env` with values appropriate for your environment. The app reads configuration from process environment variables at startup. A good workflow is:
-
-Copy a template to get started.
-```bash
-   cp .env.example .env
-```
-
-Edit `.env` and fill in the fields described below.
-
----
-
-#### Required / Important Variables
-
-- **Logging**
-   - `LOG_LEVEL` — Numeric log level (e.g., 1=DEBUG, 2=INFO, 3=WARNING, 4=ERROR, 5=CRITICAL).
-
-- **Timezone**
-  - `TIMEZONE` — IANA timezone (via Python `zoneinfo`) 
-    - Full list: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones. 
-    - Examples: `America/New_York`, `America/Chicago`, `America/Denver`, `America/Los_Angeles`, `UTC`
-
-- **Base URL**
-   - `BASE_URL` — Publicly reachable base URL (scheme + host[:port]) used in links and some redirects.
-
-- **Cookies / Sessions**
-   - `SESSION_COOKIE_SECURE` — `True` in production (HTTPS); `False` for local HTTP.
-   - `SESSION_COOKIE_DOMAIN` — Hostname used by the browser for the session cookie.
-   - `SESSION_COOKIE_NAME` — Cookie name for the app session.
-   - `SESSION_COOKIE_PATH` — Cookie path scope (usually `/`).
-
-- **Database**
-   - `SQLITE_DATABASE_PATH` — Path to the SQLite database file.
-
-- **Bootstrap Root User (first run)**
-   - `ROOT_USERNAME` — Optional; defaults to `root` if omitted. Don't use the default.
-   - `ROOT_PASSWORD` — Inline password for bootstrap user. **Change** once logged in for the first time.
-
----
-
-#### Example `.env` for running on a LAN only server no proxy (nginx).
-
-```env
-# ─────────────── Logging ───────────────
-LOG_LEVEL=1
-
-# ─────────────── Timezone ───────────────
-TIMEZONE=America/New_York
-
-# ─────────────── Base URL ───────────────
-BASE_URL=http://192.168.1.104:9911
-
-# ─────────────── Cookies ───────────────
-SESSION_COOKIE_SECURE=False
-SESSION_COOKIE_DOMAIN=192.168.1.104
-SESSION_COOKIE_NAME=icad_dispatch
-SESSION_COOKIE_PATH=/
-
-# ─────────────── SQLite ───────────────
-SQLITE_DATABASE_PATH=var/icad_dispatch.db
-
-# ─────────────── Root User Bootstrap ───────────────
-# Root username (optional, defaults to "root" if omitted)
-ROOT_USERNAME=root
-
-# Root password (required on first boot)
-ROOT_PASSWORD=changeme123
-
-```
-
----
-
-#### Using Docker/Compose (env file)
-
-Point your service to the env file: (.env set by default). Compose picks this .env up for container
-```yaml
-   services:
-   icad_dispatch:
-     image: thegreatcodeholio/icad_dispatch:latest
-     user: "icad_dispatch"
-     env_file:
-       - .env
-# ... other service config (volumes, ports, command, etc.)
-```
-
-
----
-
-### 6. **Run Docker Compose**
-With the environment configured and directories prepared, you can start the application using Docker Compose.
-
-Run the following command:
-```bash
+# Start (pulls image from GHCR)
 docker compose up -d
 ```
 
-This command will:
-1. Pull the necessary images from the repository.
-2. Build and start the containers in detached mode (running in the background).
-3. Mount the `log` and `etc` directories based on the path you ran the docker compose command in.
+### Using Docker Hub (Alternative)
 
----
-
-### 7. **Verify Deployment**
-
-#### Check if Containers Are Running
-To list all running containers, use:
-```bash
-docker ps -a
+```yaml
+# In docker-compose.yml, change:
+image: ghcr.io/renfrewcountyscanner/icad_dispatch_v2:latest
+# to:
+image: renfrewcountyscanner/icad_dispatch_v2:latest
 ```
 
-- This command will display a table of running containers, including their **container IDs**, names, and status.
+### Local Development Build
 
-#### Check Container Logs
-1. Identify the container name or ID from the output of `docker ps`.
-2. View live logs for a specific container:
-   ``bash
-   docker logs -f <container_id_or_name>
-   ``
-- Replace `<container_id_or_name>` with the actual container ID or name (e.g., `icad_dispatch`).
+For development or custom builds:
 
-#### Example
-To view logs for the Flask application:
 ```bash
-docker logs -f icad_dispatch
+# Use the production compose file
+docker compose -f docker-compose.production.yml up -d --build
 ```
 
-This will show real-time logs to help you verify that the services are starting as expected.
+---
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LOG_LEVEL` | 1=DEBUG, 2=INFO, 3=WARNING, 4=ERROR | 2 |
+| `TIMEZONE` | IANA timezone | America/New_York |
+| `BASE_URL` | Public base URL | http://localhost:9911 |
+| `SESSION_COOKIE_SECURE` | Use HTTPS cookies | False |
+| `SESSION_COOKIE_DOMAIN` | Cookie domain | (server IP) |
+| `SQLITE_DATABASE_PATH` | Database path | var/icad_dispatch.db |
+| `ROOT_USERNAME` | Admin username | root |
+| `ROOT_PASSWORD` | Admin password | (required) |
+
+### Ports
+
+- **9911** - Main application port
+
+### Volumes
+
+- `./log` - Application logs
+- `./var` - SQLite database
+- `./audio` - Stored audio files
 
 ---
 
-## Security Best Practices
-1. **Run as Non-root**: The application enforces a non-root user within the container to improve security. Host directories and files in the working path must be read/write by the same non-root user (`icad_dispatch`).
+## User Management
 
-2. **Use Secure Passwords**: If allowing general access from the internet, use a non-standard user name and a strong password.
+As of v2.5, iCAD Dispatch supports granular user permissions:
 
-3. **Restrict Permissions**: Allow only the `icad_dispatch` group and `your_user` access to the application directory and logs:
-   ```bash
-   sudo chown your_user:icad_dispatch /home/your_user/icad_dispatch
-   sudo chmod -R 760 /home/your_user/icad_dispatch
-   ```
-4. **Use HTTPS**: Ensure the application is accessed via HTTPS in production to secure data in transit. This can be done with NGINX proxy.
+1. **Admin Users** - Full access to all systems and user management
+2. **Standard Users** - Can be assigned to specific radio systems
+3. **Permission Levels**:
+   - **Read** - View system data, cannot make changes
+   - **Write** - Full access to assigned systems
+
+### Creating Users
+
+1. Log in as admin
+2. Navigate to Admin section
+3. Create new users and assign systems/permissions
 
 ---
+
+## Upgrading
+
+### Using the Setup Script
+
+```bash
+cd /opt/icad_dispatch
+sudo ./setup.sh --update
+```
+
+### Manual Update
+
+```bash
+cd icad_dispatch_v2
+docker compose pull
+docker compose up -d
+```
+
+---
+
+## Troubleshooting
+
+### Container Won't Start
+
+```bash
+# Check logs
+docker logs icad_dispatch
+
+# Common issues:
+# - Port already in use: Change port in docker-compose.yml
+# - Permission errors: Ensure directories are owned by icad_dispatch user
+```
+
+### Database Migration Issues
+
+```bash
+# Backup database
+cp var/icad_dispatch.db var/icad_dispatch.db.backup
+
+# Check logs for migration errors
+docker logs icad_dispatch | grep -i migration
+```
+
+### Audio Not Saving
+
+```bash
+# Check permissions
+ls -la audio/
+
+# Should show: icad_dispatch:icad_dispatch
+
+# Fix if needed
+sudo chown -R icad_dispatch:icad_dispatch audio
+```
+
+### Login Issues
+
+```bash
+# Reset root password in .env
+ROOT_PASSWORD=your_new_password
+
+# Restart container
+docker compose restart
+```
+
+---
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/renfrewcountyscanner/icad_dispatch_v2/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/renfrewcountyscanner/icad_dispatch_v2/discussions)
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read the [CONTRIBUTING](CONTRIBUTING.md) guidelines before submitting pull requests.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Credits
+
+- Developed for scanner enthusiasts and emergency services
+- Thanks to all contributors!
