@@ -95,21 +95,16 @@ nano .env
 docker compose up -d
 ```
 
-### Using Docker Hub (Alternative)
+### Local Development
 
-```yaml
-# In docker-compose.yml, change:
-image: ghcr.io/renfrewcountyscanner/icad_dispatch_v2:latest
-# to:
-image: renfrewcountyscanner/icad_dispatch_v2:latest
-```
-
-### Local Development Build
-
-For development or custom builds:
+For developers who want to modify the code:
 
 ```bash
-# Use the production compose file
+# Clone the repository
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
+cd icad_dispatch_v2
+
+# Use the production compose file (builds locally)
 docker compose -f docker-compose.production.yml up -d --build
 ```
 
