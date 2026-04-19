@@ -530,6 +530,7 @@ function gatherGeneralFormData () {
 
 async function saveGeneralSettings () {
     const data = gatherGeneralFormData();
+    console.log("Sending post_tone_delay:", data.post_tone_delay);
     const url  = `/api/systems/${data.radio_system_id}`;
     const resp = await apiJson(url, {method:"PATCH", body:data});
 
