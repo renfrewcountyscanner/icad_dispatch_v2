@@ -17,7 +17,7 @@ from routes.api.admin import bp_admin_api
 from lib.logging_module import CustomLogger
 
 app_name = "icad_dispatch"
-__version__ = "2.5"
+__version__ = "2.5.1"
 DEFAULT_TIMEZONE = "America/New_York"
 
 load_dotenv()

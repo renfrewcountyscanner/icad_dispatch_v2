@@ -355,10 +355,16 @@ def get_systems(
         system_decimal: int | List[int] | None = None,
         system_name: str | List[str] | None = None,
         include_config: bool = False,
+        user_id: int | None = None,
 ) -> dict:
     """
     Retrieve systems by optional filters. When `include_config=True`, joins the
     per-system settings and returns nested structures (upload/tone/email/etc.).
+
+    Parameters
+    ----------
+    user_id : int | None
+        If provided, only return systems this user has access to (unless user is admin).
 
     Returns
     -------
@@ -369,6 +375,27 @@ def get_systems(
         "result": [ { system rows ... } ]
       }
     """
+
+    # Check if user has system restrictions (non-admin)
+    user_system_ids = None
+    if user_id is not None:
+        user_res = db.execute_query(
+            "SELECT is_admin FROM users WHERE user_id = ?",
+            (user_id,),
+            fetch_mode="one"
+        )
+        is_admin = user_res.get("success") and user_res.get("result", {}).get("is_admin", 0) == 1
+
+        if not is_admin:
+            # Get user's assigned systems
+            sys_res = db.execute_query(
+                "SELECT radio_system_id FROM user_systems WHERE user_id = ?",
+                (user_id,),
+                fetch_mode="all"
+            )
+            if sys_res.get("success") and sys_res.get("result"):
+                user_system_ids = [r["radio_system_id"] for r in sys_res["result"]]
+
     if not include_config:
         base = """
                SELECT rs.radio_system_id, rs.system_decimal, rs.system_name, rs.stream_url, rs.api_key, rs.post_tone_delay
@@ -562,6 +589,14 @@ def get_systems(
         else:
             conditions.append("rs.system_name = ?")
             params.append(system_name)
+
+    # Filter by user's assigned systems (if non-admin user)
+    if user_system_ids is not None:
+        if not user_system_ids:
+            return {"success": True, "message": "No systems assigned", "result": []}
+        clause, vals = _in_clause("rs.radio_system_id", user_system_ids)
+        conditions.append(clause)
+        params.extend(vals)
 
     where = " WHERE " + " AND ".join(conditions) if conditions else ""
     # GROUP BY to dedupe left-joins; ORDER BY name

@@ -11,7 +11,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
-from flask import Blueprint, request, jsonify, abort, current_app
+from flask import Blueprint, request, jsonify, abort, current_app, session
 
 # ────────────────────────────────────────────────────────────────────
 # Library modules
@@ -260,6 +260,7 @@ def _fetch_system_with_config(db, radio_system_id: int):
 @api_systems.route("", methods=["GET", "POST"], strict_slashes=False)
 @login_required
 @csrf_protect
+@permission_required('read', 'write')
 def systems_collection():
     """
     Collection endpoint for radio systems.
@@ -292,12 +293,16 @@ def systems_collection():
         include_config  = (request.args.get("include_config", "0").lower()
                            in ("1", "true", "yes"))
 
+        # Get user_id from session for filtering
+        user_id = session.get("user_id")
+
         resp = get_systems(
             db,
             radio_system_id=radio_system_id,
             system_decimal=system_decimal,
             system_name=system_name,
             include_config=include_config,
+            user_id=user_id,
         )
         return jsonify(resp), (200 if resp.get("success") else 400)
 
@@ -328,19 +333,21 @@ def systems_collection():
 @api_systems.route("/<int:radio_system_id>", methods=["GET", "PATCH", "DELETE"])
 @login_required
 @csrf_protect
+@permission_required('read', 'write')
 def systems_item(radio_system_id: int):
     """
     Item endpoint for a single radio system.
 
     GET    → returns one system (no config)
-    PATCH  → updates "general" fields
-    DELETE → deletes the system
+    PATCH  → updates "general" fields (requires write permission)
+    DELETE → deletes the system (requires write permission)
     """
     db = current_app.config["db"]
 
     # ---------- GET ----------------------------------------------------------
     if request.method == "GET":
-        res = get_systems(db, radio_system_id=radio_system_id)
+        user_id = session.get("user_id")
+        res = get_systems(db, radio_system_id=radio_system_id, user_id=user_id)
         ok = res.get("success") and res["result"]
         return jsonify(
             success=ok,
