@@ -66,7 +66,7 @@ def get_map_calls():
     if category_filter:
         categories = [c.strip() for c in category_filter.split(",") if c.strip()]
 
-    # Query calls with geocoded data
+    # Query calls with geocoded data (join with call_transcripts for address)
     query = """
         SELECT
             cr.call_id,
@@ -74,19 +74,21 @@ def get_map_calls():
             cr.duration_s,
             cr.talkgroup,
             cr.talkgroup_name,
-            cr.incident_category,
-            cr.address_geocoded_json,
+            ct.incident_category,
+            ct.address_geocoded_json,
             rs.system_name
         FROM call_records cr
         JOIN radio_systems rs ON cr.radio_system_id = rs.radio_system_id
+        LEFT JOIN call_transcripts ct ON cr.call_id = ct.call_id
         WHERE cr.start_epoch_s >= ? AND cr.start_epoch_s < ?
+          AND ct.address_geocoded_json IS NOT NULL
     """
 
     params = [start_ts, end_ts]
 
     if categories:
         placeholders = ",".join("?" * len(categories))
-        query += f" AND cr.incident_category IN ({placeholders})"
+        query += f" AND ct.incident_category IN ({placeholders})"
         params.extend(categories)
 
     query += " ORDER BY cr.start_epoch_s DESC"
