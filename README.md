@@ -95,19 +95,6 @@ nano .env
 docker compose up -d
 ```
 
-### Local Development
-
-For developers who want to modify the code:
-
-```bash
-# Clone the repository
-git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
-cd icad_dispatch_v2
-
-# Use the production compose file (builds locally)
-docker compose -f docker-compose.production.yml up -d --build
-```
-
 ---
 
 ## Configuration
