@@ -1,8 +1,10 @@
 """Admin routes for database management and imports."""
 import sqlite3
 from pathlib import Path
-from flask import Blueprint, request, jsonify, render_template, current_app
-from .decorators import login_required, csrf_protect
+from flask import Blueprint, request, jsonify, render_template, current_app, session
+from .decorators import login_required, csrf_protect, admin_required
+from lib.user_module import get_users, create_user, delete_user, get_user_systems, add_user_system
+from lib.system_module import get_systems
 
 bp_admin = Blueprint("admin", __name__)
 
@@ -270,3 +272,99 @@ def import_db():
     finally:
         if temp_path and temp_path.exists():
             temp_path.unlink()
+
+
+# ───────────────────────────────────────────────────────────────
+#  GET /admin/users
+# ───────────────────────────────────────────────────────────────
+@bp_admin.route("/users", methods=["GET"])
+@login_required
+def admin_users():
+    """User management page - requires admin."""
+    if not session.get("is_admin"):
+        return render_template("base_site/index.html"), 403
+
+    db = current_app.config["db"]
+
+    # Get all users
+    users = get_users(db) or []
+
+    # Get systems for assignment
+    systems_res = get_systems(db)
+    systems = systems_res.get("result", []) if systems_res.get("success") else []
+
+    # Get each user's assigned systems
+    user_data = []
+    for u in users:
+        user_systems = get_user_systems(db, u["user_id"])
+        user_data.append({
+            "user_id": u["user_id"],
+            "username": u["user_username"],
+            "is_admin": u.get("is_admin", 0),
+            "is_active": u.get("is_active", 1),
+            "systems": user_systems,
+        })
+
+    return render_template("admin/users.html", users=user_data, systems=systems)
+
+
+# ───────────────────────────────────────────────────────────────
+#  POST /admin/users (create user)
+# ───────────────────────────────────────────────────────────────
+@bp_admin.route("/users", methods=["POST"])
+@csrf_protect
+@login_required
+def admin_users_create():
+    """Create a new user."""
+    if not session.get("is_admin"):
+        return jsonify(success=False, message="Admin required"), 403
+
+    db = current_app.config["db"]
+
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+    is_admin = request.form.get("is_admin") == "on"
+    system_ids = request.form.getlist("systems")
+
+    if not username or not password:
+        return jsonify(success=False, message="Username and password required"), 400
+
+    if len(password) < 4:
+        return jsonify(success=False, message="Password must be at least 4 characters"), 400
+
+    # Create user
+    res = create_user(db, username, password, is_admin=is_admin)
+    if not res.get("success"):
+        return jsonify(success=False, message=res.get("message", "Failed to create user")), 400
+
+    user_id = res.get("result")
+
+    # Assign systems
+    for sys_id in system_ids:
+        perm = request.form.get(f"perm_{sys_id}", "read")
+        add_user_system(db, user_id, int(sys_id), perm)
+
+    return jsonify(success=True, message="User created successfully")
+
+
+# ───────────────────────────────────────────────────────────────
+#  POST /admin/users/<user_id>/delete
+# ───────────────────────────────────────────────────────────────
+@bp_admin.route("/users/<int:user_id>", methods=["DELETE"])
+@csrf_protect
+@login_required
+def admin_users_delete(user_id):
+    """Delete a user."""
+    if not session.get("is_admin"):
+        return jsonify(success=False, message="Admin required"), 403
+
+    if user_id == 1:
+        return jsonify(success=False, message="Cannot delete root user"), 400
+
+    db = current_app.config["db"]
+    res = delete_user(db, user_id)
+
+    if not res.get("success"):
+        return jsonify(success=False, message=res.get("message", "Failed to delete user")), 400
+
+    return jsonify(success=True, message="User deleted successfully")
