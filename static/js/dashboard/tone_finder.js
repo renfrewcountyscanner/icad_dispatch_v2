@@ -746,7 +746,7 @@ async function fetchSystems() {
 /** Fetch triggers list → populate trigger selector. */
 async function fetchTriggers() {
     try {
-        const resp = await fetch("/api/trigger-calls?limit=500");
+        const resp = await fetch("/api/trigger-calls?limit=1000");
         const data = await resp.json();
         if (!data.success) return;
 
@@ -902,7 +902,7 @@ async function loadCalls(ev) {
     if (!table) return;
     const systemId = els.sysSel.value;
 
-    const params = new URLSearchParams({ limit: "200", offset: "0" });
+    const params = new URLSearchParams({ limit: "1000", offset: "0" });
     if (systemId) params.append("system", systemId);
     
     const selectedToneType = els.toneSel.value;

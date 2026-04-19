@@ -12,11 +12,12 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from lib.sqlite_module import SQLiteDatabase
 from lib.utility import env_bool, choose_cookie_domain
 from routes import base_site, auth, dashboard, bp_admin, api_systems, api_call_upload, bp_trig, bp_tone, register_middlewares
+from routes.api.admin import bp_admin_api
 
 from lib.logging_module import CustomLogger
 
 app_name = "icad_dispatch"
-__version__ = "2.4"
+__version__ = "2.5"
 DEFAULT_TIMEZONE = "America/New_York"
 
 load_dotenv()
@@ -146,6 +147,8 @@ app.register_blueprint(auth, url_prefix='/auth')
 app.register_blueprint(dashboard, url_prefix='/dashboard')
 
 app.register_blueprint(bp_admin, url_prefix='/admin')
+
+app.register_blueprint(bp_admin_api, url_prefix='/api/admin')
 
 app.register_blueprint(api_systems, url_prefix='/api/systems')
 

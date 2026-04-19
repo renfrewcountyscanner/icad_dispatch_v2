@@ -269,3 +269,69 @@ def token_or_login_required(fn):
         return api_error(401, "Missing authentication (API token or login session).", code="auth_required")
 
     return wrapper
+
+
+def admin_required(fn):
+    """
+    Require user to be an admin (is_admin=1 in session).
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not session.get("authenticated"):
+            return api_error(401, "Authentication required.", code="auth_required")
+
+        if not session.get("is_admin"):
+            return api_error(403, "Admin access required.", code="admin_required")
+
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def permission_required(*required_permissions):
+    """
+    Require user to have specific permission level for system access.
+    Usage:
+        @permission_required('write')  # must have write on the system
+        @permission_required('read', 'write')  # must have at least read
+    """
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not session.get("authenticated"):
+                return api_error(401, "Authentication required.", code="auth_required")
+
+            # Admins bypass permission checks
+            if session.get("is_admin"):
+                return fn(*args, **kwargs)
+
+            # Get radio_system_id from request
+            radio_system_id = kwargs.get('radio_system_id')
+            if not radio_system_id:
+                # Try to get from request args/form
+                radio_system_id = request.args.get('radio_system_id') or request.form.get('radio_system_id')
+                if radio_system_id:
+                    try:
+                        radio_system_id = int(radio_system_id)
+                    except (ValueError, TypeError):
+                        radio_system_id = None
+
+            if not radio_system_id:
+                return fn(*args, **kwargs)  # No system specified, allow
+
+            # Check user's permission
+            user_systems = session.get("user_systems", {})
+            user_perm = user_systems.get(radio_system_id, None)
+
+            # If user has no access to this system, deny
+            if user_perm is None:
+                return api_error(404, "System not found or access denied.", code="access_denied")
+
+            # Check if user has one of the required permissions
+            if user_perm not in required_permissions:
+                return api_error(403, "Insufficient permissions for this operation.", code="insufficient_permissions")
+
+            return fn(*args, **kwargs)
+
+        return wrapper
+    return decorator

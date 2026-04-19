@@ -45,7 +45,7 @@ from lib.system_module import (
 )
 from lib.utility import _parse_int_or_list, _parse_str_or_list, _generate_api_key, _norm_str, alert_test_payload, \
     alert_test_fired_trigger, alert_test_transcribe
-from routes.decorators import login_required, csrf_protect
+from routes.decorators import login_required, csrf_protect, permission_required
 
 
 try:

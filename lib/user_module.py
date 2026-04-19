@@ -110,23 +110,31 @@ def authenticate_user(db, username: str, password: str) -> Dict[str, Any]:
         return {"success": False, "message": "User not found."}
 
     user_row = users[0]
+
+    # Check if account is active
+    if not user_row.get("is_active", 1):
+        module_logger.warning("Inactive user attempted login: %s", username)
+        return {"success": False, "message": "Account is disabled."}
+
     if not password_validate(user_row.get("user_password"), password):
         module_logger.warning("Password Incorrect: %s", username)
         return {"success": False, "message": "Invalid Username or Password"}
 
-    if not set_session_keys(user_row):
+    if not set_session_keys(db, user_row):
         module_logger.error("Cannot set session values for logged in user")
         return {"success": False, "message": "Internal Error"}
 
     return {"success": True, "message": "Authenticated Successfully", "result": user_row}
 
 
-def set_session_keys(user_data: Dict[str, Any]) -> bool:
+def set_session_keys(db, user_data: Dict[str, Any]) -> bool:
     """
-    Store minimal authenticated user context in Flask session.
+    Store authenticated user context in Flask session, including systems/permissions.
 
     Parameters
     ----------
+    db : SQLiteDatabase
+        Database connection (needed to fetch user systems).
     user_data : dict
         Row dict from `users`.
 
@@ -142,12 +150,19 @@ def set_session_keys(user_data: Dict[str, Any]) -> bool:
         if not username:
             raise ValueError("No Username in row")
 
+        # Get user's systems and permissions
+        user_systems = get_user_systems(db, user_id)
+        is_admin = bool(user_data.get("is_admin", 0))
+
         session.update(
             user_id=user_id,
             username=username,
+            is_admin=is_admin,
+            user_systems=user_systems,
             authenticated=True,
         )
-        module_logger.debug("Session Keys set OK: %s", dict(session))
+        module_logger.debug("Session Keys set OK: user_id=%s is_admin=%s systems=%s",
+                           user_id, is_admin, list(user_systems.keys()))
         return True
 
     except (IndexError, AttributeError, KeyError, ValueError) as e:
@@ -212,3 +227,158 @@ def user_change_password(db, username: str, current_password: str, new_password:
         # if up.get("result", 0) == 0: return {"success": False, "message": "No password updated."}
         return {"success": True, "message": "Password Changed Successfully"}
     return {"success": False, "message": f"Password Change Failed. {up.get('message')}"}
+
+
+# =============================================================================
+# User Management (Admin Functions)
+# =============================================================================
+def is_user_admin(db, user_id: int) -> bool:
+    """Check if user is admin."""
+    res = db.execute_query(
+        "SELECT is_admin FROM users WHERE user_id = ?",
+        (user_id,),
+        fetch_mode="one"
+    )
+    return res.get("success") and res.get("result", {}).get("is_admin", 0) == 1
+
+
+def is_user_active(db, user_id: int) -> bool:
+    """Check if user account is active."""
+    res = db.execute_query(
+        "SELECT is_active FROM users WHERE user_id = ?",
+        (user_id,),
+        fetch_mode="one"
+    )
+    return res.get("success") and res.get("result", {}).get("is_active", 0) == 1
+
+
+def get_user_systems(db, user_id: int) -> Dict[int, str]:
+    """
+    Get all systems a user has access to.
+    Returns dict: {radio_system_id: permission_level}
+    """
+    res = db.execute_query(
+        """SELECT radio_system_id, permission_level
+           FROM user_systems WHERE user_id = ?""",
+        (user_id,),
+        fetch_mode="all"
+    )
+    if not res.get("success"):
+        module_logger.error("get_user_systems failed: %s", res.get("message"))
+        return {}
+
+    return {r["radio_system_id"]: r["permission_level"] for r in (res["result"] or [])}
+
+
+def get_user_permission(db, user_id: int, radio_system_id: int) -> Optional[str]:
+    """Get user's permission level for a specific system. Returns None if no access."""
+    res = db.execute_query(
+        """SELECT permission_level FROM user_systems
+           WHERE user_id = ? AND radio_system_id = ?""",
+        (user_id, radio_system_id),
+        fetch_mode="one"
+    )
+    if not res.get("success") or not res.get("result"):
+        return None
+    return res["result"]["permission_level"]
+
+
+def add_user_system(db, user_id: int, radio_system_id: int, permission_level: str = "read") -> Dict[str, Any]:
+    """Assign a system to a user with given permission level."""
+    if permission_level not in ("read", "write"):
+        return {"success": False, "message": "Invalid permission_level"}
+
+    res = db.execute_commit(
+        """INSERT INTO user_systems (user_id, radio_system_id, permission_level)
+           VALUES (?, ?, ?)""",
+        (user_id, radio_system_id, permission_level)
+    )
+    return res
+
+
+def update_user_system(db, user_system_id: int, permission_level: str) -> Dict[str, Any]:
+    """Update permission level for a user-system assignment."""
+    if permission_level not in ("read", "write"):
+        return {"success": False, "message": "Invalid permission_level"}
+
+    res = db.execute_commit(
+        """UPDATE user_systems SET permission_level = ? WHERE user_system_id = ?""",
+        (permission_level, user_system_id)
+    )
+    return res
+
+
+def delete_user_system(db, user_system_id: int) -> Dict[str, Any]:
+    """Remove a system from a user."""
+    res = db.execute_commit(
+        "DELETE FROM user_systems WHERE user_system_id = ?",
+        (user_system_id,)
+    )
+    return res
+
+
+def create_user(db, username: str, password: str, is_admin: bool = False) -> Dict[str, Any]:
+    """Create a new user."""
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    res = db.execute_commit(
+        """INSERT INTO users (user_username, user_password, is_admin, is_active)
+           VALUES (?, ?, ?, 1)""",
+        (username, hashed_password, 1 if is_admin else 0)
+    )
+    return res
+
+
+def update_user(db, user_id: int, **kwargs) -> Dict[str, Any]:
+    """Update user fields (username, is_admin, is_active)."""
+    allowed = {"user_username", "is_admin", "is_active"}
+    updates = {k: v for k, v in kwargs.items() if k in allowed}
+
+    if not updates:
+        return {"success": False, "message": "No valid fields to update"}
+
+    set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
+    values = list(updates.values()) + [user_id]
+
+    res = db.execute_commit(
+        f"UPDATE users SET {set_clause} WHERE user_id = ?",
+        tuple(values)
+    )
+    return res
+
+
+def delete_user(db, user_id: int) -> Dict[str, Any]:
+    """Delete a user (cascade removes user_systems entries)."""
+    if user_id == 1:
+        return {"success": False, "message": "Cannot delete root user"}
+
+    res = db.execute_commit(
+        "DELETE FROM users WHERE user_id = ?",
+        (user_id,)
+    )
+    return res
+
+
+def set_user_password(db, user_id: int, password: str) -> Dict[str, Any]:
+    """Set a user's password (admin can reset without knowing current)."""
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    res = db.execute_commit(
+        "UPDATE users SET user_password = ? WHERE user_id = ?",
+        (hashed_password, user_id)
+    )
+    return res
+
+
+def get_all_user_systems_with_names(db) -> List[Dict[str, Any]]:
+    """Get all user-system assignments with system names for admin UI."""
+    res = db.execute_query(
+        """SELECT us.user_system_id, us.user_id, us.radio_system_id,
+                  us.permission_level, u.user_username, rs.system_name
+           FROM user_systems us
+           JOIN users u ON us.user_id = u.user_id
+           JOIN radio_systems rs ON us.radio_system_id = rs.radio_system_id
+           ORDER BY u.user_username, rs.system_name""",
+        fetch_mode="all"
+    )
+    if not res.get("success"):
+        return []
+    return res["result"] or []

@@ -45,7 +45,7 @@ def list_trigger_calls():
         trig_filter_q = "AND tf.alert_trigger_id = ?"
         params.append(trig_id_int)
 
-    limit  = max(1, min(int(request.args.get("limit", 100)), 500))
+    limit  = max(1, min(int(request.args.get("limit", 100)), 1000))
     offset = max(0, int(request.args.get("offset", 0)))
     params.extend([limit, offset])
 
