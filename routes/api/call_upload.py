@@ -629,6 +629,12 @@ def call_upload():
                    merged, must_persist, len(fired_trigger_data))
 
     # 9) --------- response ------------------------------------------------------------
+    tone_count = 0
+    tone_types = {}
+    if detect_has_tones and detect_result and hasattr(detect_result, 'tones'):
+        tone_count = len(detect_result.tones)
+        tone_types = _count_tone_types(detect_result)
+
     return jsonify(
         success=True,
         message="Merged call imported" if merged else "Call imported successfully",
@@ -639,8 +645,8 @@ def call_upload():
             "talkgroup": talkgroup,
             "duration_s": audio_duration,
             "merged": merged,
-            "tones_detected": len(detect_result.tones) if detect_has_tones else 0,
-            "tone_types": _count_tone_types(detect_result) if detect_has_tones else {},
+            "tones_detected": tone_count,
+            "tone_types": tone_types,
             "triggers_fired": [trig['alert_trigger_name'] for trig in fired_trigger_data],
             "transcript": transcript_text[:200] if transcript_text else None,
             "persisted": must_persist,

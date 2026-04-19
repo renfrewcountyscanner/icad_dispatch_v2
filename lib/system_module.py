@@ -583,6 +583,7 @@ def get_systems(
             "system_name": row["system_name"],
             "stream_url": row["stream_url"],
             "api_key": row["api_key"],
+            "mute_notifications": row.get("mute_notifications"),
         }
 
         if include_config:
