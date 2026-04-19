@@ -371,7 +371,7 @@ def get_systems(
     """
     if not include_config:
         base = """
-               SELECT rs.radio_system_id, rs.system_decimal, rs.system_name, rs.stream_url, rs.api_key
+               SELECT rs.radio_system_id, rs.system_decimal, rs.system_name, rs.stream_url, rs.api_key, rs.post_tone_delay
                FROM radio_systems AS rs \
                """
     else:
@@ -383,6 +383,7 @@ def get_systems(
                    rs.stream_url,
                    rs.api_key,
                    rs.mute_notifications,
+                   rs.post_tone_delay,
 
                    -- upload
                    rsus.split_enabled,
