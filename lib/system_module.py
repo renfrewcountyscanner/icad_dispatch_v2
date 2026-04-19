@@ -585,6 +585,7 @@ def get_systems(
             "stream_url": row["stream_url"],
             "api_key": row["api_key"],
             "mute_notifications": row.get("mute_notifications"),
+            "post_tone_delay": row.get("post_tone_delay"),
         }
 
         if include_config:
