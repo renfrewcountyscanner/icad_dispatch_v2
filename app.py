@@ -4,7 +4,7 @@ import sys
 import time
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask
 from dotenv import load_dotenv
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
