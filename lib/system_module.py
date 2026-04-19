@@ -867,7 +867,7 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
 
     # Load current values (so we can do “update only if changed” like your original)
     cur = db.execute_query(
-        "SELECT system_decimal, system_name, stream_url, api_key "
+        "SELECT system_decimal, system_name, stream_url, api_key, post_tone_delay "
         "FROM radio_systems WHERE radio_system_id = ?",
         (radio_system_id,),
         fetch_mode="one",
