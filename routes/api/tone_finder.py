@@ -79,7 +79,7 @@ def list_calls():
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
 
-    limit  = max(1, min(int(request.args.get("limit", 100)), 500))
+    limit  = max(1, min(int(request.args.get("limit", 100)), 1000))
     offset = max(0, int(request.args.get("offset", 0)))
 
     # ── SQL build ────────────────────────────────────────────────
