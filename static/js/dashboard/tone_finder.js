@@ -1200,7 +1200,8 @@ function initToneFinderPage() {
         responsive: { details: false },
         autoWidth: false,
         order: [[COL.EPOCH, "desc"]],
-        pageLength: 25,
+        pageLength: 100,
+        lengthMenu: [25, 50, 100, 250, 500, 1000],
         columnDefs: [
             // ── widths ───────────────────────────────────────────────
             { targets: COL.SEL,         width: "28px",  orderable: false, searchable: false },
