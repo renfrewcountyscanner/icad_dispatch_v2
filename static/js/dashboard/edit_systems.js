@@ -521,7 +521,8 @@ function gatherGeneralFormData () {
         system_decimal  : Number(q("#updateSystemDecimal")),
         system_name     : q("#updateSystemName").trim(),
         stream_url      : q("#updateSystemStreamURL").trim(),
-        api_key         : q("#updateSystemApiKey").trim(),   // ✅ add this
+        api_key         : q("#updateSystemApiKey").trim(),
+        post_tone_delay : Number(q("[name=post_tone_delay]")) || 0,
     };
 }
 
