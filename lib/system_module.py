@@ -839,6 +839,7 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
       - api_key         (optional; updates if provided and changed)
       - post_tone_delay (optional; seconds to skip after tone)
     """
+    module_logger.debug(f"update_system_general received: {system_data}")
     try:
         radio_system_id = int(system_data.get("radio_system_id") or 0)
         if not radio_system_id:
@@ -883,6 +884,9 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
     old_key     = cur_row.get("api_key") or ""
     old_post_tone_delay = int(cur_row.get("post_tone_delay") or 0)
 
+    module_logger.debug(f"Old values - post_tone_delay: {old_post_tone_delay}")
+    module_logger.debug(f"New value from payload - post_tone_delay: {post_tone_delay}")
+
     sets, params = [], []
 
     # system_decimal: only if provided and different
@@ -922,7 +926,10 @@ def update_system_general(db: SQLiteDatabase, system_data: dict) -> dict:
         sets.append("post_tone_delay = ?")
         params.append(post_tone_delay)
 
+    module_logger.debug(f"Fields to update: {sets}")
+
     if not sets:
+        module_logger.warning(f"No fields to update. post_tone_delay={post_tone_delay}, old={old_post_tone_delay}")
         return {"success": False, "message": "No fields to update", "result": []}
 
     params.append(radio_system_id)
