@@ -390,6 +390,9 @@ def call_upload():
         LOG["persist"], must_persist,
         tone_cfg['tone_finder_enabled'], detect_has_tones, merged)
 
+    # Initialize transcribe_response for use outside this block
+    transcribe_response = None
+
     if must_persist:
         transcribe_response = None
         audio_tones_muted = audio_segment
