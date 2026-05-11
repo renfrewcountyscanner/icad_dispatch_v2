@@ -6,7 +6,6 @@ services:
   icad_dispatch:
     build: .
     image: icad_dispatch_v2:local
-    user: "9911:9911"
     environment:
       - LOG_LEVEL=2
     env_file:

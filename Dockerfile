@@ -36,8 +36,7 @@ COPY migrations/ ./migrations/
 # Set ownership
 RUN chown -R icad_dispatch:icad_dispatch /app
 
-# Switch to non-root user
-USER icad_dispatch
+# Running as root to avoid permission issues with volume mounts
 
 # Expose port
 EXPOSE 9911
