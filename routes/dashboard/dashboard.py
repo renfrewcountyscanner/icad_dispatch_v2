@@ -39,7 +39,4 @@ def dashboard_upload():
     systems = get_systems(db)
     return render_template("dashboard/upload.html", systems=systems)
 
-@dashboard.route("/map", methods=["GET"])
-@login_required
-def dashboard_map():
-    return render_template("dashboard/map.html")
+
