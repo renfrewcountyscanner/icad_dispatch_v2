@@ -38,7 +38,7 @@
                 <!-- Error Alert -->
                 <div id="loginError" class="alert-glass" role="alert"></div>
 
-                <form id="loginForm" class="needs-validation" novalidate>
+                <form id="loginForm" class="needs-validation" method="POST" action="/auth/login" novalidate>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
                     
                     <!-- Username Input -->

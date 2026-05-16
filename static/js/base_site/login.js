@@ -13,13 +13,12 @@ document.addEventListener('DOMContentLoaded', function () {
             : '<i class="bi bi-eye-slash-fill" style="font-size: 1.40rem"></i>';
     });
 
-    submitBtn.addEventListener('click', async () => {
-        // If your button is type="submit", also prevent the default form post:
-        // event?.preventDefault();
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
 
         if (!loginForm.checkValidity()) return;
 
-        loginErrorDiv.classList.add('d-none');
+        loginErrorDiv.classList.remove('show');
         loginErrorDiv.textContent = '';
 
         const formData = new FormData(loginForm);
@@ -68,15 +67,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (err) {
             console.error(err);
-            loginErrorDiv.classList.remove('d-none');
-
-            // Use textContent to avoid injecting HTML from server error pages
-            const pre = document.createElement('pre');
-            pre.className = 'mb-0';
-            pre.style.whiteSpace = 'pre-wrap';
-            pre.textContent = String(err?.message || err);
-            loginErrorDiv.innerHTML = ''; // clear any prior content
-            loginErrorDiv.appendChild(pre);
+            loginErrorDiv.classList.add('show');
+            loginErrorDiv.textContent = String(err?.message || err);
         }
     });
 });
