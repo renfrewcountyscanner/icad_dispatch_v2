@@ -37,7 +37,7 @@ class ReadOnlyDB:
         self.db_path = db_path
 
     def query(self, sql: str, params=(), fetch_mode="all"):
-        conn = sqlite3.connect(f"{self.db_path}?mode=ro", uri=True)
+        conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute(sql, params)

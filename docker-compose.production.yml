@@ -26,7 +26,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./var:/app/shared_var:ro
+      - ./var:/app/shared_var
       - ./audio:/app/static/audio:ro
     environment:
       - ICAD_DB_PATH=/app/shared_var/icad_dispatch.db
