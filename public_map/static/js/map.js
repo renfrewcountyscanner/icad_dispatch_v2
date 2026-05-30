@@ -6,8 +6,7 @@ const RENFREW_CENTER = [45.4748, -77.6972];
 const DEFAULT_ZOOM = 10;
 const REFRESH_INTERVAL = 30000; // 30s fallback poll
 const AUTO_FIT_DELAY_MS = 120000; // 2 minutes
-const TOAST_DURATION_MS = 60000; // 60 seconds
-const TOAST_MAX_VISIBLE = 5;
+
 
 const INCIDENT_COLORS = {
     Fire:    { bg: '#dc3545', text: '#fff' },
@@ -398,57 +397,8 @@ function handleNewCalls(calls) {
             }
         }
 
-        showToastsForNewCalls(calls.slice(0, added));
         playNotificationSound();
         sendDesktopNotifications(calls.slice(0, added));
-    }
-}
-
-// ── Toasts ───────────────────────────────────────────────────────
-const activeToasts = [];
-
-function showToastsForNewCalls(calls) {
-    calls.forEach(call => {
-        const inc = call.incident_category || 'Other';
-        const toastClass = `toast-${inc.toLowerCase()}`;
-        const id = 'toast-' + Math.random().toString(36).slice(2);
-
-        const toast = document.createElement('div');
-        toast.className = `toast-item ${toastClass}`;
-        toast.id = id;
-        toast.innerHTML = `
-            <button class="toast-close" onclick="dismissToast('${id}')" aria-label="Close">&times;</button>
-            <div class="toast-title">${esc(inc)} Call</div>
-            <div class="toast-addr">${esc(call.address || '—')}</div>
-            <div class="toast-meta">${esc(call.system_name || '')} • ${formatTime(call.timestamp)}</div>
-        `;
-
-        document.getElementById('toastContainer').appendChild(toast);
-        activeToasts.push({ id, el: toast, timer: null });
-
-        // Remove oldest if over max
-        while (activeToasts.length > TOAST_MAX_VISIBLE) {
-            const oldest = activeToasts.shift();
-            if (oldest.el.parentNode) oldest.el.parentNode.removeChild(oldest.el);
-        }
-
-        // Auto-remove after 60s
-        const t = setTimeout(() => dismissToast(id), TOAST_DURATION_MS);
-        const idx = activeToasts.findIndex(x => x.id === id);
-        if (idx >= 0) activeToasts[idx].timer = t;
-    });
-}
-
-function dismissToast(id) {
-    const idx = activeToasts.findIndex(x => x.id === id);
-    if (idx >= 0) {
-        const t = activeToasts[idx];
-        if (t.timer) clearTimeout(t.timer);
-        t.el.style.animation = 'toastOut 0.3s ease forwards';
-        setTimeout(() => {
-            if (t.el.parentNode) t.el.parentNode.removeChild(t.el);
-        }, 300);
-        activeToasts.splice(idx, 1);
     }
 }
 
