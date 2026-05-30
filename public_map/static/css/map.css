@@ -433,6 +433,10 @@ html, body {
     width: 380px;
     min-width: 300px;
     max-width: 90vw;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
     background: var(--panel-bg);
     border-left: 1px solid var(--panel-border);
     display: flex;
@@ -440,7 +444,6 @@ html, body {
     transform: translateX(100%);
     transition: transform 0.25s ease;
     z-index: 1500;
-    flex-shrink: 0;
 }
 
 #sidebar.open { transform: translateX(0); }
@@ -605,6 +608,10 @@ html, body {
     width: 320px;
     min-width: 260px;
     max-width: 90vw;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
     background: var(--panel-bg);
     border-left: 1px solid var(--panel-border);
     display: flex;
@@ -612,7 +619,6 @@ html, body {
     transform: translateX(100%);
     transition: transform 0.25s ease;
     z-index: 1500;
-    flex-shrink: 0;
 }
 
 #notifPanel.open { transform: translateX(0); }
