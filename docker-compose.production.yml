@@ -17,3 +17,19 @@ services:
       - ./var:/app/var
       - ./audio:/app/static/audio
     restart: unless-stopped
+
+  public_map:
+    build:
+      context: ./public_map
+      dockerfile: Dockerfile
+    image: icad_public_map:local
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./var:/app/shared_var:ro
+      - ./audio:/app/static/audio:ro
+    environment:
+      - ICAD_DB_PATH=/app/shared_var/icad_dispatch.db
+      - BASE_URL=https://map.yoursite.com
+      - SECRET_KEY=${MAP_SECRET_KEY:-change-me-in-production}
+    restart: unless-stopped

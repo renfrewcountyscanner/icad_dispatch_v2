@@ -49,4 +49,9 @@ def dashboard_summary():
     systems = get_systems(db)
     return render_template("dashboard/summary.html", systems=systems.get("result", []))
 
+@dashboard.route("/corrections", methods=["GET"])
+@login_required
+def dashboard_corrections():
+    return render_template("dashboard/corrections.html")
+
 

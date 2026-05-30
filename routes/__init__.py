@@ -11,6 +11,7 @@ from routes.api.call_upload import api_call_upload
 from routes.api.tone_finder import bp_tone
 from routes.api.trigger_calls import bp_trig
 from routes.api.summary import bp_summary
+from routes.api.corrections import bp_corrections
 
 
 def register_middlewares(app: Flask):

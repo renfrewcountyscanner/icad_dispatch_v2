@@ -1,0 +1,203 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Call Corrections - iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .corrections-container {
+            display: flex;
+            gap: 1rem;
+            height: calc(100vh - 120px);
+            min-height: 500px;
+        }
+        .calls-panel {
+            width: 420px;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a2e;
+            border-radius: 0.5rem;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+        .calls-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .calls-header select,
+        .calls-header input {
+            background: #2d2d44;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 0.3rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .calls-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .call-item {
+            background: #252540;
+            border: 1px solid #333;
+            border-radius: 0.35rem;
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .call-item:hover { background: #2d2d4a; }
+        .call-item.active { border-color: #0d6efd; background: #1a2a4a; }
+        .call-item .call-meta {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.25rem;
+            font-size: 0.78rem;
+        }
+        .call-item .call-address {
+            font-size: 0.85rem;
+            color: #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .call-item .badge-correction {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 0.2rem;
+            background: #ffc107;
+            color: #000;
+            font-weight: 600;
+        }
+        .call-item .badge-no-loc {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 0.2rem;
+            background: #dc3545;
+            color: #fff;
+            font-weight: 600;
+        }
+        .map-panel {
+            flex: 1;
+            background: #1a1a2e;
+            border-radius: 0.5rem;
+            border: 1px solid #333;
+            overflow: hidden;
+            position: relative;
+        }
+        #correctionMap {
+            width: 100%;
+            height: 100%;
+        }
+        .map-overlay-controls {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .map-overlay-controls input {
+            background: #2d2d44;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 0.3rem 0.5rem;
+            border-radius: 0.25rem;
+            width: 220px;
+        }
+        .save-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a2e;
+            border-top: 1px solid #333;
+            padding: 0.6rem 1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            z-index: 500;
+        }
+        .save-bar .coord-display {
+            font-size: 0.8rem;
+            color: #aaa;
+            font-family: monospace;
+        }
+        .save-bar input[type="text"] {
+            background: #2d2d44;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 0.3rem 0.5rem;
+            border-radius: 0.25rem;
+            flex: 1;
+        }
+        .leaflet-container { background: #1a1a2e; }
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(26, 26, 46, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
+    <h1 class="mt-4 mb-3">Call Location Corrections</h1>
+
+    <div class="corrections-container">
+        <!-- Calls List Panel -->
+        <div class="calls-panel">
+            <div class="calls-header">
+                <select id="filterSelect" class="form-select form-select-sm">
+                    <option value="all">All Recent (72h)</option>
+                    <option value="no_location">Needs Location</option>
+                    <option value="corrected">Corrected</option>
+                </select>
+                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search address/transcript...">
+            </div>
+            <div class="calls-list" id="callsList">
+                <div class="text-muted text-center mt-4">Loading calls…</div>
+            </div>
+        </div>
+
+        <!-- Map Panel -->
+        <div class="map-panel">
+            <div id="correctionMap"></div>
+            <div class="loading-overlay" id="mapLoader">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    Loading map…
+                </div>
+            </div>
+            <div class="map-overlay-controls">
+                <input type="text" id="addressSearch" placeholder="Search address…" title="Type address + Enter">
+            </div>
+            <div class="save-bar">
+                <span class="coord-display" id="coordDisplay">Lat: — | Lon: —</span>
+                <input type="text" id="addressDisplay" placeholder="Address will appear here…" readonly>
+                <input type="text" id="notesInput" placeholder="Notes (optional)…" style="flex:1">
+                <button class="btn btn-sm btn-success" id="saveBtn" disabled>Save</button>
+                <button class="btn btn-sm btn-outline-danger" id="revertBtn" disabled>Revert</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="{{ url_for('static', filename='js/dashboard/corrections.js') }}"></script>
+{% endblock %}

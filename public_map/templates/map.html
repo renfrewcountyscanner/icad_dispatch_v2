@@ -1,0 +1,135 @@
+{# public_map/templates/map.html #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Emergency Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/static/css/map.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div id="topBar">
+        <div class="top-left">
+            <div class="logo">
+                <i class="bi bi-broadcast-pin"></i>
+                <span>Live Emergency Map</span>
+            </div>
+            <div id="liveToggle" class="live-badge offline">
+                <span class="pulse"></span>
+                <span id="liveText">OFFLINE</span>
+            </div>
+        </div>
+
+        <div class="top-center">
+            <select id="timeRange">
+                <option value="3">Past 3 Hours</option>
+                <option value="6">Past 6 Hours</option>
+                <option value="12">Past 12 Hours</option>
+                <option value="24" selected>Past 24 Hours</option>
+                <option value="48">Past 48 Hours</option>
+                <option value="72">Past 72 Hours</option>
+            </select>
+            <select id="systemFilter">
+                <option value="">All Systems</option>
+            </select>
+            <input type="text" id="tgFilter" placeholder="Talkgroup…">
+            <button id="searchAddressBtn" title="Search address"><i class="bi bi-search"></i></button>
+            <button id="myLocationBtn" title="My location"><i class="bi bi-geo"></i></button>
+            <button id="fitBoundsBtn" title="Fit all calls"><i class="bi bi-arrows-fullscreen"></i></button>
+        </div>
+
+        <div class="top-right">
+            <button id="heatmapToggle" title="Heatmap view"><i class="bi bi-fire"></i></button>
+            <button id="themeToggle" title="Toggle light/dark"><i class="bi bi-moon-stars-fill"></i></button>
+            <button id="fullscreenBtn" title="Fullscreen"><i class="bi bi-fullscreen"></i></button>
+        </div>
+    </div>
+
+    <!-- Incident Type Filter Bar -->
+    <div id="incidentBar">
+        <label><input type="checkbox" class="inc-filter" value="Fire" checked><span class="dot fire"></span> Fire</label>
+        <label><input type="checkbox" class="inc-filter" value="Medical" checked><span class="dot medical"></span> Medical</label>
+        <label><input type="checkbox" class="inc-filter" value="Traffic" checked><span class="dot traffic"></span> Traffic</label>
+        <label><input type="checkbox" class="inc-filter" value="Rescue" checked><span class="dot rescue"></span> Rescue</label>
+        <label><input type="checkbox" class="inc-filter" value="Utilities" checked><span class="dot utilities"></span> Utilities</label>
+        <label><input type="checkbox" class="inc-filter" value="HazMat" checked><span class="dot hazmat"></span> HazMat</label>
+        <label><input type="checkbox" class="inc-filter" value="Other" checked><span class="dot other"></span> Other</label>
+        <button id="tickerToggle" title="Toggle ticker"><i class="bi bi-newspaper"></i></button>
+    </div>
+
+    <!-- Main Layout -->
+    <div id="mainLayout">
+        <!-- Map -->
+        <div id="mapContainer">
+            <div id="map"></div>
+
+            <!-- Legend -->
+            <div id="legendPanel">
+                <div class="legend-title"><i class="bi bi-key-fill"></i> Legend</div>
+                <div class="legend-item"><span class="legend-dot fire"></span> Fire</div>
+                <div class="legend-item"><span class="legend-dot medical"></span> Medical</div>
+                <div class="legend-item"><span class="legend-dot traffic"></span> Traffic</div>
+                <div class="legend-item"><span class="legend-dot rescue"></span> Rescue</div>
+                <div class="legend-item"><span class="legend-dot utilities"></span> Utilities</div>
+                <div class="legend-item"><span class="legend-dot hazmat"></span> HazMat</div>
+                <div class="legend-item"><span class="legend-dot other"></span> Other</div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div id="statsPanel">
+                <div class="stat-row">
+                    <span class="stat-label">Calls</span>
+                    <span class="stat-value" id="statTotal">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Fire</span>
+                    <span class="stat-value" id="statFire">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Medical</span>
+                    <span class="stat-value" id="statMedical">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Traffic</span>
+                    <span class="stat-value" id="statTraffic">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Active TG</span>
+                    <span class="stat-value" id="statTopTG">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div id="sidebarHeader">
+                <span id="sidebarTitle">Call Details</span>
+                <button id="closeSidebar"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div id="sidebarContent">
+                <div class="sidebar-placeholder">Click a marker to view details</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Ticker -->
+    <div id="tickerBar">
+        <div class="ticker-label"><i class="bi bi-activity"></i> Recent</div>
+        <div class="ticker-content" id="tickerContent"></div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Audio Player (hidden, used by popup) -->
+    <audio id="globalAudio" preload="none"></audio>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
+    <script src="/static/js/map.js"></script>
+</body>
+</html>
