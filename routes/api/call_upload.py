@@ -539,6 +539,8 @@ def call_upload():
         if isinstance(transcribe_response, dict) and transcribe_response.get("text"):
 
             # ───── Address extraction (LLM + optional geocode) ─────
+            # Derive township hint from fired trigger names to improve geocoding
+            town_hint = _derive_town_hint_from_triggers(fired_trigger_data)
             try:
                 addr_payload = _maybe_extract_address_for_call(
                     db=db,
@@ -547,6 +549,7 @@ def call_upload():
                     transcript_response=transcribe_response,
                     call_data=call_data,
                     route_logger=route_logger,
+                    town_hint=town_hint,
                 )
                 if addr_payload:
                     route_logger.info(
@@ -2107,6 +2110,41 @@ def save_call_transcript(db: SQLiteDatabase, call_id: int, resp: Dict[str, Any])
         raise
 
 
+def _derive_town_hint_from_triggers(fired_trigger_data: List[Dict[str, Any]]) -> Optional[str]:
+    """
+    Derive a township/city hint from fired trigger names.
+
+    Trigger names like "FIRE - Whitewater Region" or "EMS - Pembroke Base"
+    contain municipality information. We strip common prefixes and join
+    unique names to give the LLM geocoder better local context.
+
+    Returns a comma-separated hint string or None if no triggers fired.
+    """
+    if not fired_trigger_data:
+        return None
+
+    towns = []
+    seen = set()
+    for trig in fired_trigger_data:
+        name = trig.get("alert_trigger_name") or ""
+        name = name.strip()
+        if not name:
+            continue
+        # Strip common prefixes
+        for prefix in ("FIRE - ", "EMS - "):
+            if name.startswith(prefix):
+                name = name[len(prefix):]
+                break
+        if name and name not in seen:
+            seen.add(name)
+            towns.append(name)
+
+    if not towns:
+        return None
+
+    return ", ".join(towns)
+
+
 def _load_address_extraction_service(
         db: SQLiteDatabase,
         radio_system_id: int,
@@ -2205,9 +2243,15 @@ def _maybe_extract_address_for_call(
         transcript_response: Dict[str, Any],
         call_data: Dict[str, Any],
         route_logger,
+        town_hint: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     If possible, run address extraction on the transcript text for this call.
+
+    Args:
+        town_hint: Optional township/city hint derived from fired trigger
+                   names (e.g. "Whitewater Region"). Passed to the LLM
+                   address extractor to improve local context.
 
     Side effects (if we get a result):
       • call_data["address_extracted"]  -> dict
@@ -2223,8 +2267,14 @@ def _maybe_extract_address_for_call(
     if not svc:
         return None
 
+    if town_hint:
+        route_logger.info(
+            "Address extraction: call_id=%s using town_hint=%r",
+            call_id, town_hint,
+        )
+
     try:
-        result = svc.extract_and_geocode(text)
+        result = svc.extract_and_geocode(text, town_hint_override=town_hint)
     except AddressExtractorError as e:
         route_logger.warning(
             "Address extraction failed for call_id=%s: %s", call_id, e

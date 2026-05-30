@@ -957,9 +957,17 @@ class AddressExtractionService:
     def extract_and_geocode(
         self,
         transcript: str,
+        *,
+        town_hint_override: Optional[str] = None,
     ) -> Dict[str, Optional[Any]]:
         """
         Run LLM extraction and (if successful) geocode the result.
+
+        Args:
+            transcript: The dispatch transcript text
+            town_hint_override: Optional township/city hint derived from fired
+                               trigger names (e.g. "Whitewater Region"). Takes
+                               precedence over the system-wide geocode_city.
 
         Returns:
         {
@@ -973,9 +981,11 @@ class AddressExtractionService:
             )
             return {"extracted": None, "geocoded": None}
 
+        town_hint = town_hint_override or self.settings.geocode_city
+
         addr = self.llm.extract_address(
             transcript,
-            town_hint=self.settings.geocode_city,
+            town_hint=town_hint,
             county_hint=None,  # optional, could be wired from settings if needed
             state_hint=self.settings.geocode_state,
             country_hint=self.settings.geocode_country or "US",

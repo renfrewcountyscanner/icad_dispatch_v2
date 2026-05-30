@@ -313,6 +313,7 @@ function panToCall(call) {
     }
     autoFitTimer = setTimeout(() => {
         hideAutoFitCountdown();
+        closeSidebar();
         fitBounds();
         autoFitTimer = null;
     }, AUTO_FIT_DELAY_MS);
@@ -392,8 +393,9 @@ function handleNewCalls(calls) {
         } else {
             applyFilters();
             const newest = calls[0];
-            if (newest && newest.has_location) {
+            if (newest) {
                 panToCall(newest);
+                showCallDetail(newest);
             }
         }
 
