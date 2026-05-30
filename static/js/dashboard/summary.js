@@ -9,17 +9,6 @@ let currentDateTo = "";
 
 const els = {};
 
-function absUrl(u) {
-    if (!u) return "";
-    u = u.trim();
-    if (!u) return "";
-    if (/^https?:\/\//i.test(u)) return u;
-    if (u.startsWith("//")) return `${location.protocol}${u}`;
-    if (u.startsWith(location.host + "/")) return `${location.protocol}//${u}`;
-    const path = u.replace(/^\/+/, "");
-    return `${location.origin}/${path}`;
-}
-
 function esc(s) {
     return String(s)
         .replace(/&/g, "&amp;")
@@ -31,11 +20,6 @@ function esc(s) {
 function formatDateTime(epoch) {
     if (!epoch) return "—";
     return new Date(epoch * 1000).toLocaleString();
-}
-
-function formatDuration(sec) {
-    if (!sec && sec !== 0) return "—";
-    return Number(sec).toFixed(1) + "s";
 }
 
 function showAlert(message, type) {
@@ -128,8 +112,6 @@ function renderTable() {
         return [
             formatDateTime(r.start_epoch),
             esc(r.township),
-            formatDuration(r.duration_s),
-            esc(r.talkgroup_name || r.talkgroup || "—"),
             esc(r.incident_category || "—"),
             `<span class="transcript-cell" data-full="${esc(transcript)}">${esc(shortTranscript)}</span>`,
             callId
@@ -147,12 +129,10 @@ function renderTable() {
             lengthMenu: [25, 50, 100, 250, 500, 1000],
             columnDefs: [
                 { targets: 0, width: "150px" },
-                { targets: 1, width: "140px" },
-                { targets: 2, width: "70px", className: "text-end" },
-                { targets: 3, width: "100px" },
-                { targets: 4, width: "100px" },
-                { targets: 5, width: "auto" },
-                { targets: 6, visible: false }
+                { targets: 1, width: "180px" },
+                { targets: 2, width: "100px" },
+                { targets: 3, width: "auto" },
+                { targets: 4, visible: false }
             ]
         });
         table.clear().rows.add(rows).draw(false);
@@ -179,8 +159,6 @@ function exportToText() {
         lines.push(`Call ID: ${r.call_id}`);
         lines.push(`Date/Time: ${formatDateTime(r.start_epoch)}`);
         lines.push(`Township: ${r.township}`);
-        lines.push(`Duration: ${formatDuration(r.duration_s)}`);
-        lines.push(`Talkgroup: ${r.talkgroup_name || r.talkgroup || "—"}`);
         lines.push(`Incident Category: ${r.incident_category || "—"}`);
         lines.push("Transcript:");
         lines.push(r.transcript || "—");

@@ -5,7 +5,7 @@ REST endpoint for the Call Summary page.
 GET /api/summary/calls
     ?radio_system_id=<int>&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
 
-Returns a flat list of calls with full transcripts and address info
+Returns a flat list of calls with full transcripts and trigger-based township info
 for a given radio system and date range.
 """
 import json
@@ -16,9 +16,8 @@ from routes.decorators import login_required
 bp_summary = Blueprint("api_summary", __name__)
 
 
-def _parse_township(addr_extracted_json: str | None, addr_geocoded_json: str | None) -> str:
-    """Try to extract a township/location label from address JSON."""
-    # Prefer geocoded
+def _parse_address_fallback(addr_extracted_json: str | None, addr_geocoded_json: str | None) -> str:
+    """Fallback: try to extract a location label from address JSON."""
     if addr_geocoded_json:
         try:
             geo = json.loads(addr_geocoded_json)
@@ -31,7 +30,6 @@ def _parse_township(addr_extracted_json: str | None, addr_geocoded_json: str | N
                 return ", ".join(parts)
         except Exception:
             pass
-    # Fallback to extracted
     if addr_extracted_json:
         try:
             ext = json.loads(addr_extracted_json)
@@ -57,7 +55,6 @@ def list_summary_calls():
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
 
-    # Validate params
     if not rsid_arg:
         return _err("radio_system_id is required", 400)
     try:
@@ -74,23 +71,26 @@ def list_summary_calls():
     except ValueError:
         return _err("invalid date format (expected YYYY-MM-DD)", 400)
 
+    # Township comes from trigger names (alert_triggers.alert_trigger_name)
+    # Fallback to geocoded address if no triggers fired
     sql = """
         SELECT cr.call_id,
                cr.start_epoch_s,
-               cr.duration_s,
-               cr.talkgroup,
-               cr.talkgroup_name,
                ct.text_full,
                ct.address_extracted_json,
                ct.address_geocoded_json,
                ct.incident_category,
-               rs.system_name
+               rs.system_name,
+               GROUP_CONCAT(DISTINCT at.alert_trigger_name) AS trigger_names
         FROM   call_records cr
         LEFT   JOIN call_transcripts ct USING(call_id)
         LEFT   JOIN radio_systems rs ON cr.radio_system_id = rs.radio_system_id
+        LEFT   JOIN trigger_fires tf ON cr.call_id = tf.call_id
+        LEFT   JOIN alert_triggers at ON tf.alert_trigger_id = at.alert_trigger_id
         WHERE  cr.radio_system_id = ?
           AND  cr.start_epoch_s >= ?
           AND  cr.start_epoch_s < ?
+        GROUP  BY cr.call_id
         ORDER  BY cr.start_epoch_s DESC
     """
 
@@ -101,18 +101,34 @@ def list_summary_calls():
 
     rows = []
     for r in res["result"]:
+        trigger_names = r.get("trigger_names") or ""
+        township = "—"
+
+        if trigger_names:
+            # Use trigger names as township (they are station/municipality names)
+            # Clean up: remove "FIRE - ", "EMS - " prefixes for cleaner display
+            parts = []
+            for name in trigger_names.split(","):
+                name = name.strip()
+                if name.startswith("FIRE - "):
+                    name = name[7:]
+                elif name.startswith("EMS - "):
+                    name = name[6:]
+                parts.append(name)
+            township = ", ".join(parts) if parts else "—"
+        else:
+            # Fallback to geocoded/extracted address
+            township = _parse_address_fallback(
+                r.get("address_extracted_json"),
+                r.get("address_geocoded_json")
+            )
+
         rows.append({
             "call_id": r["call_id"],
             "start_epoch": r["start_epoch_s"],
-            "duration_s": r["duration_s"],
-            "talkgroup": r.get("talkgroup") or "",
-            "talkgroup_name": r.get("talkgroup_name") or "",
             "system_name": r.get("system_name") or "",
             "transcript": (r.get("text_full") or "").strip(),
-            "township": _parse_township(
-                r.get("address_extracted_json"),
-                r.get("address_geocoded_json")
-            ),
+            "township": township,
             "incident_category": r.get("incident_category") or "",
         })
 
