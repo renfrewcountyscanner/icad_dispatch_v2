@@ -762,6 +762,21 @@ html, body {
     display: block;
 }
 
+/* Latest call marker — pulses with a white ring */
+.custom-marker.latest-marker {
+    animation: latestPulse 1.5s infinite;
+    z-index: 1000;
+}
+
+@keyframes latestPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(0,0,0,0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(255, 255, 255, 0), 0 2px 6px rgba(0,0,0,0.4);
+    }
+}
+
 /* Test marker */
 .test-marker {
     display: flex;

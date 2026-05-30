@@ -213,6 +213,16 @@ function renderMarkers() {
 
     const heatPoints = [];
 
+    // Find the most recent call among visible calls
+    let latestCall = null;
+    let latestTimestamp = 0;
+    visibleCalls.forEach(call => {
+        if (call.timestamp > latestTimestamp) {
+            latestTimestamp = call.timestamp;
+            latestCall = call;
+        }
+    });
+
     visibleCalls.forEach(call => {
         if (!call.lat || !call.lng) return;
 
@@ -225,11 +235,13 @@ function renderMarkers() {
 
         // Test call uses special marker
         const isTest = call.call_id < 0;
+        const isLatest = latestCall && call.call_id === latestCall.call_id;
         let markerHtml;
         if (isTest) {
             markerHtml = `<div class="test-marker"><span>TEST</span></div>`;
         } else {
-            markerHtml = `<div class="custom-marker" style="background:${color.bg};opacity:${opacity};border-color:${color.bg}"><span>${short}</span></div>`;
+            const latestClass = isLatest ? ' latest-marker' : '';
+            markerHtml = `<div class="custom-marker${latestClass}" style="background:${color.bg};opacity:${opacity};border-color:${color.bg}"><span>${short}</span></div>`;
         }
 
         const icon = L.divIcon({
