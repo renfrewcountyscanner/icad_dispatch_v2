@@ -44,6 +44,8 @@ let desktopNotifEnabled = false;
 let notifUnreadCount = 0;
 let notifList = []; // { call_id, time, incident, address, system, read }
 let testCallId = -1; // negative IDs for test calls
+let allTriggers = []; // cached trigger list
+let selectedTriggerIds = new Set();
 
 // ── Init ───────────────────────────────────────────────────────────
 function init() {
@@ -155,11 +157,12 @@ function setLiveStatus(status) {
 async function loadCalls() {
     const hours = document.getElementById('timeRange').value;
     const systemId = document.getElementById('systemFilter').value;
-    const talkgroup = document.getElementById('tgFilter').value.trim();
 
     const params = new URLSearchParams({ hours });
     if (systemId) params.append('system_id', systemId);
-    if (talkgroup) params.append('talkgroup', talkgroup);
+    if (selectedTriggerIds.size > 0) {
+        params.append('alert_trigger_ids', Array.from(selectedTriggerIds).join(','));
+    }
 
     try {
         const resp = await fetch(`/api/calls?${params}`);
@@ -730,6 +733,93 @@ function fitBounds() {
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, minZoom: 9 });
 }
 
+// ── Trigger Filter ───────────────────────────────────────────────
+async function loadTriggers(systemId) {
+    const params = new URLSearchParams();
+    if (systemId) params.append('system_id', systemId);
+
+    try {
+        const resp = await fetch(`/api/triggers?${params}`);
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.message);
+        allTriggers = data.result || [];
+        renderTriggerOptions();
+        updateTriggerLabel();
+    } catch (err) {
+        console.error('Failed to load triggers:', err);
+    }
+}
+
+function renderTriggerOptions() {
+    const container = document.getElementById('triggerFilterOptions');
+    container.innerHTML = '';
+
+    if (allTriggers.length === 0) {
+        container.innerHTML = '<div class="empty-msg">No triggers available</div>';
+        return;
+    }
+
+    allTriggers.forEach(trig => {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = trig.alert_trigger_id;
+        cb.checked = selectedTriggerIds.has(String(trig.alert_trigger_id)) || selectedTriggerIds.has(trig.alert_trigger_id);
+        cb.addEventListener('change', (e) => {
+            const id = parseInt(e.target.value, 10);
+            if (e.target.checked) {
+                selectedTriggerIds.add(id);
+            } else {
+                selectedTriggerIds.delete(id);
+            }
+            updateTriggerLabel();
+            loadCalls();
+        });
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(trig.alert_trigger_name));
+        container.appendChild(label);
+    });
+}
+
+function updateTriggerLabel() {
+    const btn = document.getElementById('triggerFilterBtn');
+    const label = document.getElementById('triggerFilterLabel');
+    if (selectedTriggerIds.size === 0) {
+        label.textContent = 'All Triggers';
+        btn.classList.remove('active');
+    } else if (selectedTriggerIds.size === 1) {
+        const id = Array.from(selectedTriggerIds)[0];
+        const trig = allTriggers.find(t => t.alert_trigger_id === id || t.alert_trigger_id === parseInt(id, 10));
+        label.textContent = trig ? trig.alert_trigger_name : `${selectedTriggerIds.size} selected`;
+        btn.classList.add('active');
+    } else {
+        label.textContent = `${selectedTriggerIds.size} selected`;
+        btn.classList.add('active');
+    }
+}
+
+function toggleTriggerDropdown() {
+    document.getElementById('triggerFilter').classList.toggle('open');
+}
+
+function closeTriggerDropdown() {
+    document.getElementById('triggerFilter').classList.remove('open');
+}
+
+function selectAllTriggers() {
+    allTriggers.forEach(t => selectedTriggerIds.add(t.alert_trigger_id));
+    renderTriggerOptions();
+    updateTriggerLabel();
+    loadCalls();
+}
+
+function clearAllTriggers() {
+    selectedTriggerIds.clear();
+    renderTriggerOptions();
+    updateTriggerLabel();
+    loadCalls();
+}
+
 // ── Controls ─────────────────────────────────────────────────────
 function initControls() {
     document.getElementById('timeRange').addEventListener('change', () => {
@@ -739,8 +829,25 @@ function initControls() {
         }
     });
 
-    document.getElementById('systemFilter').addEventListener('change', loadCalls);
-    document.getElementById('tgFilter').addEventListener('input', debounce(loadCalls, 400));
+    document.getElementById('systemFilter').addEventListener('change', () => {
+        selectedTriggerIds.clear();
+        loadTriggers(document.getElementById('systemFilter').value);
+        loadCalls();
+    });
+
+    // Trigger filter dropdown
+    document.getElementById('triggerFilterBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTriggerDropdown();
+    });
+    document.getElementById('triggerFilterDropdown').addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+    document.getElementById('triggerSelectAll').addEventListener('click', selectAllTriggers);
+    document.getElementById('triggerClearAll').addEventListener('click', clearAllTriggers);
+    document.addEventListener('click', () => {
+        closeTriggerDropdown();
+    });
 
     document.querySelectorAll('.inc-filter').forEach(cb => {
         cb.addEventListener('change', applyFilters);
@@ -816,6 +923,8 @@ function initControls() {
                     sel.appendChild(opt);
                 });
             }
+            // Load all triggers initially (no system filter)
+            loadTriggers();
         })
         .catch(console.error);
 

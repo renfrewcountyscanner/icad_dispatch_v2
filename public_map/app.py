@@ -124,7 +124,6 @@ def api_calls():
     since_hours = request.args.get("hours", "24")
     system_id = request.args.get("system_id")
     incident = request.args.get("incident")
-    talkgroup = request.args.get("talkgroup")
 
     try:
         hours = float(since_hours)
@@ -144,9 +143,16 @@ def api_calls():
         filters.append("ct.incident_category = ?")
         params.append(incident)
 
-    if talkgroup:
-        filters.append("(cr.talkgroup = ? OR cr.talkgroup_name LIKE ?)")
-        params.extend([talkgroup, f"%{talkgroup}%"])
+    alert_trigger_ids = request.args.get("alert_trigger_ids")
+    if alert_trigger_ids:
+        try:
+            trig_ids = [int(x.strip()) for x in alert_trigger_ids.split(",") if x.strip()]
+            if trig_ids:
+                placeholders = ",".join("?" for _ in trig_ids)
+                filters.append(f"cr.call_id IN (SELECT call_id FROM trigger_fires WHERE alert_trigger_id IN ({placeholders}))")
+                params.extend(trig_ids)
+        except ValueError:
+            pass
 
     where_clause = " AND ".join(filters)
 
@@ -240,6 +246,41 @@ def api_calls():
         })
 
     return {"success": True, "result": result, "meta": {"hours": hours, "count": len(result)}}
+
+
+@app.route("/api/triggers")
+def api_triggers():
+    if not _check_rate_limit():
+        return {"success": False, "message": "Rate limit exceeded"}, 429
+
+    db = get_icad_db()
+    system_id = request.args.get("system_id")
+
+    sql = """
+        SELECT
+            alert_trigger_id,
+            alert_trigger_name,
+            radio_system_id
+        FROM alert_triggers
+        WHERE alert_trigger_enabled = 1
+    """
+    params = []
+    if system_id:
+        sql += " AND radio_system_id = ?"
+        params.append(int(system_id))
+
+    sql += " ORDER BY alert_trigger_name"
+
+    rows = db.query(sql, tuple(params))
+    result = [
+        {
+            "alert_trigger_id": r["alert_trigger_id"],
+            "alert_trigger_name": r["alert_trigger_name"] or f"Trigger {r['alert_trigger_id']}",
+            "radio_system_id": r["radio_system_id"],
+        }
+        for r in rows
+    ]
+    return {"success": True, "result": result}
 
 
 @app.route("/api/calls/<int:call_id>")

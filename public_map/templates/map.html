@@ -40,7 +40,19 @@
             <select id="systemFilter">
                 <option value="">All Systems</option>
             </select>
-            <input type="text" id="tgFilter" placeholder="Talkgroup…">
+            <div class="multi-select" id="triggerFilter">
+                <button class="multi-select-btn" id="triggerFilterBtn" type="button">
+                    <span id="triggerFilterLabel">All Triggers</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="multi-select-dropdown" id="triggerFilterDropdown">
+                    <div class="multi-select-actions">
+                        <button type="button" id="triggerSelectAll">Select All</button>
+                        <button type="button" id="triggerClearAll">Clear</button>
+                    </div>
+                    <div class="multi-select-options" id="triggerFilterOptions"></div>
+                </div>
+            </div>
             <button id="searchAddressBtn" title="Search address"><i class="bi bi-search"></i></button>
             <button id="myLocationBtn" title="My location"><i class="bi bi-geo"></i></button>
             <button id="fitBoundsBtn" title="Fit all calls (F)"><i class="bi bi-arrows-fullscreen"></i></button>
@@ -247,8 +259,8 @@
                     <h3>Radio system</h3>
                     <p>If multiple fire/EMS agencies are monitored, you can filter to show only one system (e.g., "Renfrew County Fire").</p>
 
-                    <h3>Talkgroup</h3>
-                    <p>Type a talkgroup number or name to filter calls to a specific radio channel. This is useful for tracking a single station or dispatch channel.</p>
+                    <h3>Tone triggers</h3>
+                    <p>Select one or more tone triggers to filter calls by dispatch station or agency. The dropdown updates based on the selected radio system. Useful for tracking specific stations like "FIRE - Deep River" or "EMS - Pembroke Base".</p>
 
                     <h3>Incident type filters</h3>
                     <p>The colored checkboxes below the top bar let you show or hide specific incident types:</p>
