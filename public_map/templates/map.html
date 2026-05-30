@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/static/css/map.css">
+    <link rel="stylesheet" href="/static/css/help.css">
 </head>
 <body>
     <!-- Top Bar -->
@@ -42,17 +43,18 @@
             <input type="text" id="tgFilter" placeholder="Talkgroup…">
             <button id="searchAddressBtn" title="Search address"><i class="bi bi-search"></i></button>
             <button id="myLocationBtn" title="My location"><i class="bi bi-geo"></i></button>
-            <button id="fitBoundsBtn" title="Fit all calls"><i class="bi bi-arrows-fullscreen"></i></button>
+            <button id="fitBoundsBtn" title="Fit all calls (F)"><i class="bi bi-arrows-fullscreen"></i></button>
         </div>
 
         <div class="top-right">
-            <button id="liveFeedToggle" title="Toggle Live Feed mode"><i class="bi bi-broadcast"></i> <span id="liveFeedLabel">All Calls</span></button>
-            <button id="testBtn" title="Test alert"><i class="bi bi-lightning-charge-fill"></i> Test</button>
-            <button id="muteToggle" title="Toggle sound"><i class="bi bi-volume-up-fill"></i></button>
-            <button id="notifToggle" title="Notifications"><i class="bi bi-bell"></i> <span id="notifBadge" class="notif-badge d-none">0</span></button>
+            <button id="liveFeedToggle" title="Toggle Live Feed mode (L)"><i class="bi bi-broadcast"></i> <span id="liveFeedLabel">All Calls</span></button>
+            <button id="testBtn" title="Test alert (T)"><i class="bi bi-lightning-charge-fill"></i> Test</button>
+            <button id="muteToggle" title="Toggle sound (M)"><i class="bi bi-volume-up-fill"></i></button>
+            <button id="notifToggle" title="Notifications (N)"><i class="bi bi-bell"></i> <span id="notifBadge" class="notif-badge d-none">0</span></button>
             <button id="heatmapToggle" title="Heatmap view"><i class="bi bi-fire"></i></button>
             <button id="themeToggle" title="Toggle light/dark"><i class="bi bi-moon-stars-fill"></i></button>
             <button id="fullscreenBtn" title="Fullscreen"><i class="bi bi-fullscreen"></i></button>
+            <button id="helpBtn" title="Help (?)"><i class="bi bi-question-circle"></i></button>
         </div>
     </div>
 
@@ -155,9 +157,320 @@
     <!-- Audio Player (hidden, used by popup) -->
     <audio id="globalAudio" preload="none"></audio>
 
+    <!-- Help Modal -->
+    <div id="helpModal" class="help-modal">
+        <div class="help-dialog">
+            <div class="help-header">
+                <h2><i class="bi bi-question-circle"></i> Help</h2>
+                <button class="help-close" onclick="closeHelpModal()" aria-label="Close help"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="help-tabs">
+                <button class="help-tab-btn active" data-tab="overview">Overview</button>
+                <button class="help-tab-btn" data-tab="using">Using the Map</button>
+                <button class="help-tab-btn" data-tab="filters">Filters</button>
+                <button class="help-tab-btn" data-tab="livefeed">Live Feed</button>
+                <button class="help-tab-btn" data-tab="notifications">Notifications</button>
+                <button class="help-tab-btn" data-tab="audio">Audio</button>
+                <button class="help-tab-btn" data-tab="legend">Legend</button>
+                <button class="help-tab-btn" data-tab="test">Test Button</button>
+                <button class="help-tab-btn" data-tab="shortcuts">Shortcuts</button>
+                <button class="help-tab-btn" data-tab="staff">For Staff</button>
+                <button class="help-tab-btn" data-tab="troubleshoot">Troubleshooting</button>
+            </div>
+            <div class="help-body">
+                <!-- Overview -->
+                <div class="help-tab-content active" data-tab="overview">
+                    <h3>What is this map?</h3>
+                    <p>This is a <strong>live emergency services dispatch map</strong> that shows fire, medical, rescue, and other emergency calls in real-time as they are dispatched.</p>
+
+                    <h3>Where does the data come from?</h3>
+                    <p>Calls are pulled automatically from the iCAD Dispatch system as they are received and processed. The map updates within seconds of a new dispatch.</p>
+
+                    <h3>What can I see?</h3>
+                    <ul>
+                        <li><strong>Call location</strong> — where the incident is reported (shown as a colored pin on the map)</li>
+                        <li><strong>Incident type</strong> — Fire, Medical, Traffic, Rescue, Utilities, HazMat, or Other</li>
+                        <li><strong>Call details</strong> — click any pin to see the full transcript, address, talkgroup, and audio (if available)</li>
+                        <li><strong>Time range</strong> — view calls from the past 3, 6, 12, 24, 48, or 72 hours</li>
+                    </ul>
+
+                    <h3>Is this public information?</h3>
+                    <p>Yes. This map shows the same dispatch information that is broadcast publicly over emergency radio frequencies. No sensitive personal data is displayed.</p>
+
+                    <div class="note">
+                        <strong>Tip:</strong> The map works best on a desktop or tablet. On mobile, you can still view all calls and details, but the layout is optimized for larger screens.
+                    </div>
+                </div>
+
+                <!-- Using the Map -->
+                <div class="help-tab-content" data-tab="using">
+                    <h3>Navigating the map</h3>
+                    <p><strong>Pan:</strong> Click and drag anywhere on the map to move around.</p>
+                    <p><strong>Zoom:</strong> Use your mouse scroll wheel, pinch on touchscreens, or the +/- buttons on the map.</p>
+
+                    <h3>Clicking a marker</h3>
+                    <p>Each colored pin on the map represents one emergency call. Click any pin to:</p>
+                    <ul>
+                        <li>See a brief popup with the incident type, address, and time</li>
+                        <li>Open the <strong>sidebar</strong> on the right with full call details</li>
+                    </ul>
+
+                    <h3>Sidebar details</h3>
+                    <p>The sidebar shows everything we know about a call:</p>
+                    <ul>
+                        <li><strong>Date and time</strong> — when the call was dispatched</li>
+                        <li><strong>Address</strong> — the reported location (may be approximate)</li>
+                        <li><strong>System</strong> — which radio system handled the call</li>
+                        <li><strong>Talkgroup</strong> — the radio channel the dispatch was on</li>
+                        <li><strong>Duration</strong> — how long the radio transmission was</li>
+                        <li><strong>Transcript</strong> — the full text of what was said (if transcribed)</li>
+                        <li><strong>Audio</strong> — a play button to listen to the original dispatch audio (if available)</li>
+                    </ul>
+
+                    <h3>Permalinks</h3>
+                    <p>When you click a call, the URL in your browser updates to include <code>?call=123</code>. You can copy and share this link — anyone who opens it will see the same call.</p>
+
+                    <h3>My Location</h3>
+                    <p>Click the <span class="kbd">My location</span> button (crosshair icon) to center the map on your current GPS position. You may need to grant location permission in your browser.</p>
+                </div>
+
+                <!-- Filters -->
+                <div class="help-tab-content" data-tab="filters">
+                    <h3>Time range</h3>
+                    <p>The dropdown at the top lets you choose how far back to look:</p>
+                    <ul>
+                        <li><strong>Past 3 Hours</strong> — recent active incidents</li>
+                        <li><strong>Past 6 / 12 / 24 Hours</strong> — default ranges for daily review</li>
+                        <li><strong>Past 48 / 72 Hours</strong> — wider view for analysis</li>
+                    </ul>
+
+                    <h3>Radio system</h3>
+                    <p>If multiple fire/EMS agencies are monitored, you can filter to show only one system (e.g., "Renfrew County Fire").</p>
+
+                    <h3>Talkgroup</h3>
+                    <p>Type a talkgroup number or name to filter calls to a specific radio channel. This is useful for tracking a single station or dispatch channel.</p>
+
+                    <h3>Incident type filters</h3>
+                    <p>The colored checkboxes below the top bar let you show or hide specific incident types:</p>
+                    <ul>
+                        <li><span class="dot fire"></span> Fire — structure fires, vehicle fires, grass fires</li>
+                        <li><span class="dot medical"></span> Medical — EMS calls, medical emergencies</li>
+                        <li><span class="dot traffic"></span> Traffic — motor vehicle collisions</li>
+                        <li><span class="dot rescue"></span> Rescue — water rescue, extrication, search and rescue</li>
+                        <li><span class="dot utilities"></span> Utilities — hydro lines down, gas leaks</li>
+                        <li><span class="dot hazmat"></span> HazMat — hazardous materials incidents</li>
+                        <li><span class="dot other"></span> Other — everything else</li>
+                    </ul>
+
+                    <h3>Address search</h3>
+                    <p>Click the magnifying glass icon to search for a specific address or place name. The map will pan to that location so you can see nearby calls.</p>
+                </div>
+
+                <!-- Live Feed -->
+                <div class="help-tab-content" data-tab="livefeed">
+                    <h3>What is Live Feed mode?</h3>
+                    <p><strong>Live Feed</strong> focuses the map on only the <strong>single most recent call</strong>. Instead of showing all calls in a time range, it automatically follows the newest dispatch as it comes in.</p>
+
+                    <h3>When to use it</h3>
+                    <ul>
+                        <li>In an <strong>operations center</strong> where you want a screen to always show the latest active incident</li>
+                        <li>When monitoring <strong>ongoing incidents</strong> and you only care about the newest one</li>
+                        <li>For <strong>training or demos</strong> where you want a clear, uncluttered view</li>
+                    </ul>
+
+                    <h3>How it works</h3>
+                    <ul>
+                        <li>Click <span class="kbd">All Calls</span> → it switches to <span class="kbd">Live Feed</span></li>
+                        <li>The map clears all other markers and shows only the latest call</li>
+                        <li>When a new call arrives, the old marker disappears and the map <strong>immediately pans</strong> to the new one</li>
+                        <li>The sidebar <strong>automatically opens</strong> with the new call's details</li>
+                        <li>A red <strong>LIVE FEED</strong> badge pulses in the top bar</li>
+                    </ul>
+
+                    <div class="warning">
+                        <strong>Note:</strong> In Live Feed mode, the <strong>time range filter is disabled</strong> because the map always shows the single newest call regardless of when it happened.
+                    </div>
+
+                    <h3>Switching back</h3>
+                    <p>Click <span class="kbd">Live Feed</span> again to return to <span class="kbd">All Calls</span> mode. The map will then show all calls in your selected time range.</p>
+                </div>
+
+                <!-- Notifications -->
+                <div class="help-tab-content" data-tab="notifications">
+                    <h3>The notifications bell</h3>
+                    <p>The <span class="kbd">Notifications</span> panel tracks <strong>new calls that arrive while you have the map open</strong>. It does not show historical calls — only arrivals since you loaded the page.</p>
+
+                    <h3>How to use it</h3>
+                    <ul>
+                        <li>Click the <strong>bell icon</strong> in the top bar to open the panel</li>
+                        <li>A <strong>red badge</strong> on the bell shows how many unread notifications you have</li>
+                        <li>Each notification shows: time, incident type, address, and system</li>
+                        <li>Click any notification to <strong>pan to that call</strong> and open its details</li>
+                        <li><strong>Unread</strong> items have a blue left border</li>
+                        <li>Click the checkmark icon to <strong>mark all as read</strong></li>
+                        <li>Click the clear icon to <strong>remove all notifications</strong></li>
+                    </ul>
+
+                    <h3>Desktop notifications</h3>
+                    <p>If you grant permission, your browser can show <strong>desktop popup notifications</strong> even when the map tab is in the background. These look like system notifications and help you notice new dispatches without keeping the map visible.</p>
+                    <p>To enable: click anywhere on the map once, and your browser will ask for notification permission. Click <strong>Allow</strong>.</p>
+
+                    <div class="note">
+                        <strong>Tip:</strong> Notifications reset when you refresh the page. The panel holds up to 50 recent arrivals.
+                    </div>
+                </div>
+
+                <!-- Audio -->
+                <div class="help-tab-content" data-tab="audio">
+                    <h3>Listening to dispatch audio</h3>
+                    <p>When you click a call and open the sidebar, an <strong>audio player</strong> appears below the transcript (if audio is available). Click <strong>Play</strong> to hear the original radio transmission.</p>
+
+                    <h3>Audio may not be available for all calls</h3>
+                    <p>Audio recording depends on the radio system setup. Some systems record all transmissions, others do not. If there's no audio player in the sidebar, that call was not recorded.</p>
+
+                    <h3>Mute toggle</h3>
+                    <p>Click the <span class="kbd">speaker icon</span> in the top bar to mute or unmute the <strong>notification chime</strong> that plays when new calls arrive. Your preference is saved in the browser.</p>
+
+                    <h3>Why didn't I hear a sound?</h3>
+                    <ul>
+                        <li><strong>Browser autoplay policy:</strong> Most browsers block audio until you interact with the page. Click anywhere on the map first, then sounds should work.</li>
+                        <li><strong>Muted:</strong> Check that the speaker icon in the top bar is not crossed out.</li>
+                        <li><strong>Volume:</strong> Check your system and browser volume levels.</li>
+                        <li><strong>Mobile:</strong> Some mobile browsers require the phone to not be in silent mode.</li>
+                    </ul>
+                </div>
+
+                <!-- Legend -->
+                <div class="help-tab-content" data-tab="legend">
+                    <h3>Marker colors</h3>
+                    <p>Each incident type has its own color so you can identify calls at a glance:</p>
+                    <table>
+                        <tr><th>Color</th><th>Type</th><th>Examples</th></tr>
+                        <tr><td><span class="legend-dot fire"></span></td><td>Fire</td><td>Structure fire, vehicle fire, grass fire, chimney fire</td></tr>
+                        <tr><td><span class="legend-dot medical"></span></td><td>Medical</td><td>Medical emergency, cardiac arrest, fall, breathing difficulty</td></tr>
+                        <tr><td><span class="legend-dot traffic"></span></td><td>Traffic</td><td>Motor vehicle collision, rollover, pedestrian struck</td></tr>
+                        <tr><td><span class="legend-dot rescue"></span></td><td>Rescue</td><td>Water rescue, extrication, confined space, rope rescue</td></tr>
+                        <tr><td><span class="legend-dot utilities"></span></td><td>Utilities</td><td>Hydro line down, gas leak, water main break</td></tr>
+                        <tr><td><span class="legend-dot hazmat"></span></td><td>HazMat</td><td>Chemical spill, fuel leak, unknown substance</td></tr>
+                        <tr><td><span class="legend-dot other"></span></td><td>Other</td><td>Smoke investigation, alarm activation, mutual aid</td></tr>
+                    </table>
+
+                    <h3>Age-based opacity</h3>
+                    <p>Newer calls appear brighter and bolder. Older calls (approaching 72 hours) become more transparent. This helps you spot active incidents at a glance.</p>
+
+                    <h3>Corrected locations</h3>
+                    <p>Calls with a manually corrected location show a <strong>gold "Corrected"</strong> badge in the sidebar. These have been reviewed by dispatch staff for accuracy.</p>
+                </div>
+
+                <!-- Test Button -->
+                <div class="help-tab-content" data-tab="test">
+                    <h3>What is the Test button?</h3>
+                    <p>The <span class="kbd">Test</span> button (lightning bolt icon) injects a <strong>fake fire call</strong> at a random location near Renfrew County. It triggers the full alert chain so you can verify the map is working without waiting for a real dispatch.</p>
+
+                    <h3>What happens when I click Test?</h3>
+                    <ol>
+                        <li>A <strong>yellow "TEST" marker</strong> appears on the map with a pulsing dashed border</li>
+                        <li>A <strong>toast notification</strong> appears in the top-right</li>
+                        <li>The <strong>notification chime</strong> plays (if not muted)</li>
+                        <li>The map <strong>pans to the test location</strong></li>
+                        <li>The <strong>sidebar opens</strong> with fake call details</li>
+                        <li>The call is logged in the <strong>notifications panel</strong></li>
+                    </ol>
+
+                    <h3>How long does it last?</h3>
+                    <p>Test calls <strong>auto-delete after 30 seconds</strong>. This keeps the map clean and ensures test data doesn't persist. You can also close the sidebar manually at any time.</p>
+
+                    <div class="warning">
+                        <strong>Note:</strong> Test calls are clearly labeled "TEST" and should not be mistaken for real emergencies. Use this feature for training, demos, or verifying your audio/notifications are working.
+                    </div>
+                </div>
+
+                <!-- Shortcuts -->
+                <div class="help-tab-content" data-tab="shortcuts">
+                    <h3>Keyboard shortcuts</h3>
+                    <p>Press these keys anywhere on the map (not while typing in a text field):</p>
+                    <table>
+                        <tr><th>Key</th><th>Action</th></tr>
+                        <tr><td><span class="kbd">?</span></td><td>Open / close this Help menu</td></tr>
+                        <tr><td><span class="kbd">Esc</span></td><td>Close sidebar, help, and notifications</td></tr>
+                        <tr><td><span class="kbd">F</span></td><td>Fit all calls in view (cancel auto-fit)</td></tr>
+                        <tr><td><span class="kbd">M</span></td><td>Toggle mute / unmute notification sound</td></tr>
+                        <tr><td><span class="kbd">L</span></td><td>Toggle Live Feed mode</td></tr>
+                        <tr><td><span class="kbd">N</span></td><td>Open / close Notifications panel</td></tr>
+                        <tr><td><span class="kbd">T</span></td><td>Inject a test call</td></tr>
+                    </table>
+                </div>
+
+                <!-- For Staff -->
+                <div class="help-tab-content" data-tab="staff">
+                    <h3>Data flow</h3>
+                    <p>This public map is a <strong>separate read-only service</strong> that connects to the iCAD Dispatch database. It cannot write or modify any data. The map app polls for new calls every 5 seconds and pushes them to browsers via WebSocket.</p>
+
+                    <h3>Auto-geocoding limitations</h3>
+                    <p>Call locations are determined by:</p>
+                    <ol>
+                        <li><strong>Manual corrections</strong> (highest priority) — set via the iCAD dashboard Map Corrections page</li>
+                        <li><strong>Automatic geocoding</strong> — the system extracts addresses from transcripts and geocodes them using Google Maps</li>
+                        <li><strong>No location</strong> — some calls cannot be geocoded and appear only in the call list with no map marker</li>
+                    </ol>
+
+                    <h3>Accuracy</h3>
+                    <p>Auto-geocoding is approximate. Addresses spoken in radio traffic may be unclear, incomplete, or refer to intersections rather than exact building addresses. Always verify critical locations through official channels.</p>
+
+                    <h3>Corrections</h3>
+                    <p>If you see a call in the wrong location, use the <strong>iCAD dashboard → Map Corrections</strong> page to drag the pin to the correct spot. The public map updates instantly for all viewers.</p>
+
+                    <h3>Audio retention</h3>
+                    <p>Audio files are stored on disk and served directly. Their retention depends on the iCAD system storage configuration. Not all systems record audio.</p>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="help-tab-content" data-tab="troubleshoot">
+                    <h3>The map is not updating</h3>
+                    <ul>
+                        <li>Check the <strong>Live</strong> badge in the top-left. If it says <strong>OFFLINE</strong>, the WebSocket connection is lost. The map will retry automatically.</li>
+                        <li>Try refreshing the page.</li>
+                        <li>Check your internet connection.</li>
+                    </ul>
+
+                    <h3>No audio when I click Play</h3>
+                    <ul>
+                        <li>Not all calls have audio recordings. If there's no audio player in the sidebar, audio was not captured.</li>
+                        <li>Check your browser volume and mute settings.</li>
+                        <li>Some browsers block audio autoplay. Click anywhere on the map first, then try again.</li>
+                    </ul>
+
+                    <h3>A call is in the wrong location</h3>
+                    <p>This happens when automatic geocoding misinterprets the address. Dispatch staff can correct it using the <strong>Map Corrections</strong> page in the iCAD dashboard.</p>
+
+                    <h3>The notification chime doesn't play</h3>
+                    <ul>
+                        <li>Click the map once to satisfy browser autoplay policies.</li>
+                        <li>Make sure the speaker icon in the top bar is not muted.</li>
+                        <li>Check your system volume.</li>
+                    </ul>
+
+                    <h3>Markers are stacking on top of each other</h3>
+                    <p>Multiple calls can occur at the same address (e.g., a structure fire with multiple tone hits). Zoom in to see individual pins, or switch to <strong>Heatmap</strong> mode to see call density.</p>
+
+                    <h3>Mobile issues</h3>
+                    <ul>
+                        <li>The map is optimized for desktop/tablet. On small phones, the sidebar becomes a bottom sheet.</li>
+                        <li>Audio may not play if your phone is in silent mode.</li>
+                        <li>Notifications may not appear if your browser blocks them.</li>
+                    </ul>
+
+                    <h3>Something else?</h3>
+                    <p>If you encounter a bug or have a feature request, contact the system administrator. Include your browser, what you were doing, and what you expected to happen.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
     <script src="/static/js/map.js"></script>
+    <script src="/static/js/help.js"></script>
 </body>
 </html>

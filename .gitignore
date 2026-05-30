@@ -9,6 +9,8 @@
 # Logs
 *.log
 log/*.log
+log/*.log.*
+log/*.gz
 
 # Secrets
 var/secret_key.txt

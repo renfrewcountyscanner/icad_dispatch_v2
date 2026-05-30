@@ -284,6 +284,12 @@ function panToCall(call) {
 
     map.flyTo([call.lat, call.lng], 15, { duration: 1.5 });
 
+    // In Live Feed mode, never auto-fit — always stay focused on the latest call
+    if (isLiveFeed) {
+        cancelAutoFit();
+        return;
+    }
+
     // Show countdown UI
     showAutoFitCountdown();
 
@@ -293,7 +299,7 @@ function panToCall(call) {
     }
     autoFitTimer = setTimeout(() => {
         hideAutoFitCountdown();
-        if (!isLiveFeed) fitBounds();
+        fitBounds();
         autoFitTimer = null;
     }, AUTO_FIT_DELAY_MS);
 }
@@ -315,12 +321,11 @@ function showAutoFitCountdown() {
     if (el._interval) clearInterval(el._interval);
     el._interval = setInterval(() => {
         remaining--;
+        updateText();
         if (remaining <= 0) {
             clearInterval(el._interval);
             el._interval = null;
-            return;
         }
-        updateText();
     }, 1000);
 }
 
@@ -705,11 +710,12 @@ function fitBounds() {
         return;
     }
     if (points.length === 1) {
-        map.setView(points[0], 15);
+        // Show some context around a single call
+        map.setView(points[0], 12);
         return;
     }
     const bounds = L.latLngBounds(points);
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14, minZoom: 9 });
 }
 
 // ── Controls ─────────────────────────────────────────────────────
@@ -746,6 +752,7 @@ function initControls() {
     document.getElementById('muteToggle').addEventListener('click', toggleMute);
     document.getElementById('liveFeedToggle').addEventListener('click', toggleLiveFeed);
     document.getElementById('testBtn').addEventListener('click', injectTestCall);
+    document.getElementById('helpBtn').addEventListener('click', toggleHelpModal);
 
     document.getElementById('searchAddressBtn').addEventListener('click', searchAddress);
     document.getElementById('myLocationBtn').addEventListener('click', () => {
@@ -800,12 +807,58 @@ function initControls() {
         })
         .catch(console.error);
 
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeydown);
+
     // Fallback polling every 30s
     setInterval(() => {
         if (!socket || !socket.connected) {
             loadCalls();
         }
     }, REFRESH_INTERVAL);
+}
+
+function handleKeydown(e) {
+    // Ignore if typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+    switch (e.key) {
+        case '?':
+            e.preventDefault();
+            toggleHelpModal();
+            break;
+        case 'Escape':
+            closeSidebar();
+            closeHelpModal();
+            document.getElementById('notifPanel').classList.remove('open');
+            break;
+        case 'f':
+        case 'F':
+            e.preventDefault();
+            fitBounds();
+            cancelAutoFit();
+            break;
+        case 'm':
+        case 'M':
+            e.preventDefault();
+            toggleMute();
+            break;
+        case 'l':
+        case 'L':
+            e.preventDefault();
+            toggleLiveFeed();
+            break;
+        case 'n':
+        case 'N':
+            e.preventDefault();
+            toggleNotifPanel();
+            break;
+        case 't':
+        case 'T':
+            e.preventDefault();
+            injectTestCall();
+            break;
+    }
 }
 
 function toggleTheme() {
