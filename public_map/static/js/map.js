@@ -575,6 +575,39 @@ function showCallDetail(call) {
     const sidebar = document.getElementById('sidebar');
     const content = document.getElementById('sidebarContent');
 
+    // Test calls don't exist in DB — render immediately from cached data
+    if (call.call_id < 0) {
+        _renderSidebarContent(call);
+        return;
+    }
+
+    // Show loading state, then fetch fresh data from API
+    content.innerHTML = '<div class="sidebar-placeholder"><i class="bi bi-arrow-repeat" style="display:block;font-size:1.5rem;margin-bottom:0.5rem;animation:spin 1s linear infinite"></i> Loading call details…</div>';
+    sidebar.classList.add('open');
+    updateUrlHash(call.call_id);
+
+    fetch(`/api/calls/${call.call_id}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.result) {
+                _renderSidebarContent(data.result);
+                // Update cached copy in currentCalls so subsequent clicks are faster
+                const idx = currentCalls.findIndex(c => c.call_id === call.call_id);
+                if (idx >= 0) currentCalls[idx] = data.result;
+            } else {
+                _renderSidebarContent(call);
+            }
+        })
+        .catch(err => {
+            console.error('Failed to fetch call detail:', err);
+            _renderSidebarContent(call);
+        });
+}
+
+function _renderSidebarContent(call) {
+    const sidebar = document.getElementById('sidebar');
+    const content = document.getElementById('sidebarContent');
+
     const inc = call.incident_category || 'Other';
 
     content.innerHTML = `
