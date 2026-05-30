@@ -12,7 +12,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, send_from_directory, request
+from flask import Flask, send_from_directory, request, render_template
 from flask_socketio import SocketIO, emit
 from dotenv import load_dotenv
 
@@ -59,7 +59,7 @@ def get_icad_db():
 
 @app.route("/")
 def index():
-    return app.send_static_file("map.html")
+    return render_template("map.html")
 
 
 @app.route("/api/calls")
