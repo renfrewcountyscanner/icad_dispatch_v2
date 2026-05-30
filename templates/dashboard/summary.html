@@ -1,0 +1,128 @@
+{# templates/dashboard/summary.html #}
+{% extends "dashboard/base.html" %}
+{% block title %}Call Summary - iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+    <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.css" rel="stylesheet" integrity="sha384-wn0toyEaGbOiHLoVsGIbRhHaxw3FPoMRaO7YcrgSHlXTEf0rLvG/kOfM8lSi7LVj" crossorigin="anonymous">
+    <style>
+        .filter-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .filter-row select,
+        .filter-row input {
+            background: #2d2d44;
+            border: 1px solid #444;
+            color: #fff;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 0.3rem;
+        }
+        .filter-row select:focus,
+        .filter-row input:focus {
+            background: #3d3d54;
+            border-color: #666;
+            color: #fff;
+            outline: none;
+        }
+        .table-dark-custom {
+            --bs-table-bg: #1a1a2e;
+            --bs-table-striped-bg: #252540;
+            --bs-table-hover-bg: #2d2d4a;
+            color: #fff;
+        }
+        #summaryTable th, #summaryTable td {
+            vertical-align: middle;
+            font-size: 0.85rem;
+        }
+        .transcript-cell {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .transcript-expanded {
+            white-space: pre-wrap;
+            max-width: none;
+        }
+        .export-btn {
+            margin-left: auto;
+        }
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+        }
+        .stat-item { color: #ccc; }
+        .stat-value { color: #fff; font-weight: 600; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
+    <h1 class="mt-4">Call Summary</h1>
+
+    <div class="filter-row">
+        <select id="systemSelect" class="form-select form-select-sm" style="min-width: 160px;">
+            <option value="">Select System…</option>
+            {% for sys in systems %}
+                <option value="{{ sys.radio_system_id }}">{{ sys.system_name }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="date" id="dateFrom" class="form-control form-control-sm" style="width: 140px;" placeholder="From">
+        <input type="date" id="dateTo" class="form-control form-control-sm" style="width: 140px;" placeholder="To">
+
+        <button class="btn btn-sm btn-primary" id="runQueryBtn">
+            <i class="bi bi-search"></i> Run Query
+        </button>
+
+        <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
+            <i class="bi bi-x-lg"></i> Clear
+        </button>
+
+        <button class="btn btn-sm btn-success export-btn d-none" id="exportBtn">
+            <i class="bi bi-download"></i> Export to Text
+        </button>
+    </div>
+
+    <div class="stats-row d-none" id="statsRow">
+        <span class="stat-item">Results: <span class="stat-value" id="resultCount">0</span></span>
+        <span class="stat-item">System: <span class="stat-value" id="systemLabel">—</span></span>
+        <span class="stat-item">Range: <span class="stat-value" id="rangeLabel">—</span></span>
+    </div>
+
+    <table id="summaryTable" class="table table-dark-custom table-striped table-hover table-sm w-100 d-none">
+        <thead>
+            <tr>
+                <th>Date/Time</th>
+                <th>Township</th>
+                <th>Duration</th>
+                <th>TG</th>
+                <th>Incident</th>
+                <th>Transcript</th>
+                <th class="d-none">ID</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div id="noResults" class="text-muted text-center mt-5 d-none">
+        <p class="fs-5">No calls found for the selected criteria.</p>
+    </div>
+
+    <div id="initialMessage" class="text-muted text-center mt-5">
+        <p class="fs-5">Select a radio system and date range, then click <strong>Run Query</strong>.</p>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.js" integrity="sha384-kn5u5NjXEa1i+r6gDHi8bJIMiZ6ZM+rMVdkxd4vpozUU8ZDmQkOwHjXjEpnH1Adi" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/dashboard/summary.js') }}"></script>
+{% endblock %}

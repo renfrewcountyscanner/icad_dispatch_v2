@@ -39,4 +39,14 @@ def dashboard_upload():
     systems = get_systems(db)
     return render_template("dashboard/upload.html", systems=systems)
 
+@dashboard.route("/summary", methods=["GET"])
+@login_required
+def dashboard_summary():
+    from lib.sqlite_module import SQLiteDatabase
+    from lib.system_module import get_systems
+
+    db = SQLiteDatabase()
+    systems = get_systems(db)
+    return render_template("dashboard/summary.html", systems=systems.get("result", []))
+
 
