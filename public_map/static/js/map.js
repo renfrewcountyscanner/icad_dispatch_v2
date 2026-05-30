@@ -5,6 +5,9 @@
 const RENFREW_CENTER = [45.4748, -77.6972];
 const DEFAULT_ZOOM = 10;
 const REFRESH_INTERVAL = 30000; // 30s fallback poll
+const AUTO_FIT_DELAY_MS = 120000; // 2 minutes
+const TOAST_DURATION_MS = 60000; // 60 seconds
+const TOAST_MAX_VISIBLE = 5;
 
 const INCIDENT_COLORS = {
     Fire:    { bg: '#dc3545', text: '#fff' },
@@ -27,13 +30,20 @@ let markersLayer;
 let heatLayer;
 let currentCalls = [];
 let visibleCalls = [];
-let callMarkers = new Map(); // call_id -> marker
+let callMarkers = new Map();
 let isHeatmap = false;
 let isDarkTheme = true;
 let socket;
 let audioCtx;
 let lastCallId = 0;
 let selectedCallId = null;
+let isMuted = false;
+let isLiveFeed = false;
+let autoFitTimer = null;
+let desktopNotifEnabled = false;
+let notifUnreadCount = 0;
+let notifList = []; // { call_id, time, incident, address, system, read }
+let testCallId = -1; // negative IDs for test calls
 
 // ── Init ───────────────────────────────────────────────────────────
 function init() {
@@ -41,6 +51,8 @@ function init() {
     initMap();
     initSocket();
     initControls();
+    initNotifications();
+    initDesktopNotifications();
     loadCalls();
 }
 
@@ -53,8 +65,10 @@ function initAudioContext() {
 }
 
 function playNotificationSound() {
-    if (!audioCtx) return;
+    if (isMuted || !audioCtx) return;
     try {
+        // Resume context if suspended (browser autoplay policy)
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
@@ -78,7 +92,6 @@ function initMap() {
 
     markersLayer = L.layerGroup().addTo(map);
 
-    // Heat layer (empty initially)
     heatLayer = L.heatLayer([], {
         radius: 25,
         blur: 15,
@@ -123,7 +136,6 @@ function initSocket() {
     });
 
     socket.on('call_updated', (payload) => {
-        // Admin correction updated a call
         if (payload.call_id) {
             refreshCallMarker(payload.call_id);
         }
@@ -174,15 +186,25 @@ function applyFilters() {
         Array.from(document.querySelectorAll('.inc-filter:checked')).map(cb => cb.value)
     );
 
-    visibleCalls = currentCalls.filter(c => {
-        const inc = c.incident_category || 'Other';
-        return activeIncidents.has(inc);
-    });
+    // In Live Feed mode, we only show the single most recent call
+    if (isLiveFeed) {
+        const newCalls = currentCalls.filter(c => {
+            const inc = c.incident_category || 'Other';
+            return activeIncidents.has(inc);
+        });
+        // Find the most recent call
+        visibleCalls = newCalls.length > 0 ? [newCalls[0]] : [];
+    } else {
+        visibleCalls = currentCalls.filter(c => {
+            const inc = c.incident_category || 'Other';
+            return activeIncidents.has(inc);
+        });
+    }
 
     renderMarkers();
     updateStats();
     updateTicker();
-    fitBounds();
+    if (!isLiveFeed) fitBounds();
 }
 
 function renderMarkers() {
@@ -197,21 +219,28 @@ function renderMarkers() {
         const color = INCIDENT_COLORS[call.incident_category] || INCIDENT_COLORS.Other;
         const short = INCIDENT_SHORT[call.incident_category] || '?';
 
-        // Age-based opacity (0-24h scale)
+        // Age-based opacity
         const ageHours = (Date.now() / 1000 - call.timestamp) / 3600;
         const opacity = Math.max(0.3, 1 - (ageHours / 72));
 
-        const markerHtml = `<div class="custom-marker" style="background:${color.bg};opacity:${opacity};border-color:${color.bg}"><span>${short}</span></div>`;
+        // Test call uses special marker
+        const isTest = call.call_id < 0;
+        let markerHtml;
+        if (isTest) {
+            markerHtml = `<div class="test-marker"><span>TEST</span></div>`;
+        } else {
+            markerHtml = `<div class="custom-marker" style="background:${color.bg};opacity:${opacity};border-color:${color.bg}"><span>${short}</span></div>`;
+        }
+
         const icon = L.divIcon({
             className: '',
             html: markerHtml,
-            iconSize: [28, 28],
-            iconAnchor: [14, 28]
+            iconSize: isTest ? [32, 32] : [28, 28],
+            iconAnchor: isTest ? [16, 32] : [14, 28]
         });
 
         const marker = L.marker([call.lat, call.lng], { icon }).addTo(markersLayer);
 
-        // Popup
         const popupContent = `
             <div style="min-width:180px">
                 <div style="font-weight:600;margin-bottom:0.3rem">${esc(call.incident_category || 'Call')}</div>
@@ -230,12 +259,10 @@ function renderMarkers() {
         heatPoints.push([call.lat, call.lng, 0.6]);
     });
 
-    // Update heatmap
     heatLayer.setLatLngs(heatPoints);
 }
 
 function refreshCallMarker(callId) {
-    // Re-fetch a single call and update its marker
     fetch(`/api/calls/${callId}`)
         .then(r => r.json())
         .then(data => {
@@ -251,6 +278,69 @@ function refreshCallMarker(callId) {
         .catch(console.error);
 }
 
+// ── Auto-Pan & Auto-Fit ────────────────────────────────────────────
+function panToCall(call) {
+    if (!call.lat || !call.lng) return;
+
+    map.flyTo([call.lat, call.lng], 15, { duration: 1.5 });
+
+    // Show countdown UI
+    showAutoFitCountdown();
+
+    // Start or reset 2-minute timer
+    if (autoFitTimer) {
+        clearTimeout(autoFitTimer);
+    }
+    autoFitTimer = setTimeout(() => {
+        hideAutoFitCountdown();
+        if (!isLiveFeed) fitBounds();
+        autoFitTimer = null;
+    }, AUTO_FIT_DELAY_MS);
+}
+
+function showAutoFitCountdown() {
+    const el = document.getElementById('autoFitCountdown');
+    const text = document.getElementById('countdownText');
+    el.classList.remove('d-none');
+
+    let remaining = AUTO_FIT_DELAY_MS / 1000;
+    const updateText = () => {
+        const min = Math.floor(remaining / 60);
+        const sec = String(remaining % 60).padStart(2, '0');
+        text.textContent = `Auto-fit in ${min}:${sec}`;
+    };
+    updateText();
+
+    // Store interval on the element so we can clear it
+    if (el._interval) clearInterval(el._interval);
+    el._interval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(el._interval);
+            el._interval = null;
+            return;
+        }
+        updateText();
+    }, 1000);
+}
+
+function hideAutoFitCountdown() {
+    const el = document.getElementById('autoFitCountdown');
+    el.classList.add('d-none');
+    if (el._interval) {
+        clearInterval(el._interval);
+        el._interval = null;
+    }
+}
+
+function cancelAutoFit() {
+    if (autoFitTimer) {
+        clearTimeout(autoFitTimer);
+        autoFitTimer = null;
+    }
+    hideAutoFitCountdown();
+}
+
 // ── New Call Handling ─────────────────────────────────────────────
 function handleNewCalls(calls) {
     let added = 0;
@@ -263,29 +353,199 @@ function handleNewCalls(calls) {
     });
 
     if (added > 0) {
-        // Keep max 2000 calls
         if (currentCalls.length > 2000) {
             currentCalls = currentCalls.slice(0, 2000);
         }
-        applyFilters();
-        showToastForNewCalls(calls.slice(0, added));
+
+        // Add to notifications (new arrivals only)
+        calls.slice(0, added).reverse().forEach(c => {
+            addNotification(c);
+        });
+
+        // In Live Feed mode, only show newest
+        if (isLiveFeed) {
+            applyFilters(); // this will pick the newest
+            const newest = visibleCalls[0];
+            if (newest) {
+                panToCall(newest);
+                showCallDetail(newest);
+            }
+        } else {
+            applyFilters();
+            const newest = calls[0];
+            if (newest && newest.has_location) {
+                panToCall(newest);
+            }
+        }
+
+        showToastsForNewCalls(calls.slice(0, added));
         playNotificationSound();
+        sendDesktopNotifications(calls.slice(0, added));
     }
 }
 
-function showToastForNewCalls(calls) {
+// ── Toasts ───────────────────────────────────────────────────────
+const activeToasts = [];
+
+function showToastsForNewCalls(calls) {
     calls.forEach(call => {
         const inc = call.incident_category || 'Other';
-        const color = INCIDENT_COLORS[inc] || INCIDENT_COLORS.Other;
+        const toastClass = `toast-${inc.toLowerCase()}`;
+        const id = 'toast-' + Math.random().toString(36).slice(2);
+
         const toast = document.createElement('div');
-        toast.className = `toast-item toast-${inc.toLowerCase()}`;
+        toast.className = `toast-item ${toastClass}`;
+        toast.id = id;
         toast.innerHTML = `
-            <div style="font-weight:600;margin-bottom:0.2rem">${esc(inc)} Call</div>
-            <div style="font-size:0.8rem;color:#ccc">${esc(call.address || '—')}</div>
-            <div style="font-size:0.75rem;color:#888;margin-top:0.2rem">${esc(call.system_name || '')} • ${formatTime(call.timestamp)}</div>
+            <button class="toast-close" onclick="dismissToast('${id}')" aria-label="Close">&times;</button>
+            <div class="toast-title">${esc(inc)} Call</div>
+            <div class="toast-addr">${esc(call.address || '—')}</div>
+            <div class="toast-meta">${esc(call.system_name || '')} • ${formatTime(call.timestamp)}</div>
         `;
+
         document.getElementById('toastContainer').appendChild(toast);
-        setTimeout(() => toast.remove(), 6000);
+        activeToasts.push({ id, el: toast, timer: null });
+
+        // Remove oldest if over max
+        while (activeToasts.length > TOAST_MAX_VISIBLE) {
+            const oldest = activeToasts.shift();
+            if (oldest.el.parentNode) oldest.el.parentNode.removeChild(oldest.el);
+        }
+
+        // Auto-remove after 60s
+        const t = setTimeout(() => dismissToast(id), TOAST_DURATION_MS);
+        const idx = activeToasts.findIndex(x => x.id === id);
+        if (idx >= 0) activeToasts[idx].timer = t;
+    });
+}
+
+function dismissToast(id) {
+    const idx = activeToasts.findIndex(x => x.id === id);
+    if (idx >= 0) {
+        const t = activeToasts[idx];
+        if (t.timer) clearTimeout(t.timer);
+        t.el.style.animation = 'toastOut 0.3s ease forwards';
+        setTimeout(() => {
+            if (t.el.parentNode) t.el.parentNode.removeChild(t.el);
+        }, 300);
+        activeToasts.splice(idx, 1);
+    }
+}
+
+// ── Notifications Panel ────────────────────────────────────────────
+function initNotifications() {
+    document.getElementById('notifToggle').addEventListener('click', toggleNotifPanel);
+    document.getElementById('closeNotifPanel').addEventListener('click', () => {
+        document.getElementById('notifPanel').classList.remove('open');
+    });
+    document.getElementById('clearNotifs').addEventListener('click', clearAllNotifications);
+}
+
+function toggleNotifPanel() {
+    document.getElementById('notifPanel').classList.toggle('open');
+    notifUnreadCount = 0;
+    updateNotifBadge();
+    // Mark all as read
+    notifList.forEach(n => n.read = true);
+    renderNotifications();
+}
+
+function addNotification(call) {
+    notifList.unshift({
+        call_id: call.call_id,
+        timestamp: call.timestamp,
+        incident: call.incident_category || 'Other',
+        address: call.address || '—',
+        system: call.system_name || '',
+        read: false,
+    });
+    if (notifList.length > 50) notifList = notifList.slice(0, 50);
+    notifUnreadCount++;
+    updateNotifBadge();
+    renderNotifications();
+}
+
+function updateNotifBadge() {
+    const badge = document.getElementById('notifBadge');
+    if (notifUnreadCount > 0) {
+        badge.textContent = notifUnreadCount > 99 ? '99+' : notifUnreadCount;
+        badge.classList.remove('d-none');
+    } else {
+        badge.classList.add('d-none');
+    }
+}
+
+function renderNotifications() {
+    const container = document.getElementById('notifList');
+    if (!notifList.length) {
+        container.innerHTML = '<div class="notif-empty">No new calls yet</div>';
+        return;
+    }
+    container.innerHTML = notifList.map(n => {
+        const color = INCIDENT_COLORS[n.incident] || INCIDENT_COLORS.Other;
+        const unreadClass = n.read ? '' : 'unread';
+        return `
+            <div class="notif-item ${unreadClass}" data-id="${n.call_id}">
+                <div class="notif-meta">
+                    <span class="notif-time">${formatTime(n.timestamp)}</span>
+                    <span class="notif-inc" style="background:${color.bg};color:${color.text}">${esc(n.incident)}</span>
+                </div>
+                <div class="notif-addr">${esc(n.address)}</div>
+                <div class="notif-sys">${esc(n.system)}</div>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.notif-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const callId = Number(el.dataset.id);
+            const call = currentCalls.find(c => c.call_id === callId);
+            if (call) {
+                showCallDetail(call);
+                if (call.lat && call.lng) map.flyTo([call.lat, call.lng], 16);
+            }
+        });
+    });
+}
+
+function clearAllNotifications() {
+    notifList = [];
+    notifUnreadCount = 0;
+    updateNotifBadge();
+    renderNotifications();
+}
+
+// ── Desktop Notifications ─────────────────────────────────────────
+function initDesktopNotifications() {
+    if (!('Notification' in window)) return;
+
+    // Request permission on first user interaction
+    const request = () => {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then(perm => {
+                if (perm === 'granted') desktopNotifEnabled = true;
+            });
+        } else if (Notification.permission === 'granted') {
+            desktopNotifEnabled = true;
+        }
+        document.removeEventListener('click', request);
+    };
+    document.addEventListener('click', request, { once: true });
+}
+
+function sendDesktopNotifications(calls) {
+    if (!desktopNotifEnabled || Notification.permission !== 'granted') return;
+    calls.forEach(call => {
+        try {
+            const inc = call.incident_category || 'Call';
+            new Notification(`${inc} Call`, {
+                body: `${call.address || '—'} — ${call.system_name || ''}`,
+                icon: '/static/icons/marker-fire.svg',
+                tag: String(call.call_id),
+            });
+        } catch (e) {
+            // ignore
+        }
     });
 }
 
@@ -296,7 +556,6 @@ function showCallDetail(call) {
     const content = document.getElementById('sidebarContent');
 
     const inc = call.incident_category || 'Other';
-    const color = INCIDENT_COLORS[inc] || INCIDENT_COLORS.Other;
 
     content.innerHTML = `
         <div class="call-detail">
@@ -306,6 +565,7 @@ function showCallDetail(call) {
                 <div>
                     <span class="detail-badge badge-${inc.toLowerCase()}">${esc(inc)}</span>
                     ${call.is_corrected ? '<span class="detail-badge" style="background:rgba(255,193,7,0.2);color:#fcd34d">Corrected</span>' : ''}
+                    ${call.call_id < 0 ? '<span class="detail-badge" style="background:rgba(255,193,7,0.2);color:#ffc107">TEST</span>' : ''}
                 </div>
             </div>
 
@@ -377,20 +637,22 @@ function updateUrlHash(callId) {
 function copyPermalink(callId) {
     const url = `${window.location.origin}?call=${callId}`;
     navigator.clipboard.writeText(url).then(() => {
-        showToast('Link copied to clipboard', 'success');
+        showToastMsg('Link copied to clipboard', 'success');
     }).catch(() => {
-        showToast('Failed to copy link', 'danger');
+        showToastMsg('Failed to copy link', 'danger');
     });
 }
 
-function showToast(message, type) {
+function showToastMsg(message, type) {
     const toast = document.createElement('div');
     toast.className = 'toast-item';
     if (type === 'success') toast.style.borderLeftColor = '#198754';
     if (type === 'danger') toast.style.borderLeftColor = '#dc3545';
     toast.innerHTML = `<div>${esc(message)}</div>`;
     document.getElementById('toastContainer').appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 3000);
 }
 
 // ── Stats & Ticker ────────────────────────────────────────────────
@@ -467,8 +729,8 @@ function initControls() {
     });
 
     document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
-
     document.getElementById('fitBoundsBtn').addEventListener('click', fitBounds);
+    document.getElementById('cancelAutoFit').addEventListener('click', cancelAutoFit);
 
     document.getElementById('fullscreenBtn').addEventListener('click', () => {
         const el = document.documentElement;
@@ -480,15 +742,17 @@ function initControls() {
     });
 
     document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-
     document.getElementById('heatmapToggle').addEventListener('click', toggleHeatmap);
+    document.getElementById('muteToggle').addEventListener('click', toggleMute);
+    document.getElementById('liveFeedToggle').addEventListener('click', toggleLiveFeed);
+    document.getElementById('testBtn').addEventListener('click', injectTestCall);
 
     document.getElementById('searchAddressBtn').addEventListener('click', searchAddress);
     document.getElementById('myLocationBtn').addEventListener('click', () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 pos => map.setView([pos.coords.latitude, pos.coords.longitude], 14),
-                () => showToast('Location access denied', 'danger')
+                () => showToastMsg('Location access denied', 'danger')
             );
         }
     });
@@ -546,7 +810,6 @@ function initControls() {
 
 function toggleTheme() {
     isDarkTheme = !isDarkTheme;
-    // Remove existing tiles
     map.eachLayer(layer => {
         if (layer instanceof L.TileLayer) map.removeLayer(layer);
     });
@@ -576,6 +839,102 @@ function toggleHeatmap() {
     }
 }
 
+function toggleMute() {
+    isMuted = !isMuted;
+    const btn = document.getElementById('muteToggle');
+    if (isMuted) {
+        btn.innerHTML = '<i class="bi bi-volume-mute-fill"></i>';
+        btn.title = 'Unmute';
+    } else {
+        btn.innerHTML = '<i class="bi bi-volume-up-fill"></i>';
+        btn.title = 'Mute';
+        // Resume audio context if needed
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    localStorage.setItem('mapMuted', isMuted ? '1' : '0');
+}
+
+function toggleLiveFeed() {
+    isLiveFeed = !isLiveFeed;
+    const btn = document.getElementById('liveFeedToggle');
+    const label = document.getElementById('liveFeedLabel');
+    const badge = document.getElementById('liveFeedBadge');
+
+    if (isLiveFeed) {
+        btn.classList.add('active-danger');
+        label.textContent = 'Live Feed';
+        badge.classList.remove('d-none');
+        document.getElementById('timeRange').disabled = true;
+        // In Live Feed, disable incident filters visually but keep them
+    } else {
+        btn.classList.remove('active-danger');
+        label.textContent = 'All Calls';
+        badge.classList.add('d-none');
+        document.getElementById('timeRange').disabled = false;
+    }
+
+    applyFilters();
+    if (!isLiveFeed) fitBounds();
+}
+
+function injectTestCall() {
+    // Resume audio context on user interaction
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+    testCallId--;
+    const lat = RENFREW_CENTER[0] + (Math.random() - 0.5) * 0.5;
+    const lng = RENFREW_CENTER[1] + (Math.random() - 0.5) * 0.8;
+    const now = Math.floor(Date.now() / 1000);
+
+    const testCall = {
+        call_id: testCallId,
+        timestamp: now,
+        datetime: new Date(now * 1000).toLocaleString(),
+        duration_s: 45.0,
+        talkgroup: 410837,
+        talkgroup_name: 'PAGING',
+        system_id: 1,
+        system_name: 'Renfrew County Fire',
+        transcript: 'This is a TEST call. Station 1, respond to 123 Test Street for a structure fire. This is only a test of the notification system.',
+        incident_category: 'Fire',
+        lat: lat,
+        lng: lng,
+        address: '123 Test Street, Testville, ON',
+        audio_url: '',
+        has_location: true,
+        is_corrected: false,
+        correction_notes: '',
+    };
+
+    // Insert and trigger full alert chain
+    currentCalls.unshift(testCall);
+    if (currentCalls.length > 2000) currentCalls = currentCalls.slice(0, 2000);
+
+    addNotification(testCall);
+
+    if (isLiveFeed) {
+        applyFilters();
+        panToCall(testCall);
+        showCallDetail(testCall);
+    } else {
+        applyFilters();
+        panToCall(testCall);
+    }
+
+    showToastsForNewCalls([testCall]);
+    playNotificationSound();
+
+    // Auto-remove test call after 30 seconds
+    setTimeout(() => {
+        const idx = currentCalls.findIndex(c => c.call_id === testCallId);
+        if (idx >= 0) {
+            currentCalls.splice(idx, 1);
+            applyFilters();
+            if (selectedCallId === testCallId) closeSidebar();
+        }
+    }, 30000);
+}
+
 function searchAddress() {
     const q = prompt('Search for an address or location:');
     if (!q) return;
@@ -586,10 +945,10 @@ function searchAddress() {
                 const r = results[0];
                 map.setView([parseFloat(r.lat), parseFloat(r.lon)], 16);
             } else {
-                showToast('Address not found', 'warning');
+                showToastMsg('Address not found', 'warning');
             }
         })
-        .catch(() => showToast('Search failed', 'danger'));
+        .catch(() => showToastMsg('Search failed', 'danger'));
 }
 
 // ── Utilities ─────────────────────────────────────────────────────
@@ -622,5 +981,23 @@ function debounce(fn, ms) {
     };
 }
 
+// ── Restore preferences on load ────────────────────────────────────
+function restorePreferences() {
+    const savedTheme = localStorage.getItem('mapTheme');
+    if (savedTheme === 'light') {
+        isDarkTheme = true; // toggleTheme will flip it
+        toggleTheme();
+    }
+
+    const savedMute = localStorage.getItem('mapMuted');
+    if (savedMute === '1') {
+        isMuted = false; // toggleMute will flip it
+        toggleMute();
+    }
+}
+
 // ── Boot ─────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    restorePreferences();
+});

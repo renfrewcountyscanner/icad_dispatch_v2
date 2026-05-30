@@ -21,6 +21,10 @@
                 <span class="pulse"></span>
                 <span id="liveText">OFFLINE</span>
             </div>
+            <div id="liveFeedBadge" class="live-feed-badge d-none">
+                <span class="live-pulse"></span>
+                LIVE FEED
+            </div>
         </div>
 
         <div class="top-center">
@@ -42,6 +46,10 @@
         </div>
 
         <div class="top-right">
+            <button id="liveFeedToggle" title="Toggle Live Feed mode"><i class="bi bi-broadcast"></i> <span id="liveFeedLabel">All Calls</span></button>
+            <button id="testBtn" title="Test alert"><i class="bi bi-lightning-charge-fill"></i> Test</button>
+            <button id="muteToggle" title="Toggle sound"><i class="bi bi-volume-up-fill"></i></button>
+            <button id="notifToggle" title="Notifications"><i class="bi bi-bell"></i> <span id="notifBadge" class="notif-badge d-none">0</span></button>
             <button id="heatmapToggle" title="Heatmap view"><i class="bi bi-fire"></i></button>
             <button id="themeToggle" title="Toggle light/dark"><i class="bi bi-moon-stars-fill"></i></button>
             <button id="fullscreenBtn" title="Fullscreen"><i class="bi bi-fullscreen"></i></button>
@@ -101,9 +109,15 @@
                     <span class="stat-value" id="statTopTG">—</span>
                 </div>
             </div>
+
+            <!-- Auto-fit countdown (shows when focused on new call) -->
+            <div id="autoFitCountdown" class="auto-fit-countdown d-none">
+                <span id="countdownText">Auto-fit in 2:00</span>
+                <button id="cancelAutoFit" title="Cancel auto-fit"><i class="bi bi-x-lg"></i></button>
+            </div>
         </div>
 
-        <!-- Sidebar -->
+        <!-- Sidebar (call details) -->
         <div id="sidebar">
             <div id="sidebarHeader">
                 <span id="sidebarTitle">Call Details</span>
@@ -111,6 +125,20 @@
             </div>
             <div id="sidebarContent">
                 <div class="sidebar-placeholder">Click a marker to view details</div>
+            </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div id="notifPanel">
+            <div id="notifHeader">
+                <span><i class="bi bi-bell-fill"></i> Notifications</span>
+                <div class="notif-header-actions">
+                    <button id="clearNotifs" title="Clear all"><i class="bi bi-check-all"></i></button>
+                    <button id="closeNotifPanel"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+            <div id="notifList">
+                <div class="notif-empty">No new calls yet</div>
             </div>
         </div>
     </div>
