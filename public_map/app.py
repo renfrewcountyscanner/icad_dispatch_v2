@@ -285,6 +285,33 @@ def api_triggers():
     return {"success": True, "result": result}
 
 
+@app.route("/api/push-call", methods=["POST"])
+def api_push_call():
+    """
+    Receive a fully-baked call from iCAD dispatch and broadcast it
+    via SocketIO to all connected browsers.
+    """
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        calls = data.get("calls", [])
+        if not calls:
+            return {"success": False, "message": "No calls in payload"}, 400
+
+        valid_calls = []
+        for call in calls:
+            if call and call.get("call_id") and call.get("timestamp") is not None:
+                valid_calls.append(call)
+
+        if valid_calls:
+            socketio.emit("new_calls", {"calls": valid_calls})
+            logger.info("Broadcast %d pushed call(s) from iCAD", len(valid_calls))
+
+        return {"success": True, "broadcasted": len(valid_calls)}
+    except Exception as e:
+        logger.error("Push call error: %s", e)
+        return {"success": False, "message": str(e)}, 500
+
+
 @app.route("/api/calls/<int:call_id>")
 def api_call_detail(call_id: int):
     if not _check_rate_limit():

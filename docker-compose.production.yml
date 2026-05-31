@@ -8,6 +8,7 @@ services:
     image: icad_dispatch_v2:local
     environment:
       - LOG_LEVEL=2
+      - PUBLIC_MAP_URL=http://public_map:5000/api/push-call
     env_file:
       - .env
     ports:

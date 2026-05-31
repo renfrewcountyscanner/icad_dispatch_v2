@@ -364,34 +364,49 @@ function cancelAutoFit() {
 // ── New Call Handling ─────────────────────────────────────────────
 function handleNewCalls(calls) {
     let added = 0;
+    let updated = 0;
+    const newArrivals = [];
+
     calls.forEach(call => {
-        if (call.call_id > lastCallId) {
+        const idx = currentCalls.findIndex(c => c.call_id === call.call_id);
+        if (idx >= 0) {
+            // Update existing call (iCAD push with complete data arrived after poller's incomplete version)
+            const hadTranscript = currentCalls[idx].transcript && currentCalls[idx].transcript.trim();
+            currentCalls[idx] = call;
+            updated++;
+            // If this update gave us a transcript/address where there was none before,
+            // treat it as a "new arrival" for notifications
+            if (!hadTranscript && call.transcript && call.transcript.trim()) {
+                newArrivals.push(call);
+            }
+        } else if (call.call_id > lastCallId) {
             currentCalls.unshift(call);
             lastCallId = Math.max(lastCallId, call.call_id);
             added++;
+            newArrivals.push(call);
         }
     });
 
-    if (added > 0) {
-        if (currentCalls.length > 2000) {
-            currentCalls = currentCalls.slice(0, 2000);
-        }
+    if (added > 0 && currentCalls.length > 2000) {
+        currentCalls = currentCalls.slice(0, 2000);
+    }
 
-        // Add to notifications (new arrivals only)
-        calls.slice(0, added).reverse().forEach(c => {
-            addNotification(c);
-        });
+    if (added > 0 || updated > 0) {
+        // Add notifications for truly new calls (and updated calls that just got transcripts)
+        newArrivals.forEach(c => addNotification(c));
 
-        // In Live Feed mode, only show newest
+        applyFilters();
+        updateStats();
+        updateTicker();
+
+        // In Live Feed mode, focus on newest
         if (isLiveFeed) {
-            applyFilters(); // this will pick the newest
             const newest = visibleCalls[0];
             if (newest) {
                 panToCall(newest);
                 showCallDetail(newest);
             }
-        } else {
-            applyFilters();
+        } else if (added > 0) {
             const newest = calls[0];
             if (newest) {
                 panToCall(newest);
@@ -399,8 +414,10 @@ function handleNewCalls(calls) {
             }
         }
 
-        playNotificationSound();
-        sendDesktopNotifications(calls.slice(0, added));
+        if (added > 0) {
+            playNotificationSound();
+            sendDesktopNotifications(newArrivals);
+        }
     }
 }
 

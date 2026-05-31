@@ -18,6 +18,7 @@ import json, time, threading
 import logging
 import os
 import re
+import requests
 from dataclasses import is_dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -634,7 +635,14 @@ def call_upload():
     route_logger.debug("⇢ response merged=%s persisted=%s triggers_fired=%d",
                    merged, must_persist, len(fired_trigger_data))
 
-    # 9) --------- response ------------------------------------------------------------
+    # 9) --------- push complete call to public map ------------------------------------
+    if must_persist and call_id:
+        try:
+            _push_call_to_public_map(db, call_id, route_logger)
+        except Exception as e:
+            route_logger.warning("Push to public_map failed: call_id=%s err=%s", call_id, e)
+
+    # 10) -------- response ------------------------------------------------------------
     tone_count = 0
     tone_types = {}
     if detect_has_tones and detect_result and hasattr(detect_result, 'tones'):
@@ -658,6 +666,132 @@ def call_upload():
             "persisted": must_persist,
         },
     ), 200
+
+# -----------------------------------------------------------------------------
+#  Push complete call to public_map (container-to-container, Docker network)
+# -----------------------------------------------------------------------------
+
+PUBLIC_MAP_URL = os.environ.get("PUBLIC_MAP_URL", "http://public_map:5000/api/push-call")
+
+
+def _push_call_to_public_map(
+    db: SQLiteDatabase,
+    call_id: int,
+    route_logger,
+) -> None:
+    """
+    Fetch the fully-baked call from the DB and POST it to the public_map.
+    Fire-and-forget: logs on failure, never raises.
+    """
+    sql = """
+        SELECT
+            cr.call_id,
+            cr.start_epoch_s,
+            cr.duration_s,
+            cr.talkgroup,
+            cr.talkgroup_name,
+            cr.radio_system_id,
+            rs.system_name,
+            ct.text_full,
+            ct.address_extracted_json,
+            ct.address_geocoded_json,
+            ct.incident_category,
+            cc.corrected_lat,
+            cc.corrected_lon,
+            cc.corrected_address,
+            cc.notes AS correction_notes
+        FROM call_records cr
+        LEFT JOIN call_transcripts ct ON cr.call_id = ct.call_id
+        LEFT JOIN radio_systems rs ON cr.radio_system_id = rs.radio_system_id
+        LEFT JOIN call_corrections cc ON cr.call_id = cc.call_id
+        WHERE cr.call_id = ?
+    """
+    rows = db.query(sql, (call_id,), fetch_mode="all")
+    if not rows:
+        route_logger.warning("Push to public_map: call_id=%s not found in DB", call_id)
+        return
+
+    r = rows[0]
+
+    # Build address + lat/lng exactly like public_map does
+    lat = lng = None
+    address = ""
+    is_corrected = False
+
+    if r.get("corrected_lat") is not None and r.get("corrected_lon") is not None:
+        lat = float(r["corrected_lat"])
+        lng = float(r["corrected_lon"])
+        address = r.get("corrected_address") or ""
+        is_corrected = True
+    elif r.get("address_geocoded_json"):
+        try:
+            geo = json.loads(r["address_geocoded_json"])
+            lat = geo.get("lat")
+            lng = geo.get("lng")
+            address = geo.get("formatted_address") or ""
+        except Exception:
+            pass
+
+    if not address and r.get("address_extracted_json"):
+        try:
+            ext = json.loads(r["address_extracted_json"])
+            address = ext.get("raw_text") or ""
+            if not address:
+                parts = []
+                for key in ("street", "city", "county", "state"):
+                    if ext.get(key):
+                        parts.append(str(ext[key]))
+                if parts:
+                    address = ", ".join(parts)
+        except Exception:
+            pass
+
+    # Build audio URL
+    audio_url = ""
+    fp = (r.get("file_path") or "").strip()
+    if fp.startswith("http"):
+        audio_url = fp
+    elif fp:
+        audio_url = f"/audio/{fp.replace('static/audio/', '')}"
+
+    call_payload = {
+        "call_id": r["call_id"],
+        "timestamp": r["start_epoch_s"],
+        "duration_s": r["duration_s"],
+        "talkgroup": r.get("talkgroup") or "",
+        "talkgroup_name": r.get("talkgroup_name") or "",
+        "system_id": r.get("radio_system_id"),
+        "system_name": r.get("system_name") or "",
+        "transcript": (r.get("text_full") or "").strip(),
+        "incident_category": r.get("incident_category") or "Other",
+        "lat": lat,
+        "lng": lng,
+        "address": address,
+        "audio_url": audio_url,
+        "has_location": lat is not None and lng is not None,
+        "is_corrected": is_corrected,
+        "correction_notes": r.get("correction_notes") or "",
+    }
+
+    try:
+        resp = requests.post(
+            PUBLIC_MAP_URL,
+            json={"calls": [call_payload]},
+            timeout=5,
+            headers={"Content-Type": "application/json"},
+        )
+        if resp.status_code == 200:
+            route_logger.info("Pushed call_id=%s to public_map", call_id)
+        else:
+            route_logger.warning(
+                "Push to public_map failed: call_id=%s status=%s body=%s",
+                call_id, resp.status_code, resp.text[:200],
+            )
+    except requests.exceptions.Timeout:
+        route_logger.warning("Push to public_map timed out: call_id=%s", call_id)
+    except Exception as e:
+        route_logger.warning("Push to public_map error: call_id=%s err=%s", call_id, e)
+
 
 # -----------------------------------------------------------------------------
 #  (helper) build payload dict once
