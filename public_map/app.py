@@ -207,12 +207,14 @@ def api_calls():
         if not address and r.get("address_extracted_json"):
             try:
                 ext = json.loads(r["address_extracted_json"])
-                parts = []
-                for key in ("street", "city", "county", "state"):
-                    if ext.get(key):
-                        parts.append(str(ext[key]))
-                if parts:
-                    address = ", ".join(parts)
+                address = ext.get("raw_text") or ""
+                if not address:
+                    parts = []
+                    for key in ("street", "city", "county", "state"):
+                        if ext.get(key):
+                            parts.append(str(ext[key]))
+                    if parts:
+                        address = ", ".join(parts)
             except Exception:
                 pass
 
@@ -326,6 +328,21 @@ def api_call_detail(call_id: int):
         except Exception:
             pass
 
+    # Fallback to extracted address when geocoding failed
+    if not address and r.get("address_extracted_json"):
+        try:
+            ext = json.loads(r["address_extracted_json"])
+            address = ext.get("raw_text") or ""
+            if not address:
+                parts = []
+                for key in ("street", "city", "county", "state"):
+                    if ext.get(key):
+                        parts.append(str(ext[key]))
+                if parts:
+                    address = ", ".join(parts)
+        except Exception:
+            pass
+
     audio_url = ""
     if r.get("file_path"):
         fp = r["file_path"].strip()
@@ -403,6 +420,21 @@ def _process_call_row(r):
             lat = geo.get("lat")
             lng = geo.get("lng")
             address = geo.get("formatted_address") or ""
+        except Exception:
+            pass
+
+    # Fallback to extracted address when geocoding failed
+    if not address and r.get("address_extracted_json"):
+        try:
+            ext = json.loads(r["address_extracted_json"])
+            address = ext.get("raw_text") or ""
+            if not address:
+                parts = []
+                for key in ("street", "city", "county", "state"):
+                    if ext.get(key):
+                        parts.append(str(ext[key]))
+                if parts:
+                    address = ", ".join(parts)
         except Exception:
             pass
 
