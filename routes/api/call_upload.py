@@ -706,7 +706,11 @@ def _push_call_to_public_map(
         LEFT JOIN call_corrections cc ON cr.call_id = cc.call_id
         WHERE cr.call_id = ?
     """
-    rows = db.query(sql, (call_id,), fetch_mode="all")
+    res = db.execute_query(sql, (call_id,), fetch_mode="all")
+    if not res.get("success"):
+        route_logger.warning("Push to public_map: DB query failed for call_id=%s", call_id)
+        return
+    rows = res.get("result", [])
     if not rows:
         route_logger.warning("Push to public_map: call_id=%s not found in DB", call_id)
         return
