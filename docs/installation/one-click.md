@@ -19,17 +19,18 @@ The fastest way to get iCAD Dispatch running.
 
 ---
 
-## Overview
+## What This Is
 
-The `install.sh` script automates the entire setup process. It:
+The `install.sh` script does everything for you. You run one command, answer a few questions, and iCAD Dispatch is running.
 
-1. Checks prerequisites (Docker, Docker Compose, Git)
-2. Clones the repository
-3. Prompts for configuration (domain, timezone, passwords)
-4. Generates secure secrets automatically
+**What it does:**
+1. Checks that Docker and Git are installed
+2. Downloads the code from GitHub
+3. Asks you a few questions (domain, timezone, passwords)
+4. Generates secure random passwords automatically
 5. Creates the `.env` file
-6. Builds and starts all Docker containers
-7. Prints a summary with next steps
+6. Builds and starts all 3 Docker containers
+7. Prints a summary with your URLs and login info
 
 ---
 
@@ -39,96 +40,80 @@ The `install.sh` script automates the entire setup process. It:
 - Root or sudo access
 - Public IP address
 - Domain name (recommended but not required)
+- Internet connection
 
 ---
 
 ## Run the Installer
 
-### Option 1: Direct Download (Recommended)
+### Option 1: Direct Download (Easiest)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/main/install.sh | bash
 ```
 
+**What this does:** Downloads the script and runs it immediately.
+
+---
+
 ### Option 2: Download First, Review, Then Run
+
+If you want to see what the script does before running it:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/main/install.sh -o install.sh
-nano install.sh      # Review the script
+nano install.sh      # Read through the script
 bash install.sh
 ```
 
-### Option 3: With Custom Install Directory
+---
 
-```bash
-bash install.sh /opt/icad_dispatch
+## What the Script Asks You
+
+| Question | What It Means | Example Answer |
+|---|---|---|
+| Server IP or hostname | Your server's public address | `192.168.1.50` or `dispatch.yourdomain.com` |
+| Port | Which port the dashboard runs on | `9911` (just press Enter for default) |
+| Admin password | Password for the `root` login | Type a strong password |
+| Timezone | Your region's timezone | `America/New_York` (press Enter for default) |
+
+**The script auto-generates:**
+- `PUBLIC_MAP_API_KEY` — shared secret for the containers
+- `MAP_SECRET_KEY` — secret for the public map
+- `PG_PASSWORD` — database password
+
+---
+
+## What Happens After the Script Finishes
+
+You'll see output like this:
+```
+============================================
+iCAD Dispatch v2.5 is running!
+============================================
+
+Access at: http://192.168.1.50:9911
+Log in with: root / your-password-here
+
+Change your password after first login!
 ```
 
 ---
 
-## What the Script Does
+## Next Steps After Installation
 
-### 1. Prerequisite Check
+### 1. Set Up HTTPS (Required)
 
-Verifies Docker, Docker Compose, and Git are installed.
+The one-click installer does NOT set up HTTPS. You must do this separately.
 
-### 2. Clone Repository
+#### Caddy (Easiest)
 
-Downloads iCAD Dispatch to `/opt/icad_dispatch` (or your chosen directory).
-
-### 3. Interactive Configuration
-
-The script asks for:
-
-| Prompt | Default | Purpose |
-|--------|---------|---------|
-| Dispatch domain | `dispatch.YOUR_DOMAIN.COM` | Dashboard URL |
-| Map domain | `map.YOUR_DOMAIN.COM` | Public map URL |
-| Timezone | `America/New_York` | Your region's timezone |
-| HTTPS? | `yes` | Enable secure cookies |
-| PostgreSQL password | auto-generated | Database password |
-| Google Maps API key | (optional) | Geocoding fallback |
-| OpenAI API key | (optional) | LLM address extraction |
-
-Secrets (`PUBLIC_MAP_API_KEY`, `MAP_SECRET_KEY`, `ROOT_PASSWORD`) are auto-generated.
-
-### 4. Write Configuration
-
-Creates `.env` with all your settings.
-
-### 5. Build & Start
-
-Runs:
-```bash
-docker compose -f docker-compose.production.yml build
-docker compose -f docker-compose.production.yml up -d
-```
-
-### 6. Print Summary
-
-Outputs:
-- Dashboard URL
-- Public map URL
-- Admin credentials
-- Useful commands
-- Next steps
-
----
-
-## Post-Install
-
-After the installer finishes:
-
-### 1. Set Up HTTPS
-
-If you have a domain, configure a reverse proxy:
-
-**Caddy (easiest):**
 ```bash
 sudo apt-get install caddy
 sudo nano /etc/caddy/Caddyfile
 ```
 
+Paste this (replace with your domain):
 ```
 dispatch.yourdomain.com {
     reverse_proxy localhost:9911
@@ -139,23 +124,28 @@ map.yourdomain.com {
 }
 ```
 
+Reload:
 ```bash
 sudo systemctl reload caddy
 ```
 
-**nginx:** See [Docker Installation](docker.md#reverse-proxy-setup).
+**Caddy automatically gets HTTPS certificates.**
+
+---
 
 ### 2. Log In
 
-1. Open `https://dispatch.yourdomain.com`
+1. Open `https://dispatch.yourdomain.com` (or `http://YOUR_IP:9911` if no domain)
 2. Login:
-   - Username: `root`
-   - Password: (shown in installer summary, also in `.env`)
+   - **Username:** `root`
+   - **Password:** The admin password you entered during installation
 3. **Change the password immediately**
+
+---
 
 ### 3. Configure Your System
 
-Follow the [Quick Start Guide](../quickstart.md#step-6-configure-your-system) to:
+Follow the [Quick Start Guide](../quickstart.md#step-7-configure-your-system) to:
 - Add your radio system
 - Enable address extraction
 - Set up notifiers
@@ -163,66 +153,63 @@ Follow the [Quick Start Guide](../quickstart.md#step-6-configure-your-system) to
 
 ---
 
-## Customizing the Installer
-
-### Skip Interactive Prompts
-
-Edit `install.sh` and hardcode values at the top:
-
-```bash
-# Near the top of install.sh, add:
-DISPATCH_DOMAIN="https://dispatch.mydomain.com"
-MAP_DOMAIN="https://map.mydomain.com"
-TZ="America/Chicago"
-DB_PASS="my-secure-password"
-# ... etc
-```
-
-### Use Environment Variables
-
-```bash
-export ICAD_DOMAIN="dispatch.mydomain.com"
-bash install.sh
-```
-
-Modify the script to read these variables if present.
-
----
-
 ## Troubleshooting
 
-**"Docker is not installed"**
+### "Docker is not installed"
+
+Install Docker:
 ```bash
-# Ubuntu/Debian
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 # Log out and back in
 ```
 
-**"Git clone failed"**
+---
+
+### "Git clone failed"
+
+Check internet connectivity:
 ```bash
-# Check internet connectivity
 curl -I https://github.com
-# Or clone manually:
+```
+
+If that works, try cloning manually:
+```bash
 git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git /opt/icad_dispatch
 ```
 
-**"Port 9911 already in use"**
+---
+
+### "Port 9911 already in use"
+
+Find what's using the port:
 ```bash
 sudo lsof -i :9911
-# Change port in docker-compose.production.yml
 ```
+
+Kill it or change the port during installation.
 
 ---
 
 ## Security Note
 
-The installer generates random secrets and stores the `.env` file with `chmod 600` (owner-only read). However, for production:
+The installer:
+- Generates random secrets automatically
+- Sets `.env` file permissions to `600` (only owner can read)
+- Does NOT set up HTTPS — you must do this manually
+- Does NOT configure a firewall — see [Security Hardening](../security.md)
 
-1. Change the auto-generated `ROOT_PASSWORD` immediately after first login
-2. Move secrets to Docker secrets or a vault if possible
-3. Enable UFW firewall: `sudo ufw enable && sudo ufw allow ssh && sudo ufw allow http && sudo ufw allow https`
-4. See [Security Hardening](../security.md) for full checklist
+**After installation:**
+1. Change the admin password immediately
+2. Set up HTTPS (see above)
+3. Enable firewall:
+   ```bash
+   sudo ufw default deny incoming
+   sudo ufw allow ssh
+   sudo ufw allow http
+   sudo ufw allow https
+   sudo ufw enable
+   ```
 
 ---
 

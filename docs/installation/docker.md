@@ -19,97 +19,320 @@ The recommended way to run iCAD Dispatch v2.
 
 ---
 
-## Overview
+## What Are Docker Containers?
 
-Docker Compose deploys three services:
+Think of a Docker container as a **boxed-up program** that includes everything it needs to run — code, libraries, settings, and dependencies. You don't install Python, PostgreSQL, or anything else manually. Docker handles it all.
 
-| Service | Image | Purpose | Exposed Port |
-|---------|-------|---------|--------------|
-| `postgres` | `postgis/postgis:16-3.4` | Database | 5432 (internal) |
-| `icad_dispatch` | `icad_dispatch_v2:local` | Main app | 9911 |
-| `public_map` | `icad_public_map:local` | Live map | 5000 |
+iCAD Dispatch uses **3 containers** that work together:
+
+### Container 1: `postgres` — The Database
+
+**What it does:** Stores every call, transcript, address, and configuration setting.
+
+**Why you need it:** Without the database, nothing is saved. The other two containers read from and write to this database.
+
+**Image:** `postgis/postgis:16-3.4` (PostgreSQL 16 with PostGIS extension for map coordinates)
+
+**Port:** `5432` (inside Docker only — never exposed to the internet)
+
+**Data persistence:** Uses a Docker volume called `postgres_data`. Even if you delete the container, the data survives.
+
+**Special notes:**
+- Must start first and be healthy before the other containers start
+- Only the other two containers need to talk to it
+- **Never expose port 5432 to the internet** — it's for internal use only
+
+---
+
+### Container 2: `icad_dispatch` — The Main App
+
+**What it does:** This is the brain of the operation. It:
+- Accepts uploaded radio audio via the `/api/call-upload` endpoint
+- Detects paging tones
+- Transcribes speech using AI
+- Extracts addresses from transcripts
+- Classifies incident types
+- Sends notifications to Discord, Telegram, Email, etc.
+- Serves the admin dashboard
+
+**Why you need it:** This is what you log into to manage everything.
+
+**Image:** Built from the main `Dockerfile` in the repo
+
+**Port:** `9911`
+
+**Special notes:**
+- Must be behind a reverse proxy (nginx/Caddy) with HTTPS in production
+- Reads environment variables from `.env`
+- Requires `postgres` to be healthy before it starts
+- Needs `PUBLIC_MAP_API_KEY` to authenticate with the public map
+
+---
+
+### Container 3: `public_map` — The Public Live Map
+
+**What it does:** Shows a real-time map of emergency calls that anyone can view.
+
+**Why you need it:** This is what citizens and news outlets see. It displays calls on a map in real-time.
+
+**Image:** Built from `public_map/Dockerfile`
+
+**Port:** `5000`
+
+**Special notes:**
+- **Completely separate** from the main app — it cannot modify anything
+- Has read-only database access
+- Uses **Socket.IO** (WebSocket) to push new calls to browsers instantly
+- Needs the same `PUBLIC_MAP_API_KEY` as the main app
+- Must also be behind a reverse proxy with HTTPS
+
+---
+
+## How the 3 Containers Talk to Each Other
+
+```
+Internet
+    │
+    ▼
+┌─────────────────────────────────────────┐
+│         Reverse Proxy (Caddy/nginx)       │
+│   Handles HTTPS and forwards requests     │
+└─────────────────────────────────────────┘
+    │                           │
+    ▼                           ▼
+┌──────────────┐      ┌──────────────┐
+│ icad_dispatch │      │  public_map   │
+│   (port 9911)  │      │  (port 5000)  │
+└──────┬───────┘      └──────┬───────┘
+       │                     │
+       └──────────┬──────────┘
+                  │
+         ┌────────▼────────┐
+         │     postgres      │
+         │    (port 5432)    │
+         └───────────────────┘
+```
+
+**Important:** All three containers share the same **Docker network**. They can talk to each other by name:
+- `icad_dispatch` connects to `postgres` by hostname `postgres`
+- `public_map` connects to `postgres` by hostname `postgres`
+- `icad_dispatch` pushes calls to `public_map` via HTTP to `http://public_map:5000/api/push-call`
 
 ---
 
 ## Prerequisites
 
-- Docker 24.0+
-- Docker Compose 2.0+
+Before starting, you need:
+
+- A Linux server (Ubuntu 22.04+ or Debian 12) with a public IP
+- Docker 24.0+ and Docker Compose 2.0+
 - Git
-- Domain name pointing to your server (optional but recommended)
+- A domain name (or subdomain) pointing to your server
 - 4 GB RAM, 20 GB disk minimum
+- Root or sudo access
+
+### Check Docker
+
+```bash
+docker --version
+docker compose version
+```
+
+If not installed:
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+# Log out and back in
+```
 
 ---
 
 ## Step-by-Step Setup
 
-### 1. Clone Repository
+### Step 1: Clone Repository
 
 ```bash
+cd ~
 git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git
 cd icad_dispatch_v2
 ```
 
-### 2. Create Environment File
+**What this does:** Downloads all the code, configs, and documentation.
+
+---
+
+### Step 2: Create Environment File
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Edit the values as described in [Environment Variables](../configuration/env-variables.md).
+**What this does:** Copies the template to `.env` and opens it for editing.
 
-### 3. Create Required Directories
+**Required changes:**
 
+| Variable | What it is | Example |
+|---|---|---|
+| `BASE_URL` | Your dashboard URL | `https://dispatch.yourdomain.com` |
+| `TIMEZONE` | Your IANA timezone | `America/New_York` |
+| `PG_PASSWORD` | Strong PostgreSQL password | `your-unique-password-here` |
+| `PUBLIC_MAP_API_KEY` | Long random string (shared secret) | Generate with `openssl rand -hex 24` |
+| `MAP_SECRET_KEY` | Different long random string | Generate with `openssl rand -hex 32` |
+| `ROOT_PASSWORD` | Admin login password | `change-me-immediately` |
+
+**Generate strong secrets:**
 ```bash
-mkdir -p var/public_maps log audio
+openssl rand -hex 24   # PUBLIC_MAP_API_KEY
+openssl rand -hex 32   # MAP_SECRET_KEY
 ```
 
-### 4. Build Images
+**Save in nano:**
+1. Press `Ctrl + O`
+2. Press `Enter`
+3. Press `Ctrl + X`
+
+For full details on all variables, see [Environment Variables](../configuration/env-variables.md).
+
+---
+
+### Step 3: Create Required Directories
+
+```bash
+mkdir -p var log audio
+```
+
+**What this does:** Creates folders for:
+- `var/` — Runtime data (sessions, secret keys)
+- `log/` — Application logs
+- `audio/` — Uploaded radio audio files
+
+These folders are mounted into the containers so data persists even if containers are deleted.
+
+---
+
+### Step 4: Build Images
 
 ```bash
 docker compose -f docker-compose.production.yml build
 ```
 
-This builds:
-- `icad_dispatch_v2:local` from the main Dockerfile
-- `icad_public_map:local` from `public_map/Dockerfile`
+**What this does:**
+1. Downloads PostgreSQL 16 + PostGIS
+2. Builds the main app image from `Dockerfile`
+3. Builds the public map image from `public_map/Dockerfile`
 
-First build takes 5–10 minutes depending on your connection.
+**How long it takes:** 5–10 minutes on first run (depends on internet speed).
 
-### 5. Start Services
+**What you'll see:**
+- Lots of download progress bars
+- Python package installation
+- "Successfully built icad_dispatch_v2:local"
+- "Successfully built icad_public_map:local"
+
+---
+
+### Step 5: Start Services
 
 ```bash
 docker compose -f docker-compose.production.yml up -d
 ```
 
-### 6. Verify
+**What this does:**
+- Starts all three containers in the background (`-d` = detached)
+- `postgres` starts first (it has a health check)
+- `icad_dispatch` waits for `postgres` to be healthy
+- `public_map` waits for `postgres` to be healthy
+
+---
+
+### Step 6: Verify
 
 ```bash
 docker compose -f docker-compose.production.yml ps
 ```
 
-Expected output:
+**Expected output:**
 ```
-NAME                          STATUS          PORTS
-icad_dispatch_v2-postgres-1    Up 10s (healthy)   0.0.0.0:5432->5432/tcp
+NAME                              STATUS          PORTS
+icad_dispatch_v2-postgres-1       Up 10s (healthy)   0.0.0.0:5432->5432/tcp
 icad_dispatch_v2-icad_dispatch-1  Up 10s (healthy)   0.0.0.0:9911->9911/tcp
-icad_dispatch_v2-public_map-1  Up 10s              0.0.0.0:5000->5000/tcp
+icad_dispatch_v2-public_map-1     Up 10s              0.0.0.0:5000->5000/tcp
 ```
+
+**What each column means:**
+- `NAME` — The container name (auto-generated by Docker Compose)
+- `STATUS` — `Up` means running, `(healthy)` means the health check passed
+- `PORTS` — Which ports are exposed to the host
 
 ---
 
-## Reverse Proxy Setup
+### Step 7: Check Logs
 
-For production, place a reverse proxy in front of Docker:
+If any container is not healthy, check its logs:
 
-### nginx
+```bash
+# Main application logs
+docker compose -f docker-compose.production.yml logs -f icad_dispatch
+
+# Public map logs
+docker compose -f docker-compose.production.yml logs -f public_map
+
+# Database logs
+docker compose -f docker-compose.production.yml logs -f postgres
+```
+
+**Press `Ctrl + C`** to stop watching logs.
+
+---
+
+## Reverse Proxy Setup (Required for HTTPS)
+
+**You must use HTTPS in production.** Browsers block audio and WebSocket connections over HTTP.
+
+A reverse proxy handles HTTPS for you. It sits in front of your containers and forwards requests.
+
+### Option A: Caddy (Easiest — Automatic HTTPS)
+
+Caddy automatically gets and renews HTTPS certificates from Let's Encrypt.
+
+```bash
+sudo apt-get install caddy
+sudo nano /etc/caddy/Caddyfile
+```
+
+Paste this (replace `yourdomain.com`):
+```
+dispatch.yourdomain.com {
+    reverse_proxy localhost:9911
+}
+
+map.yourdomain.com {
+    reverse_proxy localhost:5000
+}
+```
+
+Save and reload:
+```bash
+sudo systemctl reload caddy
+```
+
+**What this does:**
+- `dispatch.yourdomain.com` → forwards to main app on port 9911
+- `map.yourdomain.com` → forwards to public map on port 5000
+- Automatically obtains HTTPS certificates
+- Auto-renews certificates before they expire
+
+---
+
+### Option B: nginx (More Control)
 
 ```bash
 sudo apt-get install nginx
 sudo nano /etc/nginx/sites-available/icad
 ```
 
+Paste this:
 ```nginx
 server {
     listen 80;
@@ -134,6 +357,12 @@ server {
 }
 
 server {
+    listen 80;
+    server_name map.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
     listen 443 ssl http2;
     server_name map.yourdomain.com;
 
@@ -155,25 +384,10 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### Caddy (Easiest)
-
+**If you don't have SSL certificates yet**, use Let's Encrypt with Certbot:
 ```bash
-sudo apt-get install caddy
-sudo nano /etc/caddy/Caddyfile
-```
-
-```
-dispatch.yourdomain.com {
-    reverse_proxy localhost:9911
-}
-
-map.yourdomain.com {
-    reverse_proxy localhost:5000
-}
-```
-
-```bash
-sudo systemctl reload caddy
+sudo apt-get install certbot python3-certbot-nginx
+sudo certbot --nginx -d dispatch.yourdomain.com -d map.yourdomain.com
 ```
 
 ---
@@ -182,7 +396,7 @@ sudo systemctl reload caddy
 
 ### With Caddy
 
-Caddy automatically obtains and renews certificates. Just use a real domain in the Caddyfile.
+Caddy handles this automatically. No extra steps needed.
 
 ### With nginx + Certbot
 
@@ -190,6 +404,12 @@ Caddy automatically obtains and renews certificates. Just use a real domain in t
 sudo apt-get install certbot python3-certbot-nginx
 sudo certbot --nginx -d dispatch.yourdomain.com -d map.yourdomain.com
 ```
+
+Certbot will:
+1. Verify you own the domains
+2. Obtain certificates from Let's Encrypt
+3. Configure nginx to use them
+4. Set up auto-renewal
 
 ---
 
@@ -204,20 +424,31 @@ docker compose -f docker-compose.production.yml build
 docker compose -f docker-compose.production.yml up -d
 ```
 
-Database migrations run automatically on startup.
+**What this does:**
+1. Downloads the latest code from GitHub
+2. Rebuilds the containers with new code
+3. Restarts everything
+
+**Database migrations run automatically** on startup. You don't need to do anything.
 
 ---
 
 ## Common Commands
 
 ```bash
-# View logs
+# View all running containers
+docker compose -f docker-compose.production.yml ps
+
+# View logs (follow mode)
 docker compose -f docker-compose.production.yml logs -f icad_dispatch
+docker compose -f docker-compose.production.yml logs -f public_map
+docker compose -f docker-compose.production.yml logs -f postgres
 
-# Restart a service
+# Restart a specific service
 docker compose -f docker-compose.production.yml restart icad_dispatch
+docker compose -f docker-compose.production.yml restart public_map
 
-# Stop everything
+# Stop everything (keeps data)
 docker compose -f docker-compose.production.yml down
 
 # Stop and remove volumes (WARNING: deletes database)
@@ -237,23 +468,81 @@ cat backup.sql | docker exec -i icad_dispatch_v2-postgres-1 psql -U icad -d icad
 
 ## Troubleshooting
 
-**Build fails with "no space left on device"**
+### Build fails with "no space left on device"
+
+Docker images take up disk space. Clean up old images:
 ```bash
 docker system prune -a
 ```
 
-**Port 9911 already in use**
+**Warning:** This deletes all unused images, containers, and volumes.
+
+---
+
+### Port 9911 already in use
+
+Something else is using port 9911:
 ```bash
 sudo lsof -i :9911
-# Kill the process or change the port in docker-compose.production.yml
+# Or:
+sudo ss -tlnp | grep 9911
 ```
 
-**Database connection refused**
-```bash
-# Check postgres is healthy
-docker compose -f docker-compose.production.yml logs postgres
-# Verify PG_* env vars match
+**Fix:** Either kill the other process or change the port in `docker-compose.production.yml`:
+```yaml
+ports:
+  - "9912:9911"  # Change 9911 to 9912 on the host side
 ```
+
+Then update your reverse proxy to forward to `localhost:9912` instead.
+
+---
+
+### Database connection refused
+
+The main app starts before the database is ready:
+```bash
+# Check database status
+docker compose -f docker-compose.production.yml logs postgres
+
+# If postgres is still starting, wait 30 seconds then restart the main app:
+docker compose -f docker-compose.production.yml restart icad_dispatch
+```
+
+Also verify `PG_PASSWORD` in `.env` matches the actual database password.
+
+---
+
+### Public map not receiving calls
+
+1. Check that `PUBLIC_MAP_API_KEY` is **identical** in `.env` for both containers
+2. Check the main app logs for push errors:
+   ```bash
+   docker compose -f docker-compose.production.yml logs -f icad_dispatch
+   ```
+3. Verify the public map can reach the main app:
+   ```bash
+   docker exec icad_dispatch_v2-public_map-1 curl http://icad_dispatch:9911/health
+   ```
+
+---
+
+### Can't access dashboard
+
+1. Check the container is running:
+   ```bash
+   docker compose -f docker-compose.production.yml ps
+   ```
+2. Check logs for errors:
+   ```bash
+   docker compose -f docker-compose.production.yml logs icad_dispatch
+   ```
+3. Verify your reverse proxy is configured correctly
+4. Make sure your domain DNS points to the server IP
+5. Check firewall rules:
+   ```bash
+   sudo ufw status
+   ```
 
 ---
 

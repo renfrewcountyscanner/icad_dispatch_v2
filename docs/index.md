@@ -29,6 +29,26 @@ It automatically:
 
 ---
 
+## The 3 Containers
+
+iCAD Dispatch runs as **3 Docker containers** that work together:
+
+| Container | What It Does | Why You Need It |
+|---|---|---|
+| **`postgres`** | Stores all call data, transcripts, and settings | Without this, nothing is saved |
+| **`icad_dispatch`** | The main app — dashboard, API, AI processing, notifications | This is what you log into |
+| **`public_map`** | The public live map anyone can view | This is what citizens see |
+
+**How they connect:**
+- The main app writes calls to the database
+- The main app pushes new calls to the public map
+- The public map reads from the database and shows them on a map
+- The public map uses WebSocket to push updates to browsers instantly
+
+[Learn more about the architecture →](architecture.md)
+
+---
+
 ## Who is it for?
 
 iCAD Dispatch is built for **North American emergency services**:
@@ -43,22 +63,16 @@ iCAD Dispatch is built for **North American emergency services**:
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[Radio Audio] --> B[Tone Detection]
-    B --> C[Speech Transcription]
-    C --> D[Address Extraction]
-    D --> E[Geocoding]
-    E --> F[Incident Classification]
-    F --> G[Database]
-    G --> H[Public Map]
-    G --> I[Discord]
-    G --> J[Telegram]
-    G --> K[Email]
-    G --> L[Pushover]
-    G --> M[n8n]
-    G --> N[Make]
-    G --> O[Ntfy]
+```
+Radio Audio ──► iCAD Dispatch ──► PostgreSQL ──► Public Map ──► Browser
+                     │                              │
+                     └─► Discord                     └─► WebSocket
+                     └─► Telegram
+                     └─► Email
+                     └─► Pushover
+                     └─► n8n
+                     └─► Make
+                     └─► Ntfy
 ```
 
 1. **Radio audio** is uploaded to iCAD via the call upload endpoint
@@ -113,8 +127,8 @@ See [Native Installation Guide](installation/native.md) for Python + PostgreSQL 
 
 ## Documentation Index
 
-- **[Quick Start](quickstart.md)** — 15-minute Docker setup
-- **[Architecture](architecture.md)** — System design and data flow
+- **[Quick Start](quickstart.md)** — 15-minute Docker setup with every step explained
+- **[Architecture](architecture.md)** — System design and data flow explained simply
 - **[Installation](installation/)** — Docker, native, and one-click methods
 - **[Configuration](configuration/)** — Environment variables, geocoding, notifiers
 - **[Security](security.md)** — Hardening checklist and best practices
