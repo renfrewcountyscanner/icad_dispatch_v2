@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <title>{% block title %}Dashboard - iCAD Dispatch{% endblock %}</title>
+
+    <!-- Favorite Icon -->
+    {% include 'partials/_favicons.html' %}
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+          rel="stylesheet">
+
+    <!-- Global CSS -->
+    <link href="{{ url_for('static', filename='css/global.css') }}" rel="stylesheet">
+
+    <!-- Dashboard CSS -->
+    <link href="{{ url_for('static', filename='css/dashboard/dashboard.css') }}" rel="stylesheet">
+
+    <!-- Per Page Extra Styles -->
+    {% block extra_styles %}
+    {% endblock %}
+
+</head>
+<body class="d-flex flex-column min-vh-100 ap-sidebar-hover">
+
+<!-- Loader -->
+<div class="page-loader" id="pageLoader">
+    <div class="spinner-border" role="status">
+    </div>
+</div>
+
+{% include 'partials/_top_nav_menu.html' %}
+
+<!-- Full Page Wrapper -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="sidebar col-md-3 col-lg-2 p-0">
+            <div class="offcanvas-md offcanvas-end" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+                <div class="offcanvas-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
+                    {% include "partials/_dashboard_sidebar.html" %}
+                </div>
+            </div>
+        </div>
+
+        <main class="flex-grow-1 col-md-9 col-lg-10 px-md-4 main-content">
+            {% block content %} {% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3">
+        <!-- Toasts will be added here dynamically -->
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer text-center py-3">
+    <div class="container">
+        <span>&copy; <span id="currentYear"></span> Renfrew County Emergency Services &bull; v{{ app_version }}</span>
+    </div>
+</footer>
+
+<!-- Bootstrap 5.3 JS -->
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+<script>
+    // Set the current year dynamically in footer
+    document.getElementById("currentYear").textContent = new Date().getFullYear();
+</script>
+
+<script src="{{ url_for('static', filename='js/global.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard/dashboard.js') }}"></script>
+
+{% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="flash-message d-none" data-category="{{ category }}" data-message="{{ message }}"></div>
+{% endfor %}
+
+<!-- Per Page Extra Javascript -->
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Upload Test - iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+    <link href="{{ url_for('static', filename='css/dashboard/dashboard.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mt-3">
+    <div class="col-12">
+        <div class="card ap-toolbar-card border-0">
+            <div class="card-body py-3 px-4">
+                <span class="fw-semibold">Upload Test Audio</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card ap-content-card border-0 px-4 py-4">
+            <div class="card-body">
+                <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="systemSelect" class="form-label">Radio System</label>
+                        <select class="form-select" id="systemSelect" name="system" required>
+                            <option value="">Select a system...</option>
+                            {% for system in systems.result %}
+                            <option value="{{ system.system_decimal }}">{{ system.system_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="talkgroup" class="form-label">Talkgroup ID</label>
+                        <input type="number" class="form-control" id="talkgroup" name="talkgroup" placeholder="e.g., 101" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="audioFile" class="form-label">Audio File</label>
+                        <input type="file" class="form-control" id="audioFile" name="audio" accept="audio/*" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="deleteAfter" name="delete_after">
+                            <label class="form-check-label" for="deleteAfter">
+                                Delete audio file after processing
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Upload & Process</button>
+                </form>
+
+                <div id="uploadResult" class="mt-4 d-none">
+                    <div class="alert" role="alert"></div>
+                    <div id="resultDetails" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('Upload page JS loaded');
+(function() {
+    const form = document.getElementById('uploadForm');
+    console.log('Form element:', form);
+    if (!form) {
+        console.error('Form not found!');
+        return;
+    }
+    
+    form.addEventListener('submit', async function(e) {
+        console.log('Form submit intercepted');
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const resultDiv = document.getElementById('uploadResult');
+        const alertDiv = resultDiv.querySelector('.alert');
+        
+        resultDiv.classList.remove('d-none');
+        alertDiv.className = 'alert alert-info';
+        alertDiv.textContent = 'Uploading and processing...';
+        
+        try {
+            console.log('Sending upload request...');
+            const response = await fetch('/api/call-upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseErr) {
+                console.error('Failed to parse response as JSON:', parseErr);
+                data = null;
+            }
+            console.log('Response:', data, 'Status:', response.status);
+
+            if (response.ok) {
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = data?.message || 'Upload successful!';
+
+                // Display detailed results
+                const result = data?.result || {};
+                const detailsDiv = document.getElementById('resultDetails');
+
+                let html = '<div class="row"><div class="col-md-6">';
+                html += '<h6 class="text-muted mb-2">Call Details</h6>';
+                html += '<dl class="row small">';
+
+                if (result.call_id) {
+                    html += `<dt class="col-sm-4">Call ID:</dt><dd class="col-sm-8"><strong>${result.call_id}</strong></dd>`;
+                }
+                if (result.system_name) {
+                    html += `<dt class="col-sm-4">System:</dt><dd class="col-sm-8">${result.system_name}</dd>`;
+                }
+                if (result.talkgroup) {
+                    html += `<dt class="col-sm-4">Talkgroup:</dt><dd class="col-sm-8">${result.talkgroup}</dd>`;
+                }
+                if (result.duration_s !== undefined) {
+                    html += `<dt class="col-sm-4">Duration:</dt><dd class="col-sm-8">${result.duration_s.toFixed(1)}s</dd>`;
+                }
+                if (result.merged !== undefined) {
+                    html += `<dt class="col-sm-4">Merged:</dt><dd class="col-sm-8">${result.merged ? 'Yes' : 'No'}</dd>`;
+                }
+
+                html += '</dl></div><div class="col-md-6">';
+                html += '<h6 class="text-muted mb-2">Detection Results</h6>';
+                html += '<dl class="row small">';
+
+                if (result.tones_detected !== undefined) {
+                    html += `<dt class="col-sm-4">Tones:</dt><dd class="col-sm-8">${result.tones_detected}</dd>`;
+                }
+
+                if (result.tone_types && Object.keys(result.tone_types).length > 0) {
+                    html += `<dt class="col-sm-4">Types:</dt><dd class="col-sm-8">`;
+                    html += Object.entries(result.tone_types)
+                        .map(([type, count]) => `${type}: ${count}`)
+                        .join(', ');
+                    html += '</dd>';
+                }
+
+                if (result.triggers_fired && result.triggers_fired.length > 0) {
+                    html += `<dt class="col-sm-4">Triggers:</dt><dd class="col-sm-8">`;
+                    html += result.triggers_fired.map(t => `<span class="badge bg-info">${t}</span>`).join(' ');
+                    html += '</dd>';
+                } else {
+                    html += `<dt class="col-sm-4">Triggers:</dt><dd class="col-sm-8"><em class="text-muted">None</em></dd>`;
+                }
+
+                if (result.transcript) {
+                    html += `<dt class="col-sm-4">Transcript:</dt><dd class="col-sm-8"><small>${result.transcript}...</small></dd>`;
+                }
+
+                html += '</dl></div></div>';
+                detailsDiv.innerHTML = html;
+            } else {
+                alertDiv.className = 'alert alert-danger';
+                let errorMsg = 'Unknown error';
+                if (data && typeof data === 'object') {
+                    errorMsg = data.message || data.error || JSON.stringify(data);
+                } else if (typeof data === 'string') {
+                    errorMsg = data;
+                }
+                alertDiv.textContent = 'Error: ' + errorMsg;
+                document.getElementById('resultDetails').innerHTML = '';
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            alertDiv.className = 'alert alert-danger';
+            alertDiv.textContent = 'Upload failed: ' + err.message;
+        }
+    });
+    
+    console.log('Event listener attached');
+})();
+</script>
+{% endblock extra_js %}

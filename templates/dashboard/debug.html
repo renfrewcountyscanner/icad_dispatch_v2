@@ -1,0 +1,76 @@
+{# templates/dashboard.html #}
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Debug - iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-3">
+        <div class="col-12 d-flex mt-3">
+            <div class="card flex-fill border-0 px-4 py-4">
+
+                <!-- make the body a vertical flex box that can grow -->
+                <div class="card-body d-flex flex-column flex-fill p-0">
+                    <div class="mb-3">
+                        <h4>Dashboard</h4>
+                    </div>
+                    <!-- Page Content -->
+                    <div class="row">
+                        <div class="col-12 col-md-6 d-flex">
+                            <div class="card flex-fill border-0 illustration">
+                                <div class="card-body p-0 d-flex flex-fill">
+                                    <div class="row g-0 w-100">
+                                        <div class="col-6">
+                                            <div class="p-3 m-1">
+                                                <h4>Welcome Back, {{ session.get("username") }}</h4>
+                                                <p class="mb-0">Flask Auth</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 align-self-end text-end p-1">
+                                            <img src="{{ url_for('static', filename='img/160x160_icad.png') }}"
+                                                 class="img-fluid illustration-img"
+                                                 alt="">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Lower Content -->
+                    <div class="row">
+                        <div class="col-12 d-flex mt-3">
+                            <div class="card flex-fill border-0">
+                                <h5> Session Values</h5>
+                                <table class="table table-sm table-striped table-hover align-middle mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col" class="fw-bold">Key</th>
+                                        <th scope="col" class="fw-bold">Value</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for key, value in session.items() %}
+                                        <tr>
+                                            <td><code>{{ key }}</code></td>
+                                            <td>
+                                                {% if value is string or value is number or value is boolean %}
+                                                    {{ value }}
+                                                {% else %}
+                                                    <pre class="mb-0 bg-body-secondary p-2 rounded-2" style="white-space: pre-wrap;">{{ value | tojson(indent=2) }}</pre>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

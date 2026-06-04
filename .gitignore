@@ -1,0 +1,59 @@
+# Environment
+.env
+.env.*
+.env_example
+
+# Database
+*.db
+*.db.*
+
+# Logs
+*.log
+log/*.log
+log/*.log.*
+log/*.log-*
+log/*.gz
+
+# Secrets
+var/secret_key.txt
+var/sessions/
+
+# Audio (can be large — recursive)
+audio/**/*.mp3
+audio/**/*.wav
+
+# Backup files
+*.bak
+*.backup
+
+# Runtime data
+var/*.db
+var/*.sqlite
+var/*.sqlite.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Docker
+*.dockerignore
+docker-compose.production.yml
+
+# AI Config
+.claude/

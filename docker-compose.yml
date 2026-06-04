@@ -1,0 +1,15 @@
+services:
+  icad_dispatch:
+    image: ghcr.io/renfrewcountyscanner/icad_dispatch_v2:latest
+    user: "9911:9911"
+    environment:
+      - LOG_LEVEL=2
+    env_file:
+      - .env
+    ports:
+      - "9911:9911"
+    volumes:
+      - ./log:/app/log
+      - ./var:/app/var
+      - ./audio:/app/static/audio
+    restart: unless-stopped

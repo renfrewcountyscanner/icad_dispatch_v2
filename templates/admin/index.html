@@ -1,0 +1,139 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Admin - Database Import{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .import-container { max-width: 500px; margin: 2rem auto; }
+        .import-form { padding: 1.5rem; background: #1a1a2e; border-radius: 0.5rem; border: 1px solid #333; }
+        .form-group { margin-bottom: 1rem; }
+        .import-result { margin-top: 2rem; padding: 1rem; border-radius: 0.5rem; }
+        .import-result.success { background: #1a3a1a; border: 1px solid #2d5d2d; color: #7dd87d; }
+        .import-result.error { background: #3a1a1a; border: 1px solid #5d2d2d; color: #d87d7d; }
+        .stat-row { display: flex; justify-content: space-between; padding: 0.3rem 0; }
+        .stat-label { font-weight: 500; color: #aaa; }
+        .stat-value { color: #fff; font-family: monospace; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="import-container">
+        <h1 class="mb-3">Database Import</h1>
+
+        <div class="import-form">
+            <form id="importForm" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="form-group">
+                    <label for="dbFile" class="form-label">SQLite Database File</label>
+                    <input type="file" class="form-control" id="dbFile" name="db_file" accept=".db" required/>
+                    <small class="text-muted d-block mt-2">
+                        Select a .db SQLite database file to import from. Only new call records will be imported (duplicates are skipped).
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="importBtn">
+                    <i class="bi bi-upload"></i> Import Database
+                </button>
+            </form>
+        </div>
+
+        <div id="resultContainer"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById("importForm");
+        const importBtn = document.getElementById("importBtn");
+        const resultContainer = document.getElementById("resultContainer");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const file = document.getElementById("dbFile").files[0];
+            if (!file) {
+                showResult("error", "No file selected");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("db_file", file);
+            formData.append("csrf_token", document.querySelector("[name='csrf_token']").value);
+
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Importing…';
+
+            try {
+                const resp = await fetch("/admin/import-db", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await resp.json();
+
+                if (data.success) {
+                    showResult("success", data.result);
+                    form.reset();
+                } else {
+                    showResult("error", data.message || "Import failed");
+                }
+            } catch (err) {
+                showResult("error", "Network error: " + err.message);
+            } finally {
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="bi bi-upload"></i> Import Database';
+            }
+        });
+
+        function showResult(type, data) {
+            resultContainer.innerHTML = "";
+
+            if (typeof data === "string") {
+                resultContainer.innerHTML = `
+                    <div class="import-result ${type}">
+                        <strong>${type === "success" ? "✓ Success" : "✗ Error"}</strong>
+                        <div>${data}</div>
+                    </div>
+                `;
+            } else {
+                const stats = data;
+                resultContainer.innerHTML = `
+                    <div class="import-result success">
+                        <strong>✓ Import Complete</strong>
+                        <div class="mt-2">
+                            <div class="stat-row">
+                                <span class="stat-label">Calls imported:</span>
+                                <span class="stat-value">${stats.calls_imported}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Calls skipped (duplicates):</span>
+                                <span class="stat-value">${stats.calls_skipped}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Tone events imported:</span>
+                                <span class="stat-value">${stats.tones_imported}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Transcripts imported:</span>
+                                <span class="stat-value">${stats.transcripts_imported}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">VAD segments imported:</span>
+                                <span class="stat-value">${stats.vad_segments_imported}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Trigger fires imported:</span>
+                                <span class="stat-value">${stats.trigger_fires_imported}</span>
+                            </div>
+                            ${stats.errors > 0 ? `
+                            <div class="stat-row" style="color: #d87d7d;">
+                                <span class="stat-label">Errors:</span>
+                                <span class="stat-value">${stats.errors}</span>
+                            </div>
+                            ` : ""}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+{% endblock %}

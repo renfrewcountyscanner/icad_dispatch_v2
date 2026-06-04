@@ -1,0 +1,115 @@
+{# templates/base_site/login.html #}
+{% extends "base_site/base.html" %}
+{% block title %}Login - iCAD Dispatch{% endblock %}
+
+{% block extra_styles %}
+    <!-- Link to our login.css file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base_site/login.css') }}">
+{% endblock extra_styles %}
+
+{% block content %}
+    <div class="login-container">
+        <!-- Left Panel - Visual Side -->
+        <div class="login-visual">
+            <!-- Animated shapes -->
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            
+            <!-- Visual Content -->
+            <div class="visual-content">
+                <img class="visual-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="iCAD Dispatch Logo">
+                <h1>iCAD Dispatch</h1>
+                <p>Intelligent Computer-Aided Dispatch System for Emergency Services</p>
+            </div>
+        </div>
+
+        <!-- Right Panel - Form Side -->
+        <div class="login-form-panel">
+            <!-- Grid pattern overlay is handled in CSS -->
+            
+            <!-- Glassmorphism Card -->
+            <div class="glass-card">
+                <div class="card-header-custom">
+                    <h2>Welcome Back</h2>
+                    <p>Please sign in to access your dashboard</p>
+                </div>
+
+                <!-- Error Alert -->
+                <div id="loginError" class="alert-glass" role="alert"></div>
+
+                <form id="loginForm" class="needs-validation" method="POST" action="/auth/login" novalidate>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                    
+                    <!-- Username Input -->
+                    <div class="form-floating-custom">
+                        <i class="bi bi-person input-icon"></i>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="loginEmail" 
+                            name="loginEmail"
+                            placeholder="Username"
+                            required
+                            autocomplete="username"
+                        >
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="form-floating-custom">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            class="form-control" 
+                            id="loginPassword"
+                            name="loginPassword" 
+                            placeholder="Password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button 
+                            type="button" 
+                            class="password-toggle" 
+                            id="togglePassword"
+                            aria-label="Toggle password visibility"
+                        >
+                            <i class="bi bi-eye-fill" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="remember-row">
+                        <label class="remember-checkbox">
+                            <input type="checkbox" id="loginRememberMe" name="rememberMe">
+                            <span>Remember me</span>
+                        </label>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button id="submitLoginBtn" type="submit" class="btn-login">
+                        Sign In
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/base_site/login.js') }}"></script>
+    <script>
+        // Password toggle functionality
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('loginPassword');
+        const toggleIcon = document.getElementById('togglePasswordIcon');
+        
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                toggleIcon.classList.toggle('bi-eye-fill');
+                toggleIcon.classList.toggle('bi-eye-slash-fill');
+            });
+        }
+    </script>
+{% endblock extra_js %}

@@ -1,0 +1,83 @@
+{# ───────────────────────────────────────────────────────
+   Add/Edit Trigger modal
+   ──────────────────────────────────────────────────── #}
+<div class="modal fade" id="triggerModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <form id="triggerForm" class="modal-content input-form">
+            <input type="hidden" name="_csrf_token"    value="{{ csrf_token }}">
+            <input type="hidden" name="radio_system_id" id="modalSystemId">
+            <input type="hidden" name="alert_trigger_id" id="modalTriggerId">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="triggerModalLabel">Add Trigger</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Trigger Name</label>
+                        <input class="form-control" name="alert_trigger_name" id="modalTriggerName" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Talkgroup (optional)</label>
+                            <input
+                                    type="number"
+                                    class="form-control"
+                                    name="alert_trigger_talkgroup"
+                                    id="modalTriggerTalkgroup"
+                                    min="0" step="1" inputmode="numeric"
+                                    placeholder="Any talkgroup decimal">
+                            <div class="form-text">Leave blank to match all talkgroups.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Enabled</label>
+                        <select class="form-select" name="alert_trigger_enabled" id="modalTriggerEnabled">
+                            <option value="1">Yes</option><option value="0">No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" name="alert_trigger_type" id="modalTriggerType">
+                            <option value="AND">AND</option><option value="OR">OR</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- minimal modal: for advanced fields user edits in card -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button id="modalSaveBtn" class="btn btn-primary"><i class="bi bi-save"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ───────────────────────────────────────────────────────
+   Delete confirm
+   ──────────────────────────────────────────────────── #}
+<div class="modal fade" id="triggerDeleteModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <form id="triggerDeleteForm" class="modal-content">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="alert_trigger_id" id="deleteTriggerId">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Trigger</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteTriggerQuestion" class="mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-danger" id="confirmDeleteTrigger" type="submit">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

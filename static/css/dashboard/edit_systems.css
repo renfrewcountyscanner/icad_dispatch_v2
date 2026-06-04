@@ -1,0 +1,111 @@
+/* Settings shell */
+.ap-settings-shell{
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255,255,255,.02);
+}
+
+/* Left nav */
+.ap-settings-nav{
+  background: rgba(0,0,0,.12);
+}
+.ap-settings-nav-inner{
+  /* If your card body is the scroller, sticky will stick within it */
+  position: sticky;
+  top: 0;
+}
+
+/* Tab list: horizontal scroll on mobile, vertical on md+ */
+.ap-tablist{
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: .25rem;
+}
+@media (max-width: 767.98px){
+  .ap-tablist{
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding-top: .75rem;
+    margin-top: .5rem;
+  }
+}
+
+/* Tab buttons */
+.ap-tabbtn{
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  width: 100%;
+  border-radius: 12px;
+  padding: .55rem .75rem;
+  line-height: 1.1;
+  color: var(--bs-body-color);
+  background: transparent;
+}
+.ap-tabbtn i{
+  width: 1.25rem;
+  text-align: center;
+  font-size: 1.05rem;
+  opacity: .9;
+}
+.ap-tabbtn .tab-label{
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hover/active states */
+.ap-tabbtn:hover{
+  background: rgba(255,255,255,.06);
+}
+.nav-pills .ap-tabbtn.active{
+  background: rgba(13,110,253,.22);
+  border: 1px solid rgba(13,110,253,.35);
+}
+
+/* Content column */
+.ap-settings-content{
+  background: transparent;
+}
+/* only affect this page */
+body.ap-edit-systems .ap-toolbar-card{
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 16px;
+    box-shadow: 0 .5rem 1.25rem rgba(0,0,0,.25);
+}
+
+/* optional: give the toolbar a tiny accent line */
+body.ap-edit-systems .ap-toolbar-card{
+    position: relative;
+}
+body.ap-edit-systems .ap-toolbar-card::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:4px;
+    background: var(--primary_brand_light);
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+
+/* content feels more “panel-like” */
+body.ap-edit-systems .ap-content-card{
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    box-shadow: 0 .75rem 1.75rem rgba(0,0,0,.22);
+    background: rgba(255,255,255,.02);
+}
+
+/* optional: keep toolbar visible while scrolling the form */
+@media (min-width: 768px){
+    body.ap-edit-systems .ap-toolbar-card{
+        position: sticky;
+        top: calc(var(--ap-topbar-h) + .75rem);
+        z-index: 1030;
+    }
+}

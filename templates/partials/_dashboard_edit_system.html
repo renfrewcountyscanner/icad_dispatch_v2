@@ -1,0 +1,1960 @@
+<div class="ap-settings-shell">
+    <div class="row g-0">
+
+        <!-- LEFT: tab menu -->
+        <aside class="col-12 col-md-3 col-xl-2 ap-settings-nav border-end-md">
+            <div class="ap-settings-nav-inner p-3">
+
+                <!-- ① TAB NAV  (IDs unchanged) -->
+                <ul class="nav nav-pills ap-tablist flex-row flex-md-column gap-1 flex-nowrap overflow-auto"
+                    id="systemTabs"
+                    role="tablist">
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active ap-tabbtn"
+                                id="general-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#general"
+                                type="button"
+                                role="tab"
+                                aria-controls="general"
+                                aria-selected="true">
+                            <i class="bi bi-info-circle"></i>
+                            <span class="tab-label">General</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn"
+                                id="upload-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#upload"
+                                type="button"
+                                role="tab"
+                                aria-controls="upload"
+                                aria-selected="false">
+                            <i class="bi bi-soundwave"></i>
+                            <span class="tab-label">Upload</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn"
+                                id="storage-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#storage"
+                                type="button"
+                                role="tab"
+                                aria-controls="storage"
+                                aria-selected="false">
+                            <i class="bi bi-hdd-network"></i>
+                            <span class="tab-label">File Storage</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn"
+                                id="tone-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#tone"
+                                type="button"
+                                role="tab"
+                                aria-controls="tone"
+                                aria-selected="false">
+                            <i class="bi bi-soundwave"></i>
+                            <span class="tab-label">Tones</span>
+                        </button>
+                    </li>
+
+                    <div class="ap-nav-section text-body-secondary small mt-2 mb-1 px-2 d-none d-md-block">
+                        DELIVERY
+                    </div>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="telegram-tab" data-bs-toggle="tab"
+                                data-bs-target="#telegram"
+                                type="button" role="tab" aria-controls="telegram" aria-selected="false">
+                            <i class="bi bi-telegram"></i><span class="tab-label">Telegram</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="ntfy-tab" data-bs-toggle="tab"
+                                data-bs-target="#ntfy"
+                                type="button" role="tab" aria-controls="ntfy" aria-selected="false">
+                            <i class="bi bi-broadcast"></i><span class="tab-label">Ntfy</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="discord-tab" data-bs-toggle="tab"
+                                data-bs-target="#discord"
+                                type="button" role="tab" aria-controls="discord" aria-selected="false">
+                            <i class="bi bi-discord"></i><span class="tab-label">Discord</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="make-tab" data-bs-toggle="tab" data-bs-target="#make"
+                                type="button" role="tab" aria-controls="make" aria-selected="false">
+                            <i class="bi bi-boxes"></i><span class="tab-label">Make</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="pushover-tab" data-bs-toggle="tab"
+                                data-bs-target="#pushover"
+                                type="button" role="tab" aria-controls="pushover" aria-selected="false">
+                            <i class="bi bi-signpost-split-fill"></i><span class="tab-label">Pushover</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="email-tab" data-bs-toggle="tab" data-bs-target="#email"
+                                type="button" role="tab" aria-controls="email" aria-selected="false">
+                            <i class="bi bi-envelope-at"></i><span class="tab-label">Email</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="n8n-tab" data-bs-toggle="tab" data-bs-target="#n8n"
+                                type="button" role="tab" aria-controls="n8n" aria-selected="false">
+                            <i class="bi bi-diagram-3"></i><span class="tab-label">n8n</span>
+                        </button>
+                    </li>
+
+                    <div class="ap-nav-section text-body-secondary small mt-2 mb-1 px-2 d-none d-md-block">
+                        AI
+                    </div>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="transcribe-tab" data-bs-toggle="tab"
+                                data-bs-target="#transcribe"
+                                type="button" role="tab" aria-controls="transcribe" aria-selected="false">
+                            <i class="bi bi-file-font-fill"></i><span class="tab-label">Transcribe</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="incident-tab" data-bs-toggle="tab"
+                                data-bs-target="#incident"
+                                type="button" role="tab" aria-controls="incident" aria-selected="false">
+                            <i class="bi bi-tags"></i><span class="tab-label">Incident Classification</span>
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link ap-tabbtn" id="address-tab" data-bs-toggle="tab"
+                                data-bs-target="#address"
+                                type="button" role="tab" aria-controls="address" aria-selected="false">
+                            <i class="bi bi-geo-alt"></i><span class="tab-label">Address Extraction</span>
+                        </button>
+                    </li>
+
+                </ul>
+            </div>
+        </aside>
+
+        <!-- RIGHT: tab content (IDs unchanged) -->
+        <section class="col-12 col-md-9 col-xl-10 ap-settings-content">
+            <div class="tab-content p-3 p-lg-4" id="systemTabContent">
+                <!-- ② TAB CONTENT -->
+                <div class="tab-content border border-top-0 p-4" id="systemTabContent">
+
+                    <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="overview-tab">
+
+                        <h5 id="generalTabTitle">General Settings</h5>
+
+                        <form id="updateSystemGeneralForm" class="input-form mt-4">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input id="updateSystemId" type="hidden" name="radio_system_id" value=""/>
+
+                            <div class="mb-3">
+                                <label for="updateSystemDecimal" class="form-label">System ID</label>
+                                <input id="updateSystemDecimal" class="form-control" type="number" min="1"
+                                       max="999999999"
+                                       name="system_decimal" required>
+                                <div class="form-text">Give the system an ID number between 1 and 999999999. Should
+                                    match RDIO
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="updateSystemName" class="form-label">System Name</label>
+                                <input id="updateSystemName" class="form-control" type="text" name="system_name"
+                                       required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="updatePostToneDelay" class="form-label">Post-Tone Delay (seconds)</label>
+                                <input id="updatePostToneDelay" class="form-control" type="number" min="0"
+                                       max="60" value="0" name="post_tone_delay">
+                                <div class="form-text">Skip first N seconds of audio before saving (to exclude pre-announcement tones). Default: 0</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="updateSystemStreamURL" class="form-label">Stream URL</label>
+                                <input id="updateSystemStreamURL" class="form-control" type="text" name="stream_url">
+                                <div class="form-text">Add a URL where the audio can be heard. (Optional)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="updateSystemApiKey" class="form-label">API&nbsp;Key</label>
+
+                                <div class="input-group">
+                                    <input id="updateSystemApiKey"
+                                           name="api_key"
+                                           class="form-control text-truncate"
+                                           readonly
+                                           autocomplete="off"
+                                           spellcheck="false">
+
+                                    <!-- Toggle edit/lock -->
+                                    <button type="button"
+                                            id="toggleApiKeyEditBtn"
+                                            class="btn btn-outline-secondary"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Edit / lock API key">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <!-- Regenerate -->
+                                    <button type="button"
+                                            id="regenerateApiKeyBtn"
+                                            class="btn btn-outline-secondary"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Generate a brand-new key">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+
+                                <div class="form-text">
+                                    Used for authenticated POSTs to <code>/api/call-upload</code>.
+                                    You can edit it (custom key) or regenerate it (invalidates the old key).
+                                </div>
+                            </div>
+
+                            <!-- BUTTON ROW -->
+                            <div class="row g-2 mt-4 align-items-center">
+                                <!-- Save: auto width -->
+                                <div class="col-auto">
+                                    <button id="submitUpdateSystemGeneral"
+                                            type="button"
+                                            class="btn btn-success btn-sm">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+
+                                <!-- Spacer that consumes remaining width -->
+                                <div class="col text-end">
+                                    <!-- Delete: auto width; right aligned -->
+                                    <button id="deleteSystemBtn"
+                                            type="button"
+                                            class="btn btn-danger btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteSystemModal">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                        <h5 id="uploadTabTitle" class="mb-3">Upload / Split Settings</h5>
+
+                        <form id="updateSystemUploadForm" class="input-form">
+                            <!-- hidden ids -->
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" id="updateUploadSystemId" name="radio_system_id" value="">
+                            <input type="hidden" id="updateUploadSystemName" value="">
+
+                            <!-- master enable switch -->
+                            <div class="form-check form-switch mb-4"
+                                 data-bs-toggle="tooltip" data-bs-placement="right"
+                                 title="Turn on to merge tone-only stubs with the next voice clip.">
+                                <input class="form-check-input" type="checkbox"
+                                       id="uploadSplitEnabled" name="split_enabled" value="1">
+                                <label class="form-check-label fw-semibold" for="uploadSplitEnabled">
+                                    Split Dispatch
+                                </label>
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- === Upload file minimum length =================================== -->
+                                <div class="col-lg-6">
+                                    <h6>Upload Length</h6>
+
+                                    <!-- 1. Minimum audio length -->
+                                    <div class="mb-3"
+                                         data-bs-toggle="tooltip"
+                                         title="The required length for the uploaded audio transmission.">
+                                        <label class="form-label" for="uploadMinVoice">
+                                            Required minium audio length&nbsp;(s)
+                                        </label>
+                                        <input class="form-control" id="uploadMinVoice"
+                                               name="audio_min_length" type="number" step="0.1" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-3">
+
+                                <!-- === Tail / Voice detection =================================== -->
+                                <div class="col-lg-6">
+                                    <h6>Tail / voice detection</h6>
+
+                                    <!-- 1. Minimum tail length -->
+                                    <div class="mb-3"
+                                         data-bs-toggle="tooltip"
+                                         title="After the *last* detected paging tone, require at least this many seconds to decide the clip already contains the full voice message. Shorter ⇒ keep as stub.">
+                                        <label class="form-label" for="tailMinVoice">
+                                            Required tail length&nbsp;(s)
+                                        </label>
+                                        <input class="form-control" id="tailMinVoice"
+                                               name="tail_min_voice_sec" type="number" step="0.1" min="0">
+                                    </div>
+
+                                    <!-- 2. VAD speech ratio -->
+                                    <div class="mb-3"
+                                         data-bs-toggle="tooltip"
+                                         title="WebRTC-VAD speech ratio measured *only* in the tail segment. Values below this mark the upload as tones-only. Set to 0 to disable VAD.">
+                                        <label class="form-label" for="vadMinSpeech">
+                                            VAD speech ratio&nbsp;(0-1)
+                                        </label>
+                                        <input class="form-control" id="vadMinSpeech"
+                                               name="vad_min_speech_ratio" type="number" step="0.01" min="0" max="1">
+                                    </div>
+
+                                    <!-- 3. RMS threshold – still configurable but hidden by default -->
+                                    <div class="mb-3 d-none"
+                                         data-bs-toggle="tooltip"
+                                         title="RMS threshold (dBFS) used by the lightweight RMS-based VAD fallback.">
+                                        <label class="form-label" for="voiceRmsDbfs">
+                                            Voice RMS (dBFS)
+                                        </label>
+                                        <input class="form-control" id="voiceRmsDbfs"
+                                               name="voice_rms_dbfs" type="number" step="1">
+                                    </div>
+                                </div>
+
+                                <!-- === Stub merge window ======================================== -->
+                                <div class="col-lg-6">
+                                    <h6>Stub merge window</h6>
+
+                                    <!-- 4. Max interval between related clips -->
+                                    <div class="mb-3"
+                                         data-bs-toggle="tooltip"
+                                         title="If a cached tone-only stub is older than this when the next clip arrives, it is discarded.">
+                                        <label class="form-label" for="maxSplitInterval">
+                                            Max age between clips&nbsp;(s)
+                                        </label>
+                                        <input class="form-control" id="maxSplitInterval"
+                                               name="max_split_interval" type="number" step="1" min="1">
+                                    </div>
+
+                                    <!-- 5. max_split_length kept for compatibility, hidden -->
+                                    <div class="mb-3 d-none"
+                                         data-bs-toggle="tooltip"
+                                         title="Currently unused. Reserved for future max-length logic.">
+                                        <label class="form-label" for="maxSplitLength">
+                                            Hold stubs shorter than&nbsp;(s)
+                                        </label>
+                                        <input class="form-control" id="maxSplitLength"
+                                               name="max_split_length" type="number" step="1">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Save button -->
+                            <button id="submitUpdateSystemUpload"
+                                    type="button"
+                                    class="btn btn-sm btn-success mt-3">
+                                <i class="bi bi-save"></i> Save
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="storage" role="tabpanel" aria-labelledby="storage-tab">
+                        <h5 id="storageTabTitle" class="mb-3">File Storage Settings</h5>
+
+                        <form id="updateSystemStorageForm" class="mt-4 input-form">
+                            <!-- hidden ids / csrf -->
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" id="updateStorageSystemId" name="radio_system_id" value="">
+                            <input type="hidden" id="updateStorageSystemName" value="">
+
+                            <!-- Storage type + path pattern -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-4"
+                                     data-bs-toggle="tooltip"
+                                     data-bs-placement="top"
+                                     title="Where audio files for this system are stored.">
+                                    <label class="form-label" for="storageType">Storage Backend</label>
+                                    <select id="storageType"
+                                            name="storage_type"
+                                            class="form-select">
+                                        <option value="LOCAL">Local filesystem</option>
+                                        <option value="SFTP">SFTP / SCP</option>
+                                        <option value="S3">S3 / Object storage</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-md-8"
+                                     data-bs-toggle="tooltip"
+                                     data-bs-placement="top"
+                                     title="Relative subdirectory pattern under the backend root.">
+                                    <label class="form-label" for="storagePathPattern">Path pattern</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="storagePathPattern"
+                                           name="path_pattern"
+                                           placeholder="%Y/%m/%d">
+                                    <div class="form-text">
+                                        strftime-style pattern, e.g. <code>%Y/%m/%d</code>.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SFTP settings -->
+                            <div id="storageSftpSection" class="border rounded p-3 mb-3 bg-body-tertiary d-none">
+                                <h6 class="mb-3">SFTP / SCP settings</h6>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Hostname or IP of the SFTP server.">
+                                        <label class="form-label" for="sftpHost">Host</label>
+                                        <input type="text" class="form-control" id="sftpHost" name="sftp_host">
+                                    </div>
+                                    <div class="col-md-3"
+                                         data-bs-toggle="tooltip"
+                                         title="Port of the SFTP server (default 22).">
+                                        <label class="form-label" for="sftpPort">Port</label>
+                                        <input type="number" class="form-control" id="sftpPort" name="sftp_port" min="1"
+                                               max="65535">
+                                    </div>
+                                    <div class="col-md-3"
+                                         data-bs-toggle="tooltip"
+                                         title="Connect timeout in seconds.">
+                                        <label class="form-label" for="sftpTimeout">Timeout (s)</label>
+                                        <input type="number" class="form-control" id="sftpTimeout" name="sftp_timeout_s"
+                                               min="1">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Username for SFTP authentication.">
+                                        <label class="form-label" for="sftpUsername">Username</label>
+                                        <input type="text" class="form-control" id="sftpUsername" name="sftp_username">
+                                    </div>
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Password for SFTP authentication.">
+                                        <label class="form-label" for="sftpPassword">Password</label>
+                                        <input type="password" class="form-control" id="sftpPassword"
+                                               name="sftp_password"
+                                               autocomplete="new-password">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="If enabled, SSH key will be used.">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   id="sftpUseServerKey"
+                                                   name="sftp_use_server_key"
+                                                   value="1">
+                                            <label class="form-check-label" for="sftpUseServerKey">
+                                                Use SSH key file for authentication.
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3"
+                                     data-bs-toggle="tooltip"
+                                     title="SSH Key for server authentication.">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label mb-0" for="sftpSshKey">SSH Key</label>
+                                        <button type="button"
+                                                id="sftpClearKeyBtn"
+                                                class="btn btn-sm btn-danger">
+                                            <i class="bi bi-eraser"></i> Clear key
+                                        </button>
+                                    </div>
+
+                                    <textarea class="form-control"
+                                              id="sftpSshKey"
+                                              name="sftp_ssh_key"
+                                              rows="3"></textarea>
+
+                                    <div id="sftpSshKeyHelp" class="form-text small text-muted">
+                                        Paste a SSH private key here. If left blank, the stored key (if any) is not
+                                        changed.
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Remote directory under which files will be written.">
+                                        <label class="form-label" for="sftpRemotePath">Remote path</label>
+                                        <input type="text" class="form-control" id="sftpRemotePath"
+                                               name="sftp_remote_path"
+                                               placeholder="/var/www/html/audio">
+                                    </div>
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Base URL corresponding to the remote path (for public links).">
+                                        <label class="form-label" for="sftpBaseUrl">Base URL</label>
+                                        <input type="text" class="form-control" id="sftpBaseUrl" name="sftp_base_url"
+                                               placeholder="https://media.example.com/audio">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-4"
+                                         data-bs-toggle="tooltip"
+                                         title="How many times to retry on transient failures.">
+                                        <label class="form-label" for="sftpMaxRetries">Max retries</label>
+                                        <input type="number" class="form-control" id="sftpMaxRetries"
+                                               name="sftp_max_retries" min="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- S3 settings -->
+                            <div id="storageS3Section" class="border rounded p-3 mb-3 bg-body-tertiary d-none">
+                                <h6 class="mb-3">S3 / Object storage</h6>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Bucket name where objects will be stored.">
+                                        <label class="form-label" for="s3Bucket">Bucket</label>
+                                        <input type="text" class="form-control" id="s3Bucket" name="s3_bucket">
+                                    </div>
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="AWS region or provider region (e.g. us-east-1).">
+                                        <label class="form-label" for="s3Region">Region</label>
+                                        <input type="text" class="form-control" id="s3Region" name="s3_region">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Access key ID for the S3-compatible account.">
+                                        <label class="form-label" for="s3AccessKeyId">Access key ID</label>
+                                        <input type="text" class="form-control" id="s3AccessKeyId"
+                                               name="s3_access_key_id">
+                                    </div>
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Secret access key for the S3-compatible account.">
+                                        <label class="form-label" for="s3SecretAccessKey">Secret access key</label>
+                                        <input type="password" class="form-control" id="s3SecretAccessKey"
+                                               name="s3_secret_access_key"
+                                               autocomplete="new-password">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Optional custom endpoint URL for non-AWS providers.">
+                                        <label class="form-label" for="s3EndpointUrl">Endpoint URL</label>
+                                        <input type="text" class="form-control" id="s3EndpointUrl"
+                                               name="s3_endpoint_url"
+                                               placeholder="https://s3.example.com">
+                                    </div>
+                                    <div class="col-md-6"
+                                         data-bs-toggle="tooltip"
+                                         title="Prefix to prepend to object keys, e.g. system name.">
+                                        <label class="form-label" for="s3ObjectKeyPrefix">Object key prefix</label>
+                                        <input type="text" class="form-control" id="s3ObjectKeyPrefix"
+                                               name="s3_object_key_prefix"
+                                               placeholder="system-123/">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save button -->
+                            <div class="row mt-3">
+                                <div class="col-auto mb-3">
+                                    <button type="submit"
+                                            id="storageSettingsSaveBtn"
+                                            class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="tone" role="tabpanel" aria-labelledby="tone-tab">
+
+                        <h5 id="toneTabTitle">Tone Settings</h5>
+
+                        <form id="updateSystemToneForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateToneSystemId" name="radio_system_id">
+                            <input type="hidden" id="updateToneSystemName" name="system_name">
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Tone Finder">
+                                    <label class="form-label" for="toneFinderSelect">Tone Finder:</label>
+                                    <select id="toneFinderSelect" name="tone_finder_enabled" class="form-select"
+                                            aria-label="">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Threshold in percent to consider a tone match.">
+                                    <label class="form-label" for="toneMatchThreshold">Tone Matching Threshold %</label>
+                                    <input class="form-control" type="number" id="toneMatchThreshold"
+                                           name="matching_threshold"
+                                           step="0.1" required>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Require the audio frame to be at least this many dB above a simple noise-floor estimate.">
+                                    <label class="form-label" for="toneSNRThreshold">SNR Threshold %</label>
+                                    <input class="form-control" type="number" id="toneSNRThreshold"
+                                           name="fe_snr_above_noise_db"
+                                           step="0.1" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="toneAMin">Two Tone A Minimum Length</label>
+                                    <input class="form-control" type="number" id="toneAMin" name="tone_a_min_length"
+                                           step="0.1"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Minimum Length Tone A can be."
+                                           required>
+                                </div>
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="toneBMin">Two Tone B Minimum Length</label>
+                                    <input class="form-control" type="number" id="toneBMin" name="tone_b_min_length"
+                                           step="0.1"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Minimum Length Tone B can be."
+                                           required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Require the Tone A and Tone B to be this far apart in HZ to be a match.">
+                                    <label class="form-label" for="toneSeparationHZ">Two Tone Separation HZ</label>
+                                    <input class="form-control" type="number" id="toneSeparationHZ"
+                                           name="two_tone_min_pair_separation_hz"
+                                           step="1.0" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="toneHiLowInterval">Hi Low Tone Interval
+                                        Seconds</label>
+                                    <input class="form-control" type="number" id="toneHiLowInterval"
+                                           name="hi_low_interval" step="0.1"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Time between Hi Low tone intervals."
+                                           required>
+                                </div>
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="toneHiLowAlternations">Hi Low Tone
+                                        Alternations</label>
+                                    <input class="form-control" type="number" id="toneHiLowAlternations"
+                                           name="hi_low_min_alternations"
+                                           step="1" data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="How many times a Hi Low tone alternates."
+                                           required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="toneLongMin">Long Tone Minimum Length</label>
+                                    <input class="form-control" type="number" id="toneLongMin"
+                                           name="long_tone_min_length" step="0.1"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" title="" required>
+                                </div>
+                            </div>
+
+                            <!-- Pulsed single-tone (system defaults) -->
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Minimum number of ON/OFF cycles to accept a pulsed tone.">
+                                    <label class="form-label" for="pulsedMinCycles">Pulsed Min Cycles</label>
+                                    <input class="form-control" type="number" id="pulsedMinCycles"
+                                           name="pulsed_min_cycles"
+                                           step="1" min="1" required>
+                                </div>
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Minimum ON duration (ms) for a single pulse.">
+                                    <label class="form-label" for="pulsedMinOn">Pulsed Min ON (ms)</label>
+                                    <input class="form-control" type="number" id="pulsedMinOn" name="pulsed_min_on_ms"
+                                           step="1" min="1" required>
+                                </div>
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Maximum ON duration (ms) for a single pulse.">
+                                    <label class="form-label" for="pulsedMaxOn">Pulsed Max ON (ms)</label>
+                                    <input class="form-control" type="number" id="pulsedMaxOn" name="pulsed_max_on_ms"
+                                           step="1" min="1" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Minimum OFF (silence) duration (ms) between pulses.">
+                                    <label class="form-label" for="pulsedMinOff">Pulsed Min OFF (ms)</label>
+                                    <input class="form-control" type="number" id="pulsedMinOff" name="pulsed_min_off_ms"
+                                           step="1" min="0" required>
+                                </div>
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Maximum OFF (silence) duration (ms) between pulses.">
+                                    <label class="form-label" for="pulsedMaxOff">Pulsed Max OFF (ms)</label>
+                                    <input class="form-control" type="number" id="pulsedMaxOff" name="pulsed_max_off_ms"
+                                           step="1" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Minimum tone length (ms) to consider a valid DTMF digit.">
+                                    <label class="form-label" for="dtmfMinMs">DTMF Min Length (ms)</label>
+                                    <input class="form-control" type="number" id="dtmfMinMs" name="dtmf_min_ms"
+                                           step="1" min="20" required>
+                                </div>
+
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Merge gap (ms): if silence between digits is ≤ this, treat as one digit.">
+                                    <label class="form-label" for="dtmfMergeMs">DTMF Merge Gap (ms)</label>
+                                    <input class="form-control" type="number" id="dtmfMergeMs" name="dtmf_merge_ms"
+                                           step="1" min="0" required>
+                                </div>
+
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Trim this many ms from the start of each detected DTMF tone (can be negative).">
+                                    <label class="form-label" for="dtmfStartOffsetMs">DTMF Start Offset (ms)</label>
+                                    <input class="form-control" type="number" id="dtmfStartOffsetMs"
+                                           name="dtmf_start_offset_ms"
+                                           step="1" min="-500" max="500" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Trim this many ms from the end of each detected DTMF tone (can be negative).">
+                                    <label class="form-label" for="dtmfEndOffsetMs">DTMF End Offset (ms)</label>
+                                    <input class="form-control" type="number" id="dtmfEndOffsetMs"
+                                           name="dtmf_end_offset_ms"
+                                           step="1" min="-500" max="500" required>
+                                </div>
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Group all DTMF tones that follow within this time together.">
+                                    <label class="form-label" for="dtmfSequenceGapS">DTMF Sequence Gap</label>
+                                    <input class="form-control" type="number" id="dtmfSequenceGapS"
+                                           name="dtmf_sequence_gap_s"
+                                           step=".1" min=".1" max="2" required>
+                                </div>
+                            </div>
+
+                            <!-- Save Settings -->
+                            <div class="row">
+                                <div class="col-auto mb-3">
+                                    <button type="submit" id="toneSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="telegram" role="tabpanel" aria-labelledby="telegram-tab">
+
+                        <h5 id="telegramTabTitle">Telegram Settings</h5>
+
+                        <form id="updateSystemTelegramForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateTelegramSystemId" name="radio_system_id">
+                            <input type="hidden" id="updateTelegramSystemName" name="system_name">
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Telegram">
+                                    <label class="form-label" for="telegramSelect">Telegram:</label>
+                                    <select id="telegramSelect" name="telegram_enabled" class="form-select"
+                                            aria-label="">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="telegramChannelId">Channel ID</label>
+                                    <input class="form-control" type="text" id="telegramChannelId"
+                                           name="telegram_channel_id"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Channel ID from the telegram channel that bot will post to.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="telegramBotToken">Bot Token</label>
+                                    <input class="form-control" type="text" id="telegramBotToken"
+                                           name="telegram_bot_token"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Bot Access Token from Telegram Bot Father">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="telegramAlertBody">Telegram Alert Body</label>
+                                    <textarea class="form-control" id="telegramAlertBody" name="telegram_message_body"
+                                              rows="5"
+                                              data-bs-toggle="tooltip" data-bs-placement="top"
+                                              title="Message that is shown as the caption to the audio on the Telegram Alert.">
+                                </textarea>
+                                </div>
+                            </div>
+                            <!-- Save Settings -->
+                            <div class="row">
+                                <div class="col-auto mb-3">
+                                    <button type="submit" id="telegramSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-auto mb-3">
+                                    <button type="button" id="telegramSendTestBtn"
+                                            class="btn btn-sm btn-outline-primary ms-1" disabled>
+                                        <i class="bi bi-send-check"></i> Send Test
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="ntfy" role="tabpanel" aria-labelledby="ntfy-tab">
+
+                        <h5 id="ntfyTabTitle">Ntfy Settings</h5>
+
+                        <form id="updateSystemNtfyForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateNtfySystemId" name="radio_system_id">
+                            <input type="hidden" id="updateNtfySystemName" name="system_name">
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Ntfy push notifications">
+                                    <label class="form-label" for="ntfySelect">Ntfy:</label>
+                                    <select id="ntfySelect" name="ntfy_enabled" class="form-select"
+                                            aria-label="">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="ntfyServerUrl">Server URL</label>
+                                    <input class="form-control" type="url" id="ntfyServerUrl"
+                                           name="ntfy_server_url"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Ntfy server URL. Use https://ntfy.sh for the public server, or your self-hosted URL.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="ntfyTopic">Default Topic</label>
+                                    <input class="form-control" type="text" id="ntfyTopic"
+                                           name="ntfy_topic"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Default Ntfy topic. Triggers can override this with their own topic.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="ntfyToken">Access Token</label>
+                                    <input class="form-control" type="password" id="ntfyToken"
+                                           name="ntfy_token"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Optional Ntfy access token for protected topics.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="ntfyTitleTmpl">Title Template</label>
+                                    <input class="form-control" type="text" id="ntfyTitleTmpl"
+                                           name="ntfy_title_tmpl"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Title template. Available placeholders: {system_name}, {trigger_list}, {timestamp}, {transcript}, {audio_url}, etc.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="ntfyBodyTmpl">Body Template</label>
+                                    <textarea class="form-control" id="ntfyBodyTmpl" name="ntfy_body_tmpl"
+                                              rows="5"
+                                              data-bs-toggle="tooltip" data-bs-placement="top"
+                                              title="Body template. Available placeholders: {system_name}, {trigger_list}, {timestamp}, {transcript}, {audio_url}, etc.">
+                                    </textarea>
+                                </div>
+                            </div>
+                            <!-- Save Settings -->
+                            <div class="row">
+                                <div class="col-auto mb-3">
+                                    <button type="submit" id="ntfySettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-auto mb-3">
+                                    <button type="button" id="ntfySendTestBtn"
+                                            class="btn btn-sm btn-outline-primary ms-1" disabled>
+                                        <i class="bi bi-send-check"></i> Send Test
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="discord" role="tabpanel" aria-labelledby="discord-tab">
+                        <h5 id="discordTabTitle">Discord Settings</h5>
+
+                        <form id="updateSystemDiscordForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateDiscordSystemId" name="radio_system_id">
+                            <input type="hidden" id="updateDiscordSystemName" name="system_name">
+                            <!-- Enable -->
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Discord notifications for this system.">
+                                    <label class="form-label" for="discordSelect">Discord:</label>
+                                    <select id="discordSelect" name="discord_enabled" class="form-select"
+                                            aria-label="Discord enabled">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Webhook URL -->
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Paste the full Discord Webhook URL from the channel Integrations settings.">
+                                    <label class="form-label" for="discordWebhookURL">Webhook URL:</label>
+                                    <input class="form-control" type="url" id="discordWebhookURL"
+                                           name="discord_webhook_url"
+                                           placeholder="https://discord.com/api/webhooks/....">
+                                </div>
+                            </div>
+
+                            <!-- Embed Title -->
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Title text shown at the top of the embed. Example: 🚨 iCAD Dispatch Alert">
+                                    <label class="form-label" for="discordEmbedTitle">Embed Title:</label>
+                                    <input class="form-control" type="text" id="discordEmbedTitle"
+                                           name="discord_embed_title"
+                                           maxlength="256" placeholder="🚨 iCAD Dispatch Alert">
+                                    <div class="form-text text-body-secondary small">Max 256 chars.</div>
+                                </div>
+                            </div>
+
+                            <!-- Embed Color -->
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Color bar shown on the left side of the Discord embed.">
+                                    <label class="form-label" for="discordEmbedColor">Embed Color:</label>
+                                    <input
+                                            type="color"
+                                            class="form-control form-control-color p-0"
+                                            id="discordEmbedColor"
+                                            name="discord_embed_color"
+                                            value="#F04646"
+                                            title="Choose embed color">
+                                    <div class="form-text text-body-secondary small">
+                                        Pick a color; saved as hex (#RRGGBB).
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Delivery Options -->
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <div class="card border-0 bg-body-tertiary">
+                                        <div class="card-body py-3">
+
+                                            <div class="d-flex flex-column gap-3">
+
+                                                <!-- Render Map -->
+                                                <div class="form-check form-switch"
+                                                     data-bs-toggle="tooltip" data-bs-placement="top"
+                                                     title="When enabled, a rendered map image will be generated and included with the Discord post (when available).">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           role="switch"
+                                                           id="discordRenderMap"
+                                                           name="discord_render_map"
+                                                           value="1">
+                                                    <label class="form-check-label" for="discordRenderMap">
+                                                        Render map with Discord post
+                                                    </label>
+                                                </div>
+
+                                                <!-- Attach Audio -->
+                                                <div class="form-check form-switch"
+                                                     data-bs-toggle="tooltip" data-bs-placement="top"
+                                                     title="When enabled, the audio file will be attached directly to the Discord post (in addition to links).">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           role="switch"
+                                                           id="discordAttachAudio"
+                                                           name="discord_attach_audio"
+                                                           value="1">
+                                                    <label class="form-check-label" for="discordAttachAudio">
+                                                        Attach audio file to Discord post
+                                                    </label>
+                                                    <div class="form-text text-body-secondary small mt-1">
+                                                        Note: Discord has upload size limits; large files may fail to
+                                                        attach.
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Embed Footer -->
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Small footer text shown at the bottom of the embed. Tokens allowed.">
+                                    <label class="form-label" for="discordEmbedFooter">Embed Footer:</label>
+                                    <input class="form-control" type="text" id="discordEmbedFooter"
+                                           name="discord_embed_footer"
+                                           maxlength="256" placeholder="{timestamp_24}">
+                                    <div class="form-text text-body-secondary small">
+                                        Tokens: {timestamp_24}, {timestamp_local}, {system_name}, etc. (Your app expands
+                                        these.)
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save Settings -->
+                            <div class="row">
+                                <div class="col-auto mb-3">
+                                    <button type="submit" id="discordSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" id="discordSendTestBtn"
+                                            class="btn btn-sm btn-outline-primary ms-1" disabled>
+                                        <i class="bi bi-send-check"></i> Send Test
+                                    </button>
+                                </div>
+                            </div>
+
+                        </form>
+
+                        <hr class="my-4">
+
+                        <!-- Embed Fields Header + Add Button -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Discord Embed Fields</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="discordFieldAddBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#discordFieldModal">
+                                <i class="bi bi-plus-lg"></i> Add Field
+                            </button>
+                        </div>
+
+                        <!-- Embed Fields Table -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle" id="discordFieldsTable">
+                                <thead>
+                                <tr>
+                                    <th scope="col" style="width:3rem;">#</th>
+                                    <th scope="col">Label</th>
+                                    <th scope="col" class="d-none d-md-table-cell">Key</th>
+                                    <th scope="col" class="d-none d-lg-table-cell">Template</th>
+                                    <th scope="col" style="width:5rem;">Inline</th>
+                                    <th scope="col" style="width:5rem;">Enabled</th>
+                                    <th scope="col" style="width:6rem;">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody><!-- rows injected --></tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                    <div class="tab-pane fade" id="make" role="tabpanel" aria-labelledby="make-tab">
+                        <h5 id="makeTabTitle">Make Settings</h5>
+
+                        <form id="updateSystemMakeForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateMakeSystemId" name="radio_system_id">
+                            <input type="hidden" id="updateMakeSystemName" name="system_name">
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Make">
+                                    <label class="form-label" for="makeSelect">Make:</label>
+                                    <select id="makeSelect" name="make_enabled" class="form-select" aria-label="">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="makeWebhookURL">Make Webhook URL</label>
+                                    <input class="form-control" type="text" id="makeWebhookURL" name="make_webhook_url"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="URL for Make Custom Webhook">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="makeApiKey">Make API Key</label>
+                                    <input class="form-control" type="text" id="makeApiKey" name="make_api_key"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="API Key for the Make Webhook.">
+                                </div>
+                            </div>
+                            <!-- Save Settings -->
+                            <div class="row">
+                                <div class="col-auto">
+                                    <button type="submit" id="makeSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" id="makeSendTestBtn"
+                                            class="btn btn-sm btn-outline-primary ms-1" disabled>
+                                        <i class="bi bi-send-check"></i> Send Test
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <!-- Embed Fields Header + Add Button -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">JSON Object Keys and Values</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="makeFieldAddBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#makeFieldModal">
+                                <i class="bi bi-plus-lg"></i> Add Key
+                            </button>
+                        </div>
+
+                        <!-- JSON Key-Value Table -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle" id="makeFieldsTable">
+                                <thead>
+                                <tr>
+                                    <th scope="col" style="width:3rem;">#</th>
+                                    <th scope="col" class="d-none d-md-table-cell">Name/Key</th>
+                                    <th scope="col" class="d-none d-lg-table-cell">Value</th>
+                                    <th scope="col" style="width:5rem;">Enabled</th>
+                                    <th scope="col" style="width:6rem;">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody><!-- rows injected --></tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                    <div class="tab-pane fade" id="pushover" role="tabpanel" aria-labelledby="pushover-tab">
+
+                        <h5 id="pushoverTabTitle">Pushover Settings</h5>
+
+                        <!-- System Pushover Settings -->
+                        <form id="updateSystemPushoverForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updatePushoverSystemId" name="radio_system_id">
+                            <input type="hidden" id="updatePushoverSystemName" name="system_name">
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Pushover">
+                                    <label class="form-label" for="pushoverSelect">Pushover:</label>
+                                    <select id="pushoverSelect" name="pushover_enabled" class="form-select"
+                                            aria-label="">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="pushoverGroupToken">Group Token</label>
+                                    <input class="form-control" type="text" id="pushoverGroupToken"
+                                           name="pushover_group_token"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Group token from Pushover For All Agencies Group.">
+                                </div>
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="pushoverAppToken">App Token</label>
+                                    <input class="form-control" type="text" id="pushoverAppToken"
+                                           name="pushover_app_token"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="App Token from Pushover App for All Agencies Group.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="pushoverSound">Pushover Alert Sound</label>
+                                    <input class="form-control" type="text" id="pushoverSound" name="pushover_sound"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Alert Sound for Pushover Notification.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="pushoverSubject">Pushover Alert Subject</label>
+                                    <input class="form-control" type="text" id="pushoverSubject" name="pushover_subject"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Pushover alert message subject.">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="pushoverAlertBody">Pushover Alert Body</label>
+                                    <textarea class="form-control" id="pushoverAlertBody" name="pushover_body" rows="5"
+                                              data-bs-toggle="tooltip" data-bs-placement="top"
+                                              title="Pushover alert message body.">
+                                </textarea>
+                                </div>
+                            </div>
+                            <!-- Save Settings -->
+                            <div class="row">
+                                <div class="col-auto">
+                                    <button type="submit" id="pushoverSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" id="pushoverSendTestBtn"
+                                            class="btn btn-sm btn-outline-primary ms-1" disabled>
+                                        <i class="bi bi-send-check"></i> Send Test
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="email" role="tabpanel" aria-labelledby="email-tab">
+                        <h5 id="smtpTabTitle">Email Settings</h5>
+
+                        <form id="updateSystemSmtpForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateSmtpSystemId" name="radio_system_id">
+                            <input type="hidden" id="updateSmtpSystemName" name="system_name">
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Email">
+                                    <label class="form-label" for="smtpSelect">Emails:</label>
+                                    <select id="smtpSelect" name="email_enabled" class="form-select" aria-label="">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="smtpHost">SMTP Host</label>
+                                    <input class="form-control" type="text" id="smtpHost" name="smtp_hostname"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top" title="Hostname for SMTP Server">
+                                </div>
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="smtpPort">SMTP Port</label>
+                                    <input class="form-control" type="text" id="smtpPort" name="smtp_port"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top" title="SMTP Server Port">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="smtpUser">SMTP Username</label>
+                                    <input class="form-control" type="text" id="smtpUser" name="smtp_username"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top" title="Username for SMTP Server">
+                                </div>
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="smtpPassword">SMTP Password</label>
+                                    <div class="input-group">
+                                        <input class="form-control" type="password" id="smtpPassword"
+                                               name="smtp_password"
+                                               data-bs-toggle="tooltip" data-bs-placement="top" title="SMTP Password">
+                                        <button class="btn btn-outline-success" type="button">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="smtpEmailFrom">Email Address</label>
+                                    <input class="form-control" type="text" id="smtpEmailFrom" name="email_address_from"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Email Address To Send Email From: icad@example.com">
+                                </div>
+                                <div class="col-6 col-md-4 mb-3">
+                                    <label class="form-label" for="smtpEmailTextFrom">Email Name</label>
+                                    <input class="form-control" type="text" id="smtpEmailTextFrom"
+                                           name="email_text_from"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="Name To Use When Sending Email: iCAD Dispatch">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="emailAlertSubject">Alert Email Subject</label>
+                                    <input class="form-control" type="text" id="emailAlertSubject"
+                                           name="email_alert_subject"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" title="Alert Email Subject">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="emailAlertBody">Alert Email Body</label>
+                                    <textarea class="form-control" id="emailAlertBody" name="email_alert_body" rows="5"
+                                              data-bs-toggle="tooltip" data-bs-placement="top" title="Alert Email Body">
+                                </textarea>
+                                </div>
+                            </div>
+                            <!-- Save Settings -->
+                            <div class="row">
+                                <div class="col-auto">
+                                    <button type="submit" id="smtpSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" id="emailSendTestBtn"
+                                            class="btn btn-sm btn-outline-primary ms-1">
+                                        <i class="bi bi-send-check"></i> Send Test
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <hr class="my-4">
+
+                        <!-- Email Addresses Header + Add Button -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Email Addresses</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="emailAddressAddBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#emailAddressModal">
+                                <i class="bi bi-plus-lg"></i> Add Email
+                            </button>
+                        </div>
+
+                        <!-- Email Address Table -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle" id="emailAddressesTable">
+                                <thead>
+                                <tr>
+                                    <th style="width:3rem;">#</th>
+                                    <th>Email Address</th>
+                                    <th style="width:5rem;">Enabled</th>
+                                    <th style="width:6rem;">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody><!-- rows injected --></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="n8n" role="tabpanel" aria-labelledby="n8n-tab">
+                        <h5 id="n8nTabTitle">n8n Settings (JWT / HS256)</h5>
+
+                        <form id="updateSystemN8nForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateN8nSystemId" name="radio_system_id">
+                            <input type="hidden" id="updateN8nSystemName" name="system_name">
+
+                            <!-- Enabled -->
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable n8n webhook delivery for this system.">
+                                    <label class="form-label" for="n8nEnabled">n8n:</label>
+                                    <select id="n8nEnabled" class="form-select">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="HTTP request timeout for webhook delivery (seconds).">
+                                    <label class="form-label" for="n8nTimeoutS">Timeout (seconds)</label>
+                                    <input class="form-control" type="number" id="n8nTimeoutS" min="1" max="120" step="1" value="10">
+                                </div>
+                            </div>
+
+                            <!-- Webhook URL -->
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Your n8n webhook URL (Production).">
+                                    <label class="form-label" for="n8nWebhookURL">Webhook URL</label>
+                                    <input class="form-control" type="url" id="n8nWebhookURL"
+                                           placeholder="https://n8n.example.com/webhook/xxxxxx">
+                                </div>
+                            </div>
+
+                            <!-- JWT claims -->
+                            <div class="row">
+                                <div class="col-12 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Optional issuer (iss) claim to add to the token.">
+                                    <label class="form-label" for="n8nJwtIssuer">JWT Issuer (iss)</label>
+                                    <input class="form-control" id="n8nJwtIssuer" placeholder="icad-dispatch">
+                                </div>
+
+                                <div class="col-12 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Optional audience (aud) claim to add to the token.">
+                                    <label class="form-label" for="n8nJwtAudience">JWT Audience (aud)</label>
+                                    <input class="form-control" id="n8nJwtAudience" placeholder="n8n">
+                                </div>
+
+                                <div class="col-12 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Lifetime of the JWT in seconds (exp = now + this).">
+                                    <label class="form-label" for="n8nJwtTtlS">JWT TTL (seconds)</label>
+                                    <input class="form-control" type="number" id="n8nJwtTtlS" min="30" max="86400" step="1" value="300">
+                                </div>
+                            </div>
+
+                            <!-- Subject template -->
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Optional subject claim. Use templates if your sender supports them.">
+                                    <label class="form-label" for="n8nJwtSubjectTemplate">JWT Subject Template</label>
+                                    <input class="form-control" id="n8nJwtSubjectTemplate" placeholder="Bradford County">
+                                </div>
+                            </div>
+
+                            <!-- Secret / passphrase -->
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-1" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Symmetric secret used to sign HS256 JWTs.">
+                                    <label class="form-label" for="n8nJwtSecret">Passphrase</label>
+                                    <div class="input-group">
+                                        <input class="form-control" type="password" id="n8nJwtSecret"
+                                               autocomplete="new-password" placeholder="(hidden)">
+                                        <button class="btn btn-outline-secondary" type="button" id="n8nSecretToggle" title="Show/Hide">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary" type="button" id="n8nSecretGenerate" title="Generate random secret">
+                                            <i class="bi bi-magic"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text text-body-secondary">
+                                        Leave blank to keep the existing secret unchanged.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save / Test -->
+                            <div class="row mt-3 g-2">
+                                <div class="col-auto">
+                                    <button type="submit" id="n8nSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" id="n8nSendTestBtn" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-send"></i> Send Test
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="transcribe" role="tabpanel" aria-labelledby="transcribe-tab">
+
+                        <h5 id="transcribeTabTitle">Transcribe Settings</h5>
+
+                        <form id="updateSystemTranscribeForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateTranscribeSystemId" name="radio_system_id">
+                            <input type="hidden" id="updateTranscribeSystemName" name="system_name">
+
+                            <div class="row">
+                                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Enable/Disable Transcribe">
+                                    <label class="form-label" for="transcribeSelect">Transcribe:</label>
+                                    <select id="transcribeSelect" name="transcribe_enabled" class="form-select"
+                                            aria-label="">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="transcribeURL">Transcribe URL</label>
+                                    <input class="form-control" type="url" id="transcribeURL" name="transcribe_url"
+                                           placeholder="https://your-transcribe-endpoint.example.com"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="HTTP endpoint your server will POST audio metadata to for transcription. Don't need to include path. Leave empty for OpenAI Official">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 col-md-8 mb-3">
+                                    <label class="form-label" for="transcribeApiKey">Transcribe API Key</label>
+                                    <input class="form-control" type="text" id="transcribeApiKey"
+                                           name="transcribe_api_key"
+                                           placeholder="sk-…"
+                                           data-bs-toggle="tooltip" data-bs-placement="top"
+                                           title="API token to auth with transcribe service.">
+                                </div>
+                            </div>
+
+                            <!-- NEW: Model / Language / Prompt -->
+                            <div class="row">
+                                <div class="col-12 col-md-6 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Model to use when transcribing. (e.g., whisper-v3).">
+                                    <label class="form-label" for="transcribeModel">Model</label>
+                                    <input class="form-control" type="text" id="transcribeModel" name="transcribe_model"
+                                           placeholder="whisper-v3">
+                                </div>
+                                <div class="col-12 col-md-6 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="BCP-47/ISO language code or a friendly name accepted by your backend (e.g., en, en-US).">
+                                    <label class="form-label" for="transcribeLanguage">Language</label>
+                                    <input class="form-control" type="text" id="transcribeLanguage"
+                                           name="transcribe_language"
+                                           placeholder="en">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 col-md-10 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                                     title="Optional system prompt or vocabulary bias to improve recognition.">
+                                    <label class="form-label" for="transcribePrompt">Prompt / Hints</label>
+                                    <textarea class="form-control" id="transcribePrompt" name="transcribe_prompt"
+                                              rows="4"
+                                              placeholder="Initial prompt to help transcribe service."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Save -->
+                            <div class="row">
+                                <div class="col-auto mb-3">
+                                    <button type="submit" id="transcribeSettingsSaveBtn" class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="address" role="tabpanel" aria-labelledby="address-tab">
+                        <h5 id="addressTabTitle" class="mb-3">Address Extraction</h5>
+
+                        <!-- Address Extraction SETTINGS -->
+                        <form id="updateSystemAddressExtractionForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateAddressSystemId" name="radio_system_id" value="">
+                            <input type="hidden" id="updateAddressSystemName" value="">
+
+                            <!-- Master enable -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-4"
+                                     data-bs-toggle="tooltip"
+                                     data-bs-placement="top"
+                                     title="Enable/disable address extraction from transcripts for this system.">
+                                    <label class="form-label" for="addressExtractionEnabled">Address Extraction</label>
+                                    <select id="addressExtractionEnabled"
+                                            name="address_extraction_enabled"
+                                            class="form-select">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Row: API keys (OpenAI vs Google) -->
+                            <div class="row g-3">
+                                <!-- OpenAI side -->
+                                <div class="col-lg-6">
+                                    <h6 class="mb-3">OpenAI</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="addressOpenAiKey">OpenAI API Key</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="addressOpenAiKey"
+                                               autocomplete="off">
+                                        <div class="form-text">
+                                            Used to extract addresses from transcripts.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Google side -->
+                                <div class="col-lg-6">
+                                    <h6 class="mb-3">Google Maps Geocoding</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="addressGoogleKey">Google Maps API Key</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="addressGoogleKey"
+                                               autocomplete="off">
+                                        <div class="form-text">
+                                            Used to geocode candidate addresses from transcripts.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row: Model vs Default region -->
+                            <div class="row g-3">
+                                <!-- OpenAI model -->
+                                <div class="col-lg-6">
+                                    <div class="mb-3 mb-lg-0">
+                                        <label class="form-label" for="addressOpenAiModel">OpenAI model</label>
+                                        <select class="form-select" id="addressOpenAiModel">
+                                            <option value="">Select model…</option>
+                                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                            <option value="gpt-4o">gpt-4o</option>
+                                        </select>
+                                        <div class="form-text">
+                                            Usable models: gpt-4o-mini or gpt-4o.
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- Default geocode region -->
+                                <div class="col-lg-6">
+                                    <div class="mb-3 mb-lg-0">
+                                        <label class="form-label">Default geocode region</label>
+
+                                        <div class="row g-2">
+                                            <div class="col-4">
+                                                <label class="form-label small mb-1" id="addressGeocodeCountryLabel"
+                                                       for="addressGeocodeCountry">
+                                                    Country Code
+                                                </label>
+                                                <select id="addressGeocodeCountry" class="form-select">
+                                                    <option value="US">US</option>
+                                                    <option value="CA">CA</option>
+                                                    <!-- add more later if you want -->
+                                                </select>
+                                            </div>
+
+                                            <div class="col-4">
+                                                <label class="form-label small mb-1" id="addressGeocodeStateLabel"
+                                                       for="addressGeocodeState">
+                                                    State
+                                                </label>
+                                                <input type="text"
+                                                       id="addressGeocodeState"
+                                                       class="form-control"
+                                                       placeholder="State code (e.g. PA)">
+                                            </div>
+
+                                            <div class="col-4">
+                                                <label class="form-label small mb-1" id="addressGeocodeCityLabel"
+                                                       for="addressGeocodeCity">
+                                                    City
+                                                </label>
+                                                <input type="text"
+                                                       id="addressGeocodeCity"
+                                                       class="form-control"
+                                                       placeholder="City (optional)">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-text">
+                                            These defaults are used to bias Google’s geocoder.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bounding Box -->
+                            <div class="row g-3 mt-1">
+                                <div class="col-12">
+                                    <label class="form-label">Geocoding bounds (optional)</label>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label small mb-1" for="addressBoundsMinLat">Min Lat</label>
+                                            <input type="number" step="any" id="addressBoundsMinLat" class="form-control" placeholder="e.g. 44.9">
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label small mb-1" for="addressBoundsMaxLat">Max Lat</label>
+                                            <input type="number" step="any" id="addressBoundsMaxLat" class="form-control" placeholder="e.g. 46.3">
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label small mb-1" for="addressBoundsMinLng">Min Lng</label>
+                                            <input type="number" step="any" id="addressBoundsMinLng" class="form-control" placeholder="e.g. -78.4">
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label small mb-1" for="addressBoundsMaxLng">Max Lng</label>
+                                            <input type="number" step="any" id="addressBoundsMaxLng" class="form-control" placeholder="e.g. -76.2">
+                                        </div>
+                                    </div>
+                                    <div class="form-text">
+                                        Restricts Google geocoding results to this viewport. Leave blank to disable.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bounds map picker -->
+                            <div class="row g-3 mt-1">
+                                <div class="col-12">
+                                    <div id="boundsMapPicker" style="height: 250px; border-radius: .375rem; border: 1px solid var(--bs-border-color);" class="mb-2"></div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" id="addressBoundsComputeBtn" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-calculator"></i> Compute from calls
+                                        </button>
+                                        <button type="button" id="addressBoundsFitMapBtn" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-map"></i> Fit map to values
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save button -->
+                            <div class="row mt-3">
+                                <div class="col-auto mb-3">
+                                    <button type="submit"
+                                            id="addressExtractionSettingsSaveBtn"
+                                            class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+
+                        <hr class="my-4">
+
+                        <!-- Address Extraction REGIONS -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Geocoding Regions</h6>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    id="addressRegionAddBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addressRegionModal">
+                                <i class="bi bi-plus-lg"></i> Add Region
+                            </button>
+                        </div>
+                        <p class="text-body-secondary small mb-2" id="addressRegionsHelpText">
+                            Regions are tried in order when geocoding. Put your most common
+                            state/county pairs at the top.
+                        </p>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle"
+                                   id="addressRegionsTable">
+                                <thead>
+                                <tr>
+                                    <th scope="col" style="width:3rem;">#</th>
+                                    <th scope="col" id="addressRegionsStateHeader">State</th>
+                                    <th scope="col" id="addressRegionsCountyHeader">County / Region</th>
+                                    <th scope="col" style="width:6rem;">Priority</th>
+                                    <th scope="col" style="width:7rem;">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody><!-- rows injected via JS --></tbody>
+                            </table>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Address Extraction CITIES -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Geocoding Cities</h6>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    id="addressCityAddBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addressCityModal">
+                                <i class="bi bi-plus-lg"></i> Add City
+                            </button>
+                        </div>
+                        <p class="text-body-secondary small mb-2" id="addressCitiesHelpText">
+                            Cities are used as hints when extracting addresses from transcripts.
+                            The LLM will try to complete partial addresses using these cities.
+                        </p>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle"
+                                   id="addressCitiesTable">
+                                <thead>
+                                <tr>
+                                    <th scope="col" style="width:3rem;">#</th>
+                                    <th scope="col">City</th>
+                                    <th scope="col" style="width:6rem;">Priority</th>
+                                    <th scope="col" style="width:7rem;">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody><!-- rows injected via JS --></tbody>
+                            </table>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Address Extraction ROADS -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Geocoding Roads</h6>
+                            <div class="d-flex gap-2">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-info"
+                                        id="addressRoadFetchBtn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addressRoadFetchModal">
+                                    <i class="bi bi-globe"></i> Fetch from OSM
+                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary"
+                                        id="addressRoadAddBtn">
+                                    <i class="bi bi-plus-lg"></i> Add Road
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-body-secondary small mb-2" id="addressRoadsHelpText">
+                            Local road database for validating extracted addresses.
+                            Roads are used for fuzzy matching after LLM extraction and for post-geocoding sanity checks.
+                        </p>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle"
+                                   id="addressRoadsTable">
+                                <thead>
+                                <tr>
+                                    <th scope="col" style="width:3rem;">#</th>
+                                    <th scope="col">Road Name</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">City</th>
+                                    <th scope="col" style="width:6rem;">Priority</th>
+                                    <th scope="col" style="width:7rem;">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody><!-- rows injected via JS --></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Incident Classification -->
+                    <div class="tab-pane fade" id="incident" role="tabpanel" aria-labelledby="incident-tab">
+                        <h5 id="incidentTabTitle" class="mb-3">Incident Classification</h5>
+
+                        <form id="updateSystemIncidentClassificationForm" class="mt-4 input-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
+                            <input type="hidden" id="updateIncidentSystemId" name="radio_system_id" value=""/>
+                            <input type="hidden" id="updateIncidentSystemName" value=""/>
+
+                            <!-- Enable -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-4"
+                                     data-bs-toggle="tooltip"
+                                     data-bs-placement="top"
+                                     title="Enable/disable incident classification for this system.">
+                                    <label class="form-label" for="incidentClassificationEnabled">Incident
+                                        Classification</label>
+                                    <select id="incidentClassificationEnabled"
+                                            name="incident_classification_enabled"
+                                            class="form-select">
+                                        <option value="1">Enabled</option>
+                                        <option value="0">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- OpenAI settings -->
+                            <div class="border rounded p-3 bg-body-tertiary">
+                                <h6 class="mb-3">OpenAI</h6>
+
+                                <div class="row g-3">
+                                    <div class="col-12 col-lg-6">
+
+                                        <div class="mb-3">
+                                            <label class="form-label" for="incidentOpenAiKey">OpenAI API Key</label>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="incidentOpenAiKey"
+                                                   autocomplete="off">
+                                            <div class="form-text">
+                                                Used to classify incidents from transcripts.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-lg-6">
+                                        <label class="form-label" for="incidentOpenAiModel">OpenAI model</label>
+                                        <select class="form-select"
+                                                id="incidentOpenAiModel"
+                                                name="openai_model">
+                                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                            <option value="gpt-4o">gpt-4o</option>
+                                            <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                                            <option value="gpt-4.1">gpt-4.1</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-1">
+                                    <div class="col-12 col-md-4"
+                                         data-bs-toggle="tooltip"
+                                         data-bs-placement="top"
+                                         title="Minimum confidence (0..1).">
+                                        <label class="form-label" for="incidentMinConfidence">Min confidence
+                                            (0..1)</label>
+                                        <input class="form-control"
+                                               type="number"
+                                               id="incidentMinConfidence"
+                                               name="min_confidence"
+                                               step="0.01"
+                                               min="0"
+                                               max="1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save -->
+                            <div class="row mt-3">
+                                <div class="col-auto mb-3">
+                                    <button type="button"
+                                            id="incidentSettingsSaveBtn"
+                                            class="btn btn-sm btn-success">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>

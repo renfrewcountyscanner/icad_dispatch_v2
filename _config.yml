@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# iCAD Dispatch v2
+# Real-time Emergency Services Dispatch System
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# iCAD Dispatch is a real-time radio call processing and notification system
+# designed for fire, EMS, and emergency services dispatch in North America.
+# It ingests audio from radio systems, detects tones, transcribes speech,
+# extracts addresses, geocodes locations, and sends notifications to multiple
+# channels (Discord, Telegram, Email, Pushover, n8n, Make, Ntfy).
+#
+# License: MIT
+# Docs:    https://YOUR_GITHUB_USERNAME.github.io/icad_dispatch_v2/
+# ─────────────────────────────────────────────────────────────────────────────
+
+title: iCAD Dispatch v2
+description: Real-time Emergency Services Dispatch System for North America
+remote_theme: pages-themes/cayman@v0.2.0
+
+plugins:
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+include:
+  - docs
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+github:
+  repository_url: https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2
+
+# Navigation
+header_pages:
+  - docs/quickstart.md
+  - docs/installation/docker.md
+  - docs/configuration/env-variables.md
+  - docs/api.md
+  - docs/troubleshooting.md

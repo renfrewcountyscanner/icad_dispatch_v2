@@ -1,0 +1,340 @@
+{# ① TAB NAV — same pattern as systems page #}
+<ul class="nav nav-tabs flex-md-row flex-column" id="triggerTabs" role="tablist">
+    <li class="nav-item flex-grow-1" role="presentation">
+        <button class="nav-link active w-100 text-start text-md-center" data-bs-toggle="tab"
+                data-bs-target="#trig-general" type="button" role="tab">
+            <i class="bi bi-info-circle me-1"></i> General
+        </button>
+    </li>
+    <li class="nav-item flex-grow-1" role="presentation">
+        <button class="nav-link w-100 text-start text-md-center" data-bs-toggle="tab"
+                data-bs-target="#trig-tone" type="button" role="tab">
+            <i class="bi bi-soundwave me-1"></i> Tone Rules
+        </button>
+    </li>
+    <li class="nav-item flex-grow-1" role="presentation">
+        <button class="nav-link w-100 text-start text-md-center" data-bs-toggle="tab"
+                data-bs-target="#trig-overrides" type="button" role="tab">
+            <i class="bi bi-bell me-1"></i> Notifiers
+        </button>
+    </li>
+    <li class="nav-item flex-grow-1" role="presentation">
+        <button class="nav-link w-100 text-start text-md-center" data-bs-toggle="tab"
+                data-bs-target="#trig-pushover" type="button" role="tab">
+            <i class="bi bi-signpost-split-fill me-1"></i> Pushover
+        </button>
+    </li>
+</ul>
+
+{# ② TAB PANES #}
+<div class="tab-content border border-top-0 p-4" id="triggerTabContent">
+
+    {# ─────────── GENERAL ─────────── #}
+    <div class="tab-pane fade show active" id="trig-general" role="tabpanel">
+        <h5>General</h5>
+        <form id="updateTriggerGeneralForm" class="input-form mt-4">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" id="updateTriggerId"      name="alert_trigger_id">
+            <div class="row">
+                <div class="col-6 col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                     title="Enable/Disable Alert Trigger">
+                    <label class="form-label" for="updateTriggerEnabled">Trigger Status:</label>
+                    <select id="updateTriggerEnabled" name="alert_trigger_enabled" class="form-select" aria-label="">
+                        <option value="1">Enabled</option>
+                        <option value="0">Disabled</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                     title="The name of the Alert Trigger">
+                    <label class="form-label" for="updateTriggerName">Name:</label>
+                    <input id="updateTriggerName" class="form-control" name="alert_trigger_name" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                     title="Only fire if the call's talkgroup (decimal) matches this. Leave blank to match any talkgroup.">
+                    <label class="form-label" for="updateTriggerTalkgroup">
+                        Talkgroup <small class="text-muted">(decimal)</small>
+                    </label>
+                    <input type="number"
+                           id="updateTriggerTalkgroup"
+                           class="form-control"
+                           name="alert_trigger_talkgroup"
+                           step="1" min="0" inputmode="numeric"
+                           placeholder="e.g. 321">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                     title="Choose how the tone rules are combined.  ● AND = every rule must match.  ● OR = a single matching rule is enough.">
+                    <label class="form-label" for="updateTriggerType">Match Logic:</label>
+                    <select id="updateTriggerType" class="form-select" name="alert_trigger_type">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                     title="How long (in seconds) the system should wait after this trigger fires before it can fire again. Prevents duplicate alerts.">
+                    <label class="form-label" for="updateTriggerIgnore">Re-arm Delay&nbsp;<small class="text-muted">(sec)</small></label>
+                    <input type="number" id="updateTriggerIgnore" class="form-control"  name="alert_trigger_ignore_time" step="0.1" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3" data-bs-toggle="tooltip" data-bs-placement="top"
+                     title="How much the detected tone may deviate from the stored value and still count as a match. A value of 2 means ±2 % (0.02).">
+                    <label class="form-label" for="updateTriggerTol">± Tolerance&nbsp;<small class="text-muted">(%)</small></label>
+                    <input type="number" id="updateTriggerTol" class="form-control" name="alert_trigger_tone_tolerance" step="0.1">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-success"><i class="bi bi-save"></i> Save</button>
+                </div>
+                <div class="col text-end">
+                    <button id="deleteTriggerBtn" type="button" class="btn btn-sm btn-danger"
+                            data-bs-toggle="modal" data-bs-target="#triggerDeleteModal">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# ─────────── TONE RULES (Accordion) ─────────── #}
+    <div class="tab-pane fade" id="trig-tone" role="tabpanel">
+        <h5 class="mb-3">Tone Rules</h5>
+
+        <form id="updateTriggerRulesForm" class="input-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="alert_trigger_id" value="" data-bind="id">
+
+            <div class="alert alert-secondary small py-2 mb-3">
+                <div class="mb-1">
+                    Add one or more rule-sets per category. Click <strong>Edit</strong> to adjust, or <strong>Delete</strong> to remove.
+                </div>
+                <div class="mb-0">
+                    Leave per-rule tolerance blank to use the system’s default tolerance.
+                </div>
+            </div>
+
+            <div class="accordion tone-acc" id="toneAcc">
+
+                <!-- Two-Tone -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header d-flex align-items-center">
+                        <button class="accordion-button collapsed flex-grow-1" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#trPaneTwoTone" aria-expanded="false">
+                            <span class="me-2">Two-Tone</span>
+                            <span id="twoToneCount" class="badge rounded-pill primary-button ms-2">0</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success ms-2 tone-acc-add"
+                                data-rule-add="two_tone">
+                            <i class="bi bi-plus-circle"></i> Add
+                        </button>
+                    </h2>
+                    <div id="trPaneTwoTone" class="accordion-collapse collapse" data-bs-parent="#toneAcc">
+                        <div class="accordion-body">
+                            <div id="twoToneList" class="dt-theme table-responsive border rounded d-none"></div>
+                            <div id="twoToneEmpty" class="text-muted small py-2">No Two-Tone rules yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Long Tone -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header d-flex align-items-center">
+                        <button class="accordion-button collapsed flex-grow-1" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#trPaneLongTone" aria-expanded="false">
+                            <span class="me-2">Long Tone</span>
+                            <span id="longToneCount" class="badge rounded-pill primary-button ms-2">0</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success ms-2 tone-acc-add"
+                                data-rule-add="long_tone">
+                            <i class="bi bi-plus-circle"></i> Add
+                        </button>
+                    </h2>
+                    <div id="trPaneLongTone" class="accordion-collapse collapse" data-bs-parent="#toneAcc">
+                        <div class="accordion-body">
+                            <div id="longToneList" class="dt-theme table-responsive border rounded d-none"></div>
+                            <div id="longToneEmpty" class="text-muted small py-2">No Long Tone rules yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hi / Low -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header d-flex align-items-center">
+                        <button class="accordion-button collapsed flex-grow-1" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#trPaneHiLow" aria-expanded="false">
+                            <span class="me-2">Hi / Low Alternating</span>
+                            <span id="hiLowCount" class="badge rounded-pill primary-button ms-2">0</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success ms-2 tone-acc-add"
+                                data-rule-add="hi_low">
+                            <i class="bi bi-plus-circle"></i> Add
+                        </button>
+                    </h2>
+                    <div id="trPaneHiLow" class="accordion-collapse collapse" data-bs-parent="#toneAcc">
+                        <div class="accordion-body">
+                            <div id="hiLowList" class="dt-theme table-responsive border rounded d-none"></div>
+                            <div id="hiLowEmpty" class="text-muted small py-2">No Hi/Low rules yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pulsed -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header d-flex align-items-center">
+                        <button class="accordion-button collapsed flex-grow-1" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#trPanePulsed" aria-expanded="false">
+                            <span class="me-2">Pulsed Single-Tone</span>
+                            <span id="pulsedCount" class="badge rounded-pill primary-button ms-2">0</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success ms-2 tone-acc-add"
+                                data-rule-add="pulsed">
+                            <i class="bi bi-plus-circle"></i> Add
+                        </button>
+                    </h2>
+                    <div id="trPanePulsed" class="accordion-collapse collapse" data-bs-parent="#toneAcc">
+                        <div class="accordion-body">
+                            <div id="pulsedList" class="dt-theme table-responsive border rounded d-none"></div>
+                            <div id="pulsedEmpty" class="text-muted small py-2">No Pulsed rules yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DTMF -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header d-flex align-items-center">
+                        <button class="accordion-button collapsed flex-grow-1" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#trPaneDTMF" aria-expanded="false">
+                            <span class="me-2">DTMF</span>
+                            <span id="dtmfCount" class="badge rounded-pill primary-button ms-2">0</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success ms-2 tone-acc-add"
+                                data-rule-add="dtmf">
+                            <i class="bi bi-plus-circle"></i> Add
+                        </button>
+                    </h2>
+                    <div id="trPaneDTMF" class="accordion-collapse collapse" data-bs-parent="#toneAcc">
+                        <div class="accordion-body">
+                            <div id="dtmfList" class="dt-theme table-responsive border rounded d-none"></div>
+                            <div id="dtmfEmpty" class="text-muted small py-2">No DTMF sequences yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /accordion -->
+
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-sm btn-success" id="saveRulesBtn">
+                    <i class="bi bi-save"></i> Save rules
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="resetRulesBtn">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Reusable modal -->
+    <div class="modal fade" id="toneRuleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" id="toneRuleForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="toneRuleModalLabel">Add rule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="rule_uid" id="toneRuleUid">
+                    <input type="hidden" name="type_key" id="toneRuleTypeKey">
+                    <div id="toneRuleFields" class="row g-3"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    {# ─────────── NOTIFIER OVERRIDES ─────────── #}
+    <div class="tab-pane fade" id="trig-overrides" role="tabpanel">
+        <h5>Notifier Overrides</h5>
+        <form id="updateTriggerOverridesForm" class="input-form mt-4">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="alert_trigger_id" value="" data-bind="id">
+
+            <div class="row">
+                {% for ch in ['discord','make','telegram','ntfy'] %}
+                    <div class="col-6 col-md-3 mb-3">
+                        <label class="form-label text-capitalize">{{ ch }}</label>
+                        <select class="form-select form-select-sm" name="alert_trigger_enable_{{ ch }}">
+                            <option value="1">Enabled</option><option value="0">Disabled</option>
+                        </select>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="row">
+                <div class="col-6 col-md-4 mb-3">
+                    <label class="form-label">Ntfy Topic</label>
+                    <input class="form-control" type="text" name="alert_trigger_ntfy_topic"
+                           placeholder="e.g. fire-bonnechere-valley">
+                </div>
+            </div>
+            <button class="btn btn-sm btn-success"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+
+    {# ─────────── PUSHOVER SETTINGS (child table) ─────────── #}
+    <div class="tab-pane fade" id="trig-pushover" role="tabpanel">
+        <h5>Pushover</h5>
+        <form id="updateTriggerPushoverForm" class="input-form mt-4">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Enable</label>
+                    <select class="form-select" name="enable_pushover">
+                        <option value="1">Yes</option><option value="0">No</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Group Token</label>
+                    <input class="form-control" name="pushover_group_token">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">App Token</label>
+                    <input class="form-control" name="pushover_app_token">
+                </div>
+            </div>
+
+            <div class="mb-3"><label class="form-label">Subject</label>
+                <input class="form-control" name="pushover_subject">
+            </div>
+            <div class="mb-3"><label class="form-label">Body</label>
+                <textarea class="form-control" rows="4" name="pushover_body"></textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Sound</label>
+                    <input class="form-control" name="pushover_sound">
+                </div>
+            </div>
+
+            <button class="btn btn-sm btn-success"><i class="bi bi-save"></i> Save</button>
+        </form>
+    </div>
+</div><!-- /tab-content -->

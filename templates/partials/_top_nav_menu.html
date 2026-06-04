@@ -1,0 +1,145 @@
+<script>
+async function toggleMuteNotifications() {
+    const btn = document.getElementById('muteToggle');
+    const icon = document.getElementById('muteIcon');
+    const text = document.getElementById('muteText');
+
+    // Get CSRF token from the meta tag injected by Flask-Session/CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    try {
+        const response = await fetch('/api/systems/toggle-mute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+        const data = await response.json();
+        
+        if (data.muted) {
+            icon.classList.remove('bi-bell-fill');
+            icon.classList.add('bi-bell-slash-fill');
+            text.textContent = 'Unmute notifications';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-warning');
+        } else {
+            icon.classList.remove('bi-bell-slash-fill');
+            icon.classList.add('bi-bell-fill');
+            text.textContent = 'Mute notifications';
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-success');
+        }
+        showAlert(data.message, 'success');
+    } catch (err) {
+        showAlert('Failed to toggle mute state', 'danger');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const muteBtn = document.getElementById('muteToggle');
+    if (!muteBtn) return;
+    
+    fetch('/api/systems/mute-state')
+        .then(r => r.json())
+        .then(data => {
+            const icon = document.getElementById('muteIcon');
+            const text = document.getElementById('muteText');
+            const btn = document.getElementById('muteToggle');
+            if (data.muted) {
+                icon.classList.remove('bi-bell-fill');
+                icon.classList.add('bi-bell-slash-fill');
+                text.textContent = 'Unmute notifications';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-warning');
+            } else {
+                text.textContent = 'Mute notifications';
+                btn.classList.add('btn-success');
+            }
+        });
+});
+</script>
+{% if "login" not in request.path %}
+    <!-- Top Navbar -->
+    <nav class="navbar sticky-top navbar-header navbar-expand-lg">
+        <div class="container-fluid">
+            <a href="/" class=navbar-brand">
+                <img
+                        src="{{ url_for('static', filename='img/logo.png') }}"
+                        height="48px"
+                        alt="Site Logo"
+                        loading="lazy"
+                />
+            </a>
+
+            <!-- Offcanvas Toggle (on small screens) -->
+            <button
+                    class="btn ms-2 mt-1 d-lg-none"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#sidebarMenu"
+                    aria-controls="sidebarMenu"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+            >
+                <i class="bi bi-list nav-icon"></i>
+            </button>
+
+            <!-- User Profile Dropdown on the Far Right -->
+            <ul class="navbar-nav ms-auto mb-lg-0">
+                {% if session.get("authenticated") %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.2rem;font-weight: 500;">
+                            <i class="bi bi-person-fill me-1"></i>
+                            {% if session.get("username") %}
+                                {{ session['username'] }}
+                            {% else %}
+                                Guest
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('dashboard.dashboard_index') }}">
+                                    <i class="bi bi-house-door-fill me-1"></i> Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('dashboard.dashboard_change_password') }}">
+                                    <i class="bi bi-key-fill me-1"></i> Change Password
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('auth.auth_logout') }}">
+                                    <i class="bi bi-box-arrow-right me-1"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Mute Notifications Toggle -->
+                    <li class="nav-item">
+                        <button
+                                class="btn btn-success d-flex align-items-center gap-1"
+                                type="button"
+                                id="muteToggle"
+                                title="Toggle all notifications"
+                                onclick="toggleMuteNotifications()"
+                        >
+                            <i id="muteIcon" class="bi bi-bell-fill"></i>
+                            <span id="muteText">Mute notifications</span>
+                        </button>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('base_site.base_site_login') }}"
+                           class="btn primary-button"
+                           role="button">
+                            Log&nbsp;In
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+{% endif %}
