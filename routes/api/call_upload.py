@@ -847,6 +847,7 @@ def get_start_epoch(call_data: dict) -> float:
 
 def _make_payload(audio_url: str, cd: Dict, tg: str, sid: int, dur: float) -> Dict:
     payload = {
+        "call_id": cd.get("call_id"),
         "radio_system_id": sid,
         "talkgroup": tg,
         "talkgroup_name": cd.get("talkgroupLabel"),

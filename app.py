@@ -99,7 +99,8 @@ app.config["AUDIO_ARCHIVE_PATH"] = audio_path
 # ─────────────── Sessions ───────────────
 app.config['SESSION_TYPE']        = 'filesystem'
 app.config['SESSION_FILE_DIR']    = os.path.join(var_path, 'sessions')
-app.config['SESSION_PERMANENT']   = False
+app.config['SESSION_PERMANENT']   = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 604800  # 7 days
 app.config['SESSION_USE_SIGNER']  = True
 app.config['SESSION_KEY_PREFIX']  = 'icad_dispatch_session:'
 

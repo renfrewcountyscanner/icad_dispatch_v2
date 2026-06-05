@@ -356,10 +356,27 @@ class AddressGeocoder:
             (sw_lat, sw_lng), (ne_lat, ne_lng) = self.bounds
             return (sw_lat <= lat <= ne_lat) and (sw_lng <= lng <= ne_lng)
 
+        # Helper: reject geocoding results where the returned city doesn't
+        # match the city we extracted from the transcript (prevents street-only
+        # matches in the wrong town, e.g. Pembroke → Petawawa)
+        def _city_matches(result_city: Optional[str]) -> bool:
+            if not result_city or not extracted or not extracted.city:
+                return True  # no extracted city to compare against
+            rc = result_city.lower().strip()
+            ec = extracted.city.lower().strip()
+            # Exact match or the result city contains the extracted city
+            if rc == ec or ec in rc or rc in ec:
+                return True
+            self.log.warning(
+                "[Geocode] City mismatch: extracted=%r geocoded=%r — rejecting",
+                extracted.city, result_city,
+            )
+            return False
+
         # Attempt 1: Nominatim full with hard viewbox (bounded=1)
         self.log.info("[Geocode] Attempt 1a - Nominatim full bounded=1: %r", address)
         result = self._geocode_nominatim(address, bounded=True)
-        if result and _in_bounds(result["lat"], result["lng"]):
+        if result and _in_bounds(result["lat"], result["lng"]) and _city_matches(result.get("city")):
             self.log.info(
                 "[Geocode] Nominatim bounded=1 succeeded: %r -> %s",
                 address, result["formatted_address"],
@@ -369,7 +386,7 @@ class AddressGeocoder:
         # Attempt 1b: Nominatim full with soft bias (bounded=0)
         self.log.info("[Geocode] Attempt 1b - Nominatim full bounded=0: %r", address)
         result = self._geocode_nominatim(address, bounded=False)
-        if result and _in_bounds(result["lat"], result["lng"]):
+        if result and _in_bounds(result["lat"], result["lng"]) and _city_matches(result.get("city")):
             self.log.info(
                 "[Geocode] Nominatim bounded=0 succeeded: %r -> %s",
                 address, result["formatted_address"],
@@ -387,7 +404,7 @@ class AddressGeocoder:
                 "[Geocode] Attempt 2 - Nominatim street-only: %r", street_query
             )
             result = self._geocode_nominatim(street_query, bounded=False)
-            if result and _in_bounds(result["lat"], result["lng"]):
+            if result and _in_bounds(result["lat"], result["lng"]) and _city_matches(result.get("city")):
                 self.log.info(
                     "[Geocode] Nominatim street-only succeeded: %r -> %s",
                     street_query, result["formatted_address"],
@@ -410,7 +427,7 @@ class AddressGeocoder:
                 "[Geocode] Attempt 3 - Nominatim city-appended: %r", city_query
             )
             result = self._geocode_nominatim(city_query, bounded=False)
-            if result and _in_bounds(result["lat"], result["lng"]):
+            if result and _in_bounds(result["lat"], result["lng"]) and _city_matches(result.get("city")):
                 self.log.info(
                     "[Geocode] Nominatim city-appended succeeded: %r -> %s",
                     city_query, result["formatted_address"],
@@ -434,7 +451,7 @@ class AddressGeocoder:
                     "[Geocode] Attempt 3b - Nominatim stripped: %r", stripped_query
                 )
                 result = self._geocode_nominatim(stripped_query, bounded=False)
-                if result and _in_bounds(result["lat"], result["lng"]):
+                if result and _in_bounds(result["lat"], result["lng"]) and _city_matches(result.get("city")):
                     self.log.info(
                         "[Geocode] Nominatim stripped succeeded: %r -> %s",
                         stripped_query, result["formatted_address"],
@@ -445,12 +462,17 @@ class AddressGeocoder:
         if self.google_api_key:
             self.log.info("[Geocode] Attempt 4 - Google Maps: %r", address)
             result = self._geocode_google(address)
-            if result:
+            if result and _city_matches(result.get("city")):
                 self.log.info(
                     "[Geocode] Google Maps succeeded: %r -> %s",
                     address, result["formatted_address"],
                 )
                 return self._to_geocoded_address(result)
+            elif result:
+                self.log.warning(
+                    "[Geocode] Google Maps city mismatch — rejecting: %r -> %s",
+                    address, result["formatted_address"],
+                )
         else:
             self.log.info("[Geocode] Attempt 4 - Google Maps skipped (no API key)")
 
