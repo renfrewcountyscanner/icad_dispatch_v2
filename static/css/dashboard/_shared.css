@@ -1,0 +1,124 @@
+/*
+ * _shared.css — Shared dashboard table/filter/stats utilities.
+ * Loaded by dashboard/base.html so every dashboard page gets these.
+ * Page-specific overrides stay in page-level <style> blocks.
+ */
+
+/* ── Table dark theme (used by DataTables) ──────────────────────── */
+.table-dark-custom {
+    --bs-table-bg: #1a1a2e;
+    --bs-table-striped-bg: #252540;
+    --bs-table-hover-bg: #2d2d4a;
+    color: #fff;
+}
+
+/* ── Filter rows ───────────────────────────────────────────────── */
+.filter-row,
+.filter-row-top,
+.filter-row-bottom {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ── Styled filter inputs (matching dark theme) ────────────────── */
+.filter-row select,
+.filter-row input,
+.filter-row-top select,
+.filter-row-top input {
+    background: #2d2d44;
+    border: 1px solid #444;
+    color: #fff;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+}
+
+.filter-row select:focus,
+.filter-row input:focus,
+.filter-row-top select:focus,
+.filter-row-top input:focus {
+    background: #3d3d54;
+    border-color: #666;
+    color: #fff;
+    outline: none;
+}
+
+/* ── Stats row (inline label / value pairs) ────────────────────── */
+.stats-inline,
+.stats-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+}
+
+.stats-inline .stat,
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #ccc;
+}
+
+.stats-inline .stat-label,
+.stat-label { color: #888; }
+
+.stats-inline .stat-value,
+.stat-value { color: #fff; font-weight: 600; }
+
+/* ── Live-pulse pill ───────────────────────────────────────────── */
+.live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #27ae60;
+    color: #fff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.live-pill::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    background: #fff;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+}
+
+/* ── Incident type badges ──────────────────────────────────────── */
+.badge-other     { background-color: #6c757d; }
+.badge-fire      { background-color: #dc3545; }
+.badge-medical   { background-color: #0d6efd; }
+.badge-traffic   { background-color: #ffc107; color: #000; }
+.badge-rescue    { background-color: #20c997; color: #000; }
+.badge-utilities { background-color: #343a40; }
+.badge-hazmat    { background-color: #d4a017; color: #000; }
+
+/* ── Trigger pills ─────────────────────────────────────────────── */
+.trigger-pill {
+    display: inline-block;
+    background: #3d3d4d;
+    color: #fff;
+    padding: 0.15rem 0.45rem;
+    border-radius: 0.3rem;
+    font-size: 0.68rem;
+    margin: 0.1rem 0.1rem 0.1rem 0;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+/* ── Action buttons in tables ──────────────────────────────────── */
+.action-btn { padding: 0.15rem 0.35rem; font-size: 0.75rem; }

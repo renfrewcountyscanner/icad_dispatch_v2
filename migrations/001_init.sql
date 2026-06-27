@@ -122,8 +122,8 @@ CREATE TABLE IF NOT EXISTS radio_system_pushover_settings
     pushover_enabled     INTEGER DEFAULT 0,
     pushover_group_token TEXT,
     pushover_app_token   TEXT,
-    pushover_body        TEXT    DEFAULT '<font color="red"><b>{trigger_list}</b></font><br><br><a href="{audio_url}">Click for Dispatch Audio</a><br><br><a href="{stream_url}">Click Audio Stream</a>',
-    pushover_subject     TEXT    DEFAULT 'Dispatch Alert',
+    pushover_body        TEXT    DEFAULT '<b>{system_name} — {trigger_list}</b>\n<i>{incident_category} • {incident_type}</i>\n\n{address}\n\n{transcript}\n\n<a href="{audio_url}">Dispatch Audio</a>\n<small>{timestamp_12} • Call #{call_id}</small>',
+    pushover_subject     TEXT    DEFAULT '{system_name} — {trigger_list}',
     pushover_sound       TEXT    DEFAULT 'pushover',
     FOREIGN KEY (radio_system_id) REFERENCES radio_systems (radio_system_id) ON DELETE CASCADE
 );
@@ -309,8 +309,8 @@ CREATE TABLE IF NOT EXISTS alert_trigger_pushover_settings
     enable_pushover                   INTEGER DEFAULT 0,
     pushover_group_token              TEXT    DEFAULT NULL,
     pushover_app_token                TEXT    DEFAULT NULL,
-    pushover_body                     TEXT    DEFAULT '<font color="red"><b>{trigger_list}</b></font><br><br><a href="{audio_url}">Click for Dispatch Audio</a><br><br><a href="{stream_url}">Click Audio Stream</a>',
-    pushover_subject                  TEXT    DEFAULT 'Dispatch Alert',
+    pushover_body                     TEXT    DEFAULT '<b>{system_name} — {trigger_list}</b>\n<i>{incident_category} • {incident_type}</i>\n\n{address}\n\n{transcript}\n\n<a href="{audio_url}">Dispatch Audio</a>\n<small>{timestamp_12} • Call #{call_id}</small>',
+    pushover_subject                  TEXT    DEFAULT '{system_name} — {trigger_list}',
     pushover_sound                    TEXT    DEFAULT 'pushover',
     FOREIGN KEY (alert_trigger_id) REFERENCES alert_triggers (alert_trigger_id) ON DELETE CASCADE
 );

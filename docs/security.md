@@ -144,7 +144,7 @@ What is NOT public:
 
 ### Reporting Security Issues
 
-See [SECURITY.md](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/blob/main/SECURITY.md) for responsible disclosure.
+See [SECURITY.md](https://github.com/renfrewcountyscanner/icad_dispatch_v2/blob/main/SECURITY.md) for responsible disclosure.
 
 ---
 

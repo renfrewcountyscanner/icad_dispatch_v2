@@ -28,7 +28,7 @@ server on your own hardware.
 
 **Self-hosted OpenAI-compatible services**
 
-- iCAD Transcribe: https://github.com/TheGreatCodeholio/icad_transcribe
+- iCAD Transcribe: https://github.com/renfrewcountyscanner/icad_transcribe
 - Speaches: https://github.com/speaches-ai/speaches
 
 ---

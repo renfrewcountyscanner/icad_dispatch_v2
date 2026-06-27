@@ -119,6 +119,36 @@ function addLightTiles() {
     }).addTo(map);
 }
 
+/**
+ * Compute today at 00:00 in America/Toronto (Eastern Time) as a UTC epoch.
+ * Uses Intl.DateTimeFormat to get the calendar date in Toronto, then
+ * measures the timezone offset to convert Toronto-local 00:00 to UTC.
+ * Works correctly regardless of the user's browser timezone and handles
+ * DST transitions (EST↔EDT) automatically.
+ */
+function torontoMidnightEpoch() {
+    // Get the calendar date as it is right now in America/Toronto
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Toronto',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(new Date());
+    const y = parts.find(p => p.type === 'year').value;
+    const m = parts.find(p => p.type === 'month').value;
+    const d = parts.find(p => p.type === 'day').value;
+
+    // Build a Date that we *pretend* is UTC for the same calendar date,
+    // then measure the offset between that moment's UTC wall-clock and its
+    // Toronto wall-clock. The difference is the Toronto timezone offset,
+    // which we apply to get the epoch for Toronto-local 00:00.
+    const tempDate = new Date(`${y}-${m}-${d}T00:00:00Z`);
+    const torontoStr = tempDate.toLocaleString('en-US', { timeZone: 'America/Toronto' });
+    const utcStr = tempDate.toLocaleString('en-US', { timeZone: 'UTC' });
+    const offsetMs = new Date(utcStr).getTime() - new Date(torontoStr).getTime();
+    return Math.floor((tempDate.getTime() + offsetMs) / 1000);
+}
+
 // ── SocketIO ─────────────────────────────────────────────────────
 function initSocket() {
     socket = io({ transports: ['websocket', 'polling'] });
@@ -135,6 +165,8 @@ function initSocket() {
             if (dateTo) sub.to = Math.floor(new Date(dateTo + 'T23:59:59').getTime() / 1000);
             if (!sub.from && !sub.to) sub.hours = 24;
             socket.emit('subscribe', sub);
+        } else if (timeRange.value === 'midnight') {
+            socket.emit('subscribe', { from: torontoMidnightEpoch() });
         } else {
             socket.emit('subscribe', { hours: parseFloat(timeRange.value) });
         }
@@ -192,6 +224,8 @@ async function loadCalls() {
         if (!dateFrom && !dateTo) {
             params.append('hours', '24');
         }
+    } else if (timeRange.value === 'midnight') {
+        params.append('from', torontoMidnightEpoch());
     } else {
         params.append('hours', timeRange.value);
     }
@@ -912,7 +946,11 @@ function initControls() {
             customWrap.classList.add('d-none');
             loadCalls();
             if (socket && socket.connected) {
-                socket.emit('subscribe', { hours: parseFloat(timeRange.value) });
+                if (timeRange.value === 'midnight') {
+                    socket.emit('subscribe', { from: torontoMidnightEpoch() });
+                } else {
+                    socket.emit('subscribe', { hours: parseFloat(timeRange.value) });
+                }
             }
         }
     });

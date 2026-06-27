@@ -1,6 +1,7 @@
 # ────────────────────────── helpers ──────────────────────────
 import ipaddress
 import os
+import re
 import uuid
 from urllib.parse import urlparse
 
@@ -79,17 +80,22 @@ def _is_ip(host: str) -> bool:
 
 
 def choose_cookie_domain() -> str | None:
-    # Prefer explicit env if it’s a real domain
+    # Prefer explicit env if it's a real domain
     dom = (os.getenv("SESSION_COOKIE_DOMAIN") or "").strip()
     if dom:
-        if dom.lower() == "localhost" or _is_ip(dom):
-            return None  # host-only for localhost/IP
+        if dom.lower() == "localhost" or _is_ip(dom) or _is_ip_based_hostname(dom):
+            return None  # host-only for localhost/IP/IP-based names
         return dom  # FQDN allowed
     # Else try BASE_URL host
     host = (urlparse(os.getenv("BASE_URL", "")).hostname or "").strip()
-    if not host or host.lower() == "localhost" or _is_ip(host):
+    if not host or host.lower() == "localhost" or _is_ip(host) or _is_ip_based_hostname(host):
         return None
     return host
+
+
+def _is_ip_based_hostname(host: str) -> bool:
+    """Return True if the host ends with 4 numeric octets like .192.168.90.130."""
+    return bool(re.search(r'\.\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', host))
 
 
 alert_test_payload = {

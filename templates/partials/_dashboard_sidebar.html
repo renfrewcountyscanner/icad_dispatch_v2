@@ -1,7 +1,7 @@
-{% macro sidebar_link(label, endpoint, icon_class='') %}
-    {% set is_active = request.path == endpoint %}
+{% macro sidebar_link(label, target, icon_class='') %}
+    {% set is_active = request.path == target %}
     <li class="nav-item">
-        <a href="{{ url_for(endpoint) if '/' not in endpoint else endpoint }}"
+        <a href="{{ target }}"
            class="nav-link {{ 'active' if is_active else '' }}"
            {% if is_active %}aria-current="page"{% endif %}>
             {% if icon_class %}
@@ -12,14 +12,23 @@
     </li>
 {% endmacro %}
 
+{% macro sidebar_divider() %}
+    <li class="nav-item"><hr class="my-1 border-secondary"></li>
+{% endmacro %}
+
 <ul class="nav nav-pills flex-column mb-auto">
     {{ sidebar_link('Dashboard', '/dashboard', 'bi bi-house-door-fill') }}
-    <hr>
+    {{ sidebar_divider() }}
     {{ sidebar_link('Radio Systems', '/dashboard/systems', 'bi bi-broadcast') }}
     {{ sidebar_link('Triggers', '/dashboard/triggers', 'bi bi-bell-fill') }}
-    {{ sidebar_link('Upload Test', '/dashboard/upload', 'bi bi-upload') }}
-    <hr>
+    {{ sidebar_link('Upload', '/dashboard/upload', 'bi bi-upload') }}
+    {{ sidebar_divider() }}
     {{ sidebar_link('Call Summary', '/dashboard/summary', 'bi bi-journal-text') }}
     {{ sidebar_link('Map Corrections', '/dashboard/corrections', 'bi bi-geo-alt-fill') }}
-    {{ sidebar_link('Users', '/admin/users', 'bi bi-people-fill') }}
+
+    {% if session.get('is_admin') %}
+    {{ sidebar_divider() }}
+    {{ sidebar_link('User Management', '/admin/users', 'bi bi-people-fill') }}
+    {{ sidebar_link('Database Import', '/admin', 'bi bi-database-fill-up') }}
+    {% endif %}
 </ul>

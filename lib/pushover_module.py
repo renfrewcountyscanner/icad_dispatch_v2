@@ -76,7 +76,7 @@ class PushoverSender:
             app_token=(p.get("app_token") or p.get("pushover_app_token") or None),
             group_token=(p.get("group_token") or p.get("pushover_group_token") or None),
             subject_tmpl=(p.get("subject") or p.get("pushover_subject") or "Dispatch Alert"),
-            body_tmpl=(p.get("body") or p.get("pushover_body") or "{trigger_list}"),
+            body_tmpl=(p.get("body") or p.get("pushover_body") or "{system_name} — {trigger_list}\n\n{incident_category} • {incident_type}\n\n{address}\n\n{transcript}\n\n{audio_url}"),
             sound=(p.get("sound") or p.get("pushover_sound") or "pushover"),
         )
 

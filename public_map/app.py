@@ -453,7 +453,16 @@ def api_calls():
         })
 
     meta["count"] = len(result)
-    return sanitize_for_json({"success": True, "result": result, "meta": meta})
+    resp = sanitize_for_json({"success": True, "result": result, "meta": meta})
+    return Response(
+        json.dumps(resp),
+        mimetype="application/json",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 @app.route("/api/triggers")
@@ -488,7 +497,16 @@ def api_triggers():
         }
         for r in rows
     ]
-    return {"success": True, "result": result}
+    resp = {"success": True, "result": result}
+    return Response(
+        json.dumps(resp),
+        mimetype="application/json",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 @app.route("/api/push-call", methods=["POST"])
@@ -602,7 +620,7 @@ def api_call_detail(call_id: int):
         else:
             audio_url = f"{BASE_URL}/audio/{fp.replace('static/audio/', '')}"
 
-    return sanitize_for_json({
+    resp = sanitize_for_json({
         "success": True,
         "result": {
             "call_id": r["call_id"],
@@ -624,6 +642,15 @@ def api_call_detail(call_id: int):
             "correction_notes": r.get("correction_notes") or "",
         }
     })
+    return Response(
+        json.dumps(resp),
+        mimetype="application/json",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 @app.route("/audio/<path:audio_path>")

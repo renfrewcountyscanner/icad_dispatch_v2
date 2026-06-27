@@ -1992,20 +1992,27 @@ def systems_n8n_test(radio_system_id: int):
     # Require config to exist
     if not n8n.settings.webhook_url:
         return jsonify(success=False, message="n8n webhook URL is not configured for this system.", result=[]), 400
-    if not n8n.settings.jwt_passphrase:
-        return jsonify(success=False, message="n8n JWT passphrase is not configured for this system.", result=[]), 400
 
     # User clicked the button → allow test even if the "enabled" toggle is off
     n8n.settings.enabled = True
 
+    # Build map_image_url exactly like production dispatch
+    base = os.getenv("PUBLIC_MAP_BASE_URL", "").rstrip("/")
+    lat = ctx.get("address_lat")
+    lng = ctx.get("address_lng")
+    incident = ctx.get("incident_category") or "Other"
+    if base and lat is not None and lng is not None:
+        ctx["map_image_url"] = (
+            f"{base}/map-image?lat={lat}&lng={lng}&incident={incident}"
+        )
+
     # “As if production”:
-    # - If production requires a fired trigger with enable_n8n=1, keep this True.
-    # - If you want the button to always send regardless of trigger flags, set False.
+    # - Test always sends regardless of trigger n8n gate flags
     sent = n8n.send(
         ctx,
         fired_trigger_data=fired_trigger_data,
-        only_if_any_trigger_enabled=True,
-        max_retries=0,  # test button: don’t sit and retry
+        only_if_any_trigger_enabled=False,
+        max_retries=0,  # test button: don't sit and retry
     )
 
     if not sent:
@@ -2013,7 +2020,7 @@ def systems_n8n_test(radio_system_id: int):
             success=False,
             message="n8n test send failed. Check server logs for details (n8n_module).",
             result=[],
-        ), 502
+        ), 400
 
     return jsonify(
         success=True,

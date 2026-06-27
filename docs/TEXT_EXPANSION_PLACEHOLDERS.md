@@ -51,7 +51,7 @@ These placeholders let you include the system’s **best guess about what kind o
 - `Call Type: {incident_category} / {incident_type}`
 - `Classification: {incident_category} ({incident_confidence})`
 - `Debug: {incident_json}`
-- 
+
 ---
 
 ### Triggers

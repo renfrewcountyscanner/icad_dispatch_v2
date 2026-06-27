@@ -2,18 +2,52 @@
 {% extends "base_site/base.html" %}
 {% block title %}Home - iCAD Dispatch{% endblock %}
 
-{% block extra_styles %}
-
-{% endblock extra_styles %}
-
 {% block content %}
-    <div class="row py-4">
-        <div class="col-12">
+    <div class="row py-5 justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6 text-center">
+            <img src="{{ url_for('static', filename='img/logo.png') }}"
+                 alt="iCAD Dispatch Logo"
+                 height="80"
+                 class="mb-4"
+                 loading="lazy">
 
+            <h1 class="fw-bold mb-3">iCAD Dispatch</h1>
+            <p class="lead text-muted mb-4">
+                Real-time emergency services dispatch system.
+                Automatically detect tones, transcribe radio traffic, extract addresses, and send alerts.
+            </p>
+
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="{{ url_for('base_site.base_site_login') }}" class="btn btn-lg primary-button">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </a>
+            </div>
+
+            <hr class="my-5 border-secondary">
+
+            <div class="row g-4 text-start">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-soundwave fs-4" style="color: var(--primary_brand);"></i>
+                        <h6 class="mb-0">Tone Detection</h6>
+                    </div>
+                    <small class="text-muted">Two-tone, long-tone, MDC, and DTMF detection from live radio audio.</small>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-translate fs-4" style="color: var(--primary_brand);"></i>
+                        <h6 class="mb-0">AI Transcription</h6>
+                    </div>
+                    <small class="text-muted">Whisper-powered speech-to-text on emergency radio traffic.</small>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-bell-fill fs-4" style="color: var(--primary_brand);"></i>
+                        <h6 class="mb-0">Multi-Channel Alerts</h6>
+                    </div>
+                    <small class="text-muted">Discord, Telegram, Email, Pushover, n8n, Make, and Ntfy notifications.</small>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
-
-{% block extra_js %}
-
-{% endblock extra_js %}

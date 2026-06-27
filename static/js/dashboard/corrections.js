@@ -7,12 +7,43 @@ let callsData = [];
 let selectedCallId = null;
 let draggedLat = null;
 let draggedLon = null;
+let dirty = false; // becomes true only when the user actually changes the location
 
-const RENFREW_CENTER = [45.4748, -77.6972];
+// Default map center. Can be overridden by a #mapDefaults element with
+// data-lat / data-lng / data-zoom attributes (set per-deployment in the template).
+function getDefaultCenter() {
+    const el = document.getElementById("mapDefaults");
+    const lat = parseFloat(el?.dataset.lat);
+    const lng = parseFloat(el?.dataset.lng);
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) return [lat, lng];
+    return [45.4215, -75.6972]; // neutral fallback (Ottawa, ON)
+}
+
+function getDefaultZoom() {
+    const el = document.getElementById("mapDefaults");
+    const z = parseInt(el?.dataset.zoom, 10);
+    return Number.isNaN(z) ? 8 : z;
+}
+
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=";
 
 function esc(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function markDirty() {
+    dirty = true;
+    const btn = document.getElementById("saveBtn");
+    if (btn) btn.disabled = false;
+}
+
+// Simple debounce helper.
+function debounce(fn, wait) {
+    let t;
+    return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
 }
 
 function formatDateTime(epoch) {
@@ -59,6 +90,7 @@ function renderCallsList() {
     }
 
     const container = document.getElementById("callsList");
+    const prevScroll = container.scrollTop;
     if (!filtered.length) {
         container.innerHTML = `<div class="text-muted text-center mt-4">No calls match the filter.</div>`;
         return;
@@ -86,6 +118,9 @@ function renderCallsList() {
     container.querySelectorAll(".call-item").forEach(el => {
         el.addEventListener("click", () => selectCall(Number(el.dataset.id)));
     });
+
+    // Preserve scroll position across re-renders (e.g. after a save).
+    container.scrollTop = prevScroll;
 }
 
 function selectCall(callId) {
@@ -104,8 +139,7 @@ function selectCall(callId) {
         map.setView([lat, lng], 16);
         updateMarker(lat, lng);
     } else {
-        // Default to Renfrew County if no location
-        map.setView(RENFREW_CENTER, 10);
+        map.setView(getDefaultCenter(), getDefaultZoom());
         if (marker) { map.removeLayer(marker); marker = null; }
     }
 
@@ -115,12 +149,16 @@ function selectCall(callId) {
 
     document.getElementById("addressDisplay").value = call.address || "";
     document.getElementById("notesInput").value = call.notes || "";
-    document.getElementById("saveBtn").disabled = false;
+
+    // No change made yet: Save stays disabled until the user moves the marker
+    // or searches an address. Revert is only available for existing corrections.
+    dirty = false;
+    document.getElementById("saveBtn").disabled = true;
     document.getElementById("revertBtn").disabled = !call.has_correction;
 }
 
 function initMap() {
-    map = L.map("correctionMap", { zoomControl: true }).setView(RENFREW_CENTER, 10);
+    map = L.map("correctionMap", { zoomControl: true }).setView(getDefaultCenter(), getDefaultZoom());
 
     // CartoDB Dark Matter tiles (match dashboard dark theme)
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
@@ -135,7 +173,7 @@ function initMap() {
         draggedLat = e.latlng.lat;
         draggedLon = e.latlng.lng;
         updateCoordDisplay();
-        document.getElementById("saveBtn").disabled = false;
+        markDirty();
     });
 
     document.getElementById("mapLoader").classList.add("d-none");
@@ -150,7 +188,7 @@ function updateMarker(lat, lng) {
             draggedLat = e.target.getLatLng().lat;
             draggedLon = e.target.getLatLng().lng;
             updateCoordDisplay();
-            document.getElementById("saveBtn").disabled = false;
+            markDirty();
         });
     }
 }
@@ -184,7 +222,7 @@ async function searchAddress() {
             draggedLon = lon;
             updateCoordDisplay();
             document.getElementById("addressDisplay").value = r.display_name || q;
-            if (selectedCallId) document.getElementById("saveBtn").disabled = false;
+            if (selectedCallId) markDirty();
         } else {
             showAlert("Address not found", "warning");
         }
@@ -196,6 +234,15 @@ async function searchAddress() {
 
 async function saveCorrection() {
     if (!selectedCallId || draggedLat == null || draggedLon == null) return;
+    if (!dirty) {
+        showAlert("No changes to save", "info");
+        return;
+    }
+
+    const saveBtn = document.getElementById("saveBtn");
+    const original = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving…';
 
     const body = {
         lat: draggedLat,
@@ -223,13 +270,25 @@ async function saveCorrection() {
     } catch (err) {
         console.error(err);
         showAlert("Failed to save correction", "danger");
+    } finally {
+        saveBtn.innerHTML = original;
     }
 }
 
 async function revertCorrection() {
     if (!selectedCallId) return;
 
-    if (!confirm("Remove this manual correction and revert to automatic geocoding?")) return;
+    const ok = await confirmAction({
+        title: "Revert Correction",
+        body: "Remove this manual correction and revert to automatic geocoding?",
+        confirmText: "Revert",
+    });
+    if (!ok) return;
+
+    const revertBtn = document.getElementById("revertBtn");
+    const original = revertBtn.innerHTML;
+    revertBtn.disabled = true;
+    revertBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Reverting…';
 
     try {
         const resp = await fetch(`/api/calls/${selectedCallId}/correct-location`, {
@@ -247,26 +306,9 @@ async function revertCorrection() {
     } catch (err) {
         console.error(err);
         showAlert("Failed to revert", "danger");
+    } finally {
+        revertBtn.innerHTML = original;
     }
-}
-
-function showAlert(message, type) {
-    const container = document.getElementById("toastContainer");
-    if (!container) return;
-    const id = "toast-" + Math.random().toString(36).slice(2);
-    const html = `
-        <div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">${esc(message)}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `;
-    container.insertAdjacentHTML("beforeend", html);
-    const el = document.getElementById(id);
-    const toast = new bootstrap.Toast(el, { delay: 4000 });
-    toast.show();
-    el.addEventListener("hidden.bs.toast", () => el.remove());
 }
 
 function initCorrectionsPage() {
@@ -274,9 +316,15 @@ function initCorrectionsPage() {
     loadCalls();
 
     document.getElementById("filterSelect").addEventListener("change", renderCallsList);
-    document.getElementById("searchInput").addEventListener("input", renderCallsList);
+    document.getElementById("searchInput").addEventListener("input", debounce(renderCallsList, 200));
     document.getElementById("addressSearch").addEventListener("keydown", (e) => {
         if (e.key === "Enter") searchAddress();
+    });
+    document.getElementById("addressDisplay").addEventListener("input", () => {
+        if (selectedCallId) markDirty();
+    });
+    document.getElementById("notesInput").addEventListener("input", () => {
+        if (selectedCallId) markDirty();
     });
     document.getElementById("saveBtn").addEventListener("click", saveCorrection);
     document.getElementById("revertBtn").addEventListener("click", revertCorrection);

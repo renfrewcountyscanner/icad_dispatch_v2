@@ -43,12 +43,13 @@
                     
                     <!-- Username Input -->
                     <div class="form-floating-custom">
+                        <label for="loginUsername" class="visually-hidden">Username</label>
                         <i class="bi bi-person input-icon"></i>
                         <input 
                             type="text" 
                             class="form-control" 
-                            id="loginEmail" 
-                            name="loginEmail"
+                            id="loginUsername" 
+                            name="loginUsername"
                             placeholder="Username"
                             required
                             autocomplete="username"
@@ -57,6 +58,7 @@
 
                     <!-- Password Input -->
                     <div class="form-floating-custom">
+                        <label for="loginPassword" class="visually-hidden">Password</label>
                         <i class="bi bi-lock input-icon"></i>
                         <input 
                             type="password" 
@@ -97,19 +99,4 @@
 
 {% block extra_js %}
     <script src="{{ url_for('static', filename='js/base_site/login.js') }}"></script>
-    <script>
-        // Password toggle functionality
-        const toggleBtn = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('loginPassword');
-        const toggleIcon = document.getElementById('togglePasswordIcon');
-        
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                toggleIcon.classList.toggle('bi-eye-fill');
-                toggleIcon.classList.toggle('bi-eye-slash-fill');
-            });
-        }
-    </script>
 {% endblock extra_js %}

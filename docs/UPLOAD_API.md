@@ -206,9 +206,3 @@ curl -X POST "https://example.com/api/call-upload" \
 
 ## Related docs
 
-- `SPLIT_UPLOADS.md` (stub/merge behavior and tuning)
-- `TONE_DETECTION.md` (what tones are detected and how they’re stored)
-- `TRIGGERS.md` (how triggers match tone sets and dispatch)
-- `TRANSCRIPTION.md` (transcribe settings and payload fields)
-- `ADDRESS_EXTRACTION.md`
-- `INCIDENT_CLASSIFICATION.md`

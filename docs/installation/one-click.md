@@ -49,7 +49,7 @@ The `install.sh` script does everything for you. You run one command, answer a f
 ### Option 1: Direct Download (Easiest)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/renfrewcountyscanner/icad_dispatch_v2/main/install.sh | bash
 ```
 
 **What this does:** Downloads the script and runs it immediately.
@@ -61,7 +61,7 @@ curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/icad_dispatch_
 If you want to see what the script does before running it:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/main/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/renfrewcountyscanner/icad_dispatch_v2/main/install.sh -o install.sh
 nano install.sh      # Read through the script
 bash install.sh
 ```
@@ -71,16 +71,20 @@ bash install.sh
 ## What the Script Asks You
 
 | Question | What It Means | Example Answer |
-|---|---|---|
-| Server IP or hostname | Your server's public address | `192.168.1.50` or `dispatch.yourdomain.com` |
-| Port | Which port the dashboard runs on | `9911` (just press Enter for default) |
-| Admin password | Password for the `root` login | Type a strong password |
-| Timezone | Your region's timezone | `America/New_York` (press Enter for default) |
+|---|---|---|---|
+| Dispatch domain | Your main dashboard URL | `dispatch.yourdomain.com` |
+| Map domain | Your public map URL | `map.dispatch.yourdomain.com` |
+| Timezone | Your region's IANA timezone | `America/New_York` (press Enter) |
+| Use HTTPS? | Whether you have SSL certificates | `yes` or `no` |
+| PostgreSQL password | Database password (or Enter to auto-generate) | Type a strong password or press Enter |
+| Enable Google Maps? | Optional geocoding fallback | `yes` or `no` (default) |
+| Enable OpenAI? | Optional LLM address extraction | `yes` or `no` (default) |
 
 **The script auto-generates:**
+- `ROOT_PASSWORD` — admin login password (shown in summary)
 - `PUBLIC_MAP_API_KEY` — shared secret for the containers
 - `MAP_SECRET_KEY` — secret for the public map
-- `PG_PASSWORD` — database password
+- `PG_PASSWORD` — database password (if you pressed Enter)
 
 ---
 
@@ -175,7 +179,7 @@ curl -I https://github.com
 
 If that works, try cloning manually:
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git /opt/icad_dispatch
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git /opt/icad_dispatch
 ```
 
 ---

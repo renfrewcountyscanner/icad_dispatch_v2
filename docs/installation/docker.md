@@ -153,7 +153,7 @@ sudo usermod -aG docker $USER
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
 cd icad_dispatch_v2
 ```
 
@@ -196,18 +196,32 @@ For full details on all variables, see [Environment Variables](../configuration/
 
 ---
 
-### Step 3: Create Required Directories
+### Step 3: Create Required Directories and User
+
+The container runs as a non-root user (`UID 9911`). You must create this user on the host and set directory ownership so the container can write to its volumes.
 
 ```bash
+# Create the user and group
+sudo groupadd -g 9911 icad_dispatch 2>/dev/null || true
+sudo useradd -M -s /usr/sbin/nologin -u 9911 -g icad_dispatch icad_dispatch 2>/dev/null || true
+
+# Create directories
 mkdir -p var log audio
+
+# Set ownership
+sudo chown -R 9911:9911 var log audio
+
+# Allow yourself to manage files too
+sudo usermod -aG icad_dispatch "$USER"
 ```
 
-**What this does:** Creates folders for:
-- `var/` — Runtime data (sessions, secret keys)
-- `log/` — Application logs
-- `audio/` — Uploaded radio audio files
+**What this does:**
+- Creates the `icad_dispatch` user/group with UID/GID 9911
+- Creates folders for runtime data, logs, and audio
+- Sets ownership so the container (running as 9911) can read and write
+- Adds your user to the `icad_dispatch` group so you can manage files
 
-These folders are mounted into the containers so data persists even if containers are deleted.
+> **Note:** You may need to log out and back in for the group change to take effect.
 
 ---
 

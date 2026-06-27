@@ -64,12 +64,13 @@ def password_validate(database_password: Any, given_password: str) -> bool:
     """
     Validate a plaintext password against a stored bcrypt hash.
 
-    Handles SQLite return types that might be `bytes`, `str`, or `memoryview`.
+    Handles PostgreSQL bytea hex encoding, SQLite return types, and multiple
+    psycopg2 configurations (bytes, str, memoryview, hex-encoded str).
 
     Parameters
     ----------
     database_password : Any
-        Stored bcrypt hash (ideally bytes). If str, it will be encoded as UTF-8.
+        Stored bcrypt hash. May be bytes, str (hex-encoded or raw), or memoryview.
     given_password : str
         Plaintext password from the user.
 
@@ -85,7 +86,14 @@ def password_validate(database_password: Any, given_password: str) -> bool:
     if isinstance(database_password, memoryview):
         database_password = database_password.tobytes()
     elif isinstance(database_password, str):
-        database_password = database_password.encode("utf-8")
+        # PostgreSQL may return bytea as hex-encoded string: \x243262243132...
+        if database_password.startswith("\\x") and len(database_password) > 2:
+            try:
+                database_password = bytes.fromhex(database_password[2:])
+            except ValueError:
+                database_password = database_password.encode("utf-8")
+        else:
+            database_password = database_password.encode("utf-8")
 
     try:
         return bcrypt.checkpw(given_password.encode("utf-8"), database_password)
@@ -163,6 +171,7 @@ def set_session_keys(db, user_data: Dict[str, Any]) -> bool:
             user_systems=user_systems,
             authenticated=True,
         )
+        session.permanent = True  # Ensure cookie survives browser restarts
         module_logger.debug("Session Keys set OK: user_id=%s is_admin=%s systems=%s",
                            user_id, is_admin, list(user_systems.keys()))
         return True

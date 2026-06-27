@@ -27,6 +27,18 @@
     border-top: 1px solid rgba(255,255,255,.08);
     padding-top: .75rem;
     margin-top: .5rem;
+    scroll-snap-type: x mandatory;
+  }
+  /* Right-edge fade hint that there are more tabs to scroll */
+  .ap-tablist::after {
+    content: '';
+    position: sticky;
+    right: 0;
+    width: 28px;
+    min-width: 28px;
+    background: linear-gradient(90deg, transparent, var(--primary_back) 70%);
+    pointer-events: none;
+    flex-shrink: 0;
   }
 }
 

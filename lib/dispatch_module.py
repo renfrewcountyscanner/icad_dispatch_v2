@@ -101,6 +101,13 @@ def _dispatch_triggers(
         ctx["map_image_url"] = (
             f"{base}/map-image?lat={lat}&lng={lng}&incident={incident}"
         )
+    elif base:
+        ctx["map_image_url"] = f"{base}/static/img/placeholder.png"
+    elif lat is not None and lng is not None and not base:
+        module_logger.warning(
+            "PUBLIC_MAP_BASE_URL is not set — map image will not be included in notifications. "
+            "Set PUBLIC_MAP_BASE_URL in .env to the public URL of your map service."
+        )
 
     # ───────────────────────── Email ─────────────────────────
     emailer = EmailSender.from_system_row(system_row, logger=module_logger)

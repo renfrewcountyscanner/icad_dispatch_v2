@@ -5,7 +5,7 @@
 # It assumes Docker and Docker Compose are already installed.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/YOUR_USER/icad_dispatch_v2/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/renfrewcountyscanner/icad_dispatch_v2/main/install.sh | bash
 #   # or download and run locally:
 #   bash install.sh
 # ─────────────────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_URL="https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git"
+REPO_URL="https://github.com/renfrewcountyscanner/icad_dispatch_v2.git"
 INSTALL_DIR="${1:-/opt/icad_dispatch}"
 
 # ─── Colors ──────────────────────────────────────────────────────────────────
@@ -134,6 +134,13 @@ configure() {
         COOKIE_DOMAIN="${COOKIE_DOMAIN#http://}"
     fi
 
+    # If the domain is IP-based (e.g. dispatch.192.168.90.130), use host-only cookie
+    if [[ ! "$COOKIE_DOMAIN" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]] || \
+       [[ "$COOKIE_DOMAIN" =~ \.[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        log_warn "Domain appears to be IP-based — using host-only cookies"
+        COOKIE_DOMAIN=""
+    fi
+
     # Database password
     echo
     DB_PASS=$(prompt_password "Enter PostgreSQL password (or press Enter for auto-generated)")
@@ -189,17 +196,29 @@ PUBLIC_MAP_BASE_URL=$MAP_DOMAIN
 ROOT_USERNAME=root
 ROOT_PASSWORD=$ROOT_PASSWORD
 
-# Optional notifiers — configure later via dashboard
-# GOOGLE_MAPS_API_KEY=$GOOGLE_KEY
-# OPENAI_API_KEY=$OPENAI_KEY
+# Optional services — configure later via dashboard
+GOOGLE_MAPS_API_KEY=$GOOGLE_KEY
+OPENAI_API_KEY=$OPENAI_KEY
 EOF
-
-    # Update docker-compose.production.yml placeholders
-    sed -i "s|https://map\.firepage\.ca|$MAP_DOMAIN|g" "$INSTALL_DIR/docker-compose.production.yml" 2>/dev/null || true
-    sed -i "s|https://map\.yoursite\.com|$MAP_DOMAIN|g" "$INSTALL_DIR/docker-compose.production.yml" 2>/dev/null || true
 
     log_ok ".env file created at $INSTALL_DIR/.env"
     chmod 600 "$INSTALL_DIR/.env"
+}
+
+# ─── User & Group Setup ────────────────────────────────────────────────────
+
+create_user() {
+    if ! getent group icad_dispatch &>/dev/null; then
+        log_info "Creating icad_dispatch group (GID 9911)..."
+        groupadd -g 9911 icad_dispatch || true
+    fi
+
+    if ! getent passwd icad_dispatch &>/dev/null; then
+        log_info "Creating icad_dispatch user (UID 9911)..."
+        useradd -M -s /usr/sbin/nologin -u 9911 -g icad_dispatch icad_dispatch || true
+    fi
+
+    log_ok "User and group ready"
 }
 
 # ─── Directory Setup ────────────────────────────────────────────────────────
@@ -209,7 +228,17 @@ setup_dirs() {
     mkdir -p "$INSTALL_DIR"/var/public_maps
     mkdir -p "$INSTALL_DIR"/log
     mkdir -p "$INSTALL_DIR"/audio
-    log_ok "Directories created"
+
+    # Set ownership so the container (running as UID 9911) can write
+    chown -R icad_dispatch:icad_dispatch "$INSTALL_DIR"/var
+    chown -R icad_dispatch:icad_dispatch "$INSTALL_DIR"/log
+    chown -R icad_dispatch:icad_dispatch "$INSTALL_DIR"/audio
+
+    # Allow current user to manage files too
+    CURRENT_USER="$(whoami)"
+    usermod -aG icad_dispatch "$CURRENT_USER" 2>/dev/null || true
+
+    log_ok "Directories created and permissions set"
 }
 
 # ─── Build & Start ───────────────────────────────────────────────────────────
@@ -248,7 +277,7 @@ print_summary() {
     echo
     echo "  Admin Login:"
     echo "    Username: root"
-    echo "    Password: (in .env file)"
+    echo "    Password: $ROOT_PASSWORD"
     echo
     echo "  Next Steps:"
     echo "    1. Set up a reverse proxy (nginx/Caddy) for HTTPS"
@@ -260,7 +289,7 @@ print_summary() {
     echo "    docker compose -f docker-compose.production.yml logs -f"
     echo "    docker compose -f docker-compose.production.yml ps"
     echo
-    echo "  Docs: https://YOUR_GITHUB_USERNAME.github.io/icad_dispatch_v2/"
+    echo "  Docs: https://renfrewcountyscanner.github.io/icad_dispatch_v2/"
     echo "═══════════════════════════════════════════════════════════════"
 }
 
@@ -274,6 +303,7 @@ main() {
 
     check_prereqs
     clone_repo
+    create_user
     setup_dirs
     configure
     build_and_start

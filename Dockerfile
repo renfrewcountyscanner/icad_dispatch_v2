@@ -10,6 +10,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libavcodec-extra \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
@@ -34,10 +35,12 @@ COPY static/ ./static/
 COPY migrations/ ./migrations/
 COPY scripts/ ./scripts/
 
+# Entrypoint fixes volume mount ownership at startup
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Set ownership
 RUN chown -R icad_dispatch:icad_dispatch /app
-
-# Running as root to avoid permission issues with volume mounts
 
 # Expose port
 EXPOSE 9911
@@ -46,5 +49,6 @@ EXPOSE 9911
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests, sys; r = requests.get('http://localhost:9911/'); sys.exit(0 if r.status_code in (200, 302) else 1)" || exit 1
 
-# Run the application
+# Entrypoint fixes permissions then drops to non-root user
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:9911", "--workers", "4", "--threads", "2", "--timeout", "120", "app:app"]

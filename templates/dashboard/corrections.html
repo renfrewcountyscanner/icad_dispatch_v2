@@ -12,13 +12,18 @@
         }
         .calls-panel {
             width: 420px;
-            min-width: 320px;
+            min-width: 300px;
             display: flex;
             flex-direction: column;
-            background: #1a1a2e;
+            background: var(--secondary_back);
             border-radius: 0.5rem;
             border: 1px solid #333;
             overflow: hidden;
+        }
+        @media (max-width: 992px) {
+            .corrections-container { flex-direction: column; height: auto; }
+            .calls-panel { width: 100%; max-height: 40vh; }
+            .map-panel { min-height: 55vh; }
         }
         .calls-header {
             padding: 0.75rem 1rem;
@@ -156,18 +161,20 @@
 
 {% block content %}
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
+    {# Default map center for this deployment. Override lat/lng/zoom as needed. #}
+    <span id="mapDefaults" data-lat="45.4215" data-lng="-75.6972" data-zoom="8" hidden></span>
     <h1 class="mt-4 mb-3">Call Location Corrections</h1>
 
     <div class="corrections-container">
         <!-- Calls List Panel -->
         <div class="calls-panel">
             <div class="calls-header">
-                <select id="filterSelect" class="form-select form-select-sm">
+                <select id="filterSelect" class="form-select form-select-sm" aria-label="Filter calls">
                     <option value="all">All Recent (72h)</option>
                     <option value="no_location">Needs Location</option>
                     <option value="corrected">Corrected</option>
                 </select>
-                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search address/transcript...">
+                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search address/transcript..." aria-label="Search calls">
             </div>
             <div class="calls-list" id="callsList">
                 <div class="text-muted text-center mt-4">Loading calls…</div>
@@ -184,12 +191,12 @@
                 </div>
             </div>
             <div class="map-overlay-controls">
-                <input type="text" id="addressSearch" placeholder="Search address…" title="Type address + Enter">
+                <input type="text" id="addressSearch" placeholder="Search address…" title="Type an address and press Enter to locate" aria-label="Search address on map">
             </div>
             <div class="save-bar">
                 <span class="coord-display" id="coordDisplay">Lat: — | Lon: —</span>
-                <input type="text" id="addressDisplay" placeholder="Address will appear here…" readonly>
-                <input type="text" id="notesInput" placeholder="Notes (optional)…" style="flex:1">
+                <input type="text" id="addressDisplay" placeholder="Address (editable)…" aria-label="Corrected address" title="The address stored with this correction. You can edit it directly.">
+                <input type="text" id="notesInput" placeholder="Notes (optional)…" style="flex:1" aria-label="Correction notes">
                 <button class="btn btn-sm btn-success" id="saveBtn" disabled>Save</button>
                 <button class="btn btn-sm btn-outline-danger" id="revertBtn" disabled>Revert</button>
             </div>

@@ -11,7 +11,7 @@ Real-time Emergency Services Dispatch System for Fire, EMS, and Public Safety ag
 {: .fs-6 .fw-300 }
 
 [Get Started](quickstart){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[View on GitHub](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2){: .btn .fs-5 .mb-4 .mb-md-0 }
+[View on GitHub](https://github.com/renfrewcountyscanner/icad_dispatch_v2){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
@@ -106,13 +106,13 @@ Radio Audio ──► iCAD Dispatch ──► PostgreSQL ──► Public Map �
 ### Option 1: One-Click Installer (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/renfrewcountyscanner/icad_dispatch_v2/main/install.sh | bash
 ```
 
 ### Option 2: Manual Docker Setup
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
 cd icad_dispatch_v2
 cp .env.example .env
 # Edit .env with your domain and secrets
@@ -152,7 +152,7 @@ See [Native Installation Guide](installation/native.md) for Python + PostgreSQL 
 
 ## License
 
-[MIT License](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/blob/main/LICENSE) — free for personal and commercial use.
+[MIT License](https://github.com/renfrewcountyscanner/icad_dispatch_v2/blob/main/LICENSE) — free for personal and commercial use.
 
 ---
 

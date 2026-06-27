@@ -1813,10 +1813,10 @@ def update_system_n8n_settings(db: PostgreSQLDatabase, data: dict) -> dict:
     # ---- validate final merged state when enabled -------------------------
     merged = {**current, **norm}
     if int(merged.get("n8n_enabled") or 0) == 1:
-        if not merged.get("n8n_webhook_url") or not merged.get("jwt_passphrase"):
+        if not merged.get("n8n_webhook_url"):
             return {
                 "success": False,
-                "message": "Cannot enable n8n without both n8n_webhook_url and jwt_passphrase.",
+                "message": "Cannot enable n8n without n8n_webhook_url.",
                 "result": [],
             }
 

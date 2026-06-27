@@ -1,17 +1,13 @@
 {% extends 'dashboard/base.html' %}
 
-{% block title %}Upload Test - iCAD Dispatch{% endblock %}
-
-{% block extra_styles %}
-    <link href="{{ url_for('static', filename='css/dashboard/dashboard.css') }}" rel="stylesheet">
-{% endblock %}
+{% block title %}Upload Audio - iCAD Dispatch{% endblock %}
 
 {% block content %}
 <div class="row g-3 mt-3">
     <div class="col-12">
         <div class="card ap-toolbar-card border-0">
             <div class="card-body py-3 px-4">
-                <span class="fw-semibold">Upload Test Audio</span>
+                <span class="fw-semibold">Upload Audio</span>
             </div>
         </div>
     </div>
@@ -49,7 +45,14 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Upload & Process</button>
+                    <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">
+                        <i class="bi bi-upload"></i> Upload &amp; Process
+                    </button>
+
+                    <div class="progress mt-3 d-none" id="uploadProgress" style="height: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                             role="progressbar" style="width: 100%;"></div>
+                    </div>
                 </form>
 
                 <div id="uploadResult" class="mt-4 d-none">
@@ -63,121 +66,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-console.log('Upload page JS loaded');
-(function() {
-    const form = document.getElementById('uploadForm');
-    console.log('Form element:', form);
-    if (!form) {
-        console.error('Form not found!');
-        return;
-    }
-    
-    form.addEventListener('submit', async function(e) {
-        console.log('Form submit intercepted');
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const resultDiv = document.getElementById('uploadResult');
-        const alertDiv = resultDiv.querySelector('.alert');
-        
-        resultDiv.classList.remove('d-none');
-        alertDiv.className = 'alert alert-info';
-        alertDiv.textContent = 'Uploading and processing...';
-        
-        try {
-            console.log('Sending upload request...');
-            const response = await fetch('/api/call-upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            let data;
-            try {
-                data = await response.json();
-            } catch (parseErr) {
-                console.error('Failed to parse response as JSON:', parseErr);
-                data = null;
-            }
-            console.log('Response:', data, 'Status:', response.status);
-
-            if (response.ok) {
-                alertDiv.className = 'alert alert-success';
-                alertDiv.textContent = data?.message || 'Upload successful!';
-
-                // Display detailed results
-                const result = data?.result || {};
-                const detailsDiv = document.getElementById('resultDetails');
-
-                let html = '<div class="row"><div class="col-md-6">';
-                html += '<h6 class="text-muted mb-2">Call Details</h6>';
-                html += '<dl class="row small">';
-
-                if (result.call_id) {
-                    html += `<dt class="col-sm-4">Call ID:</dt><dd class="col-sm-8"><strong>${result.call_id}</strong></dd>`;
-                }
-                if (result.system_name) {
-                    html += `<dt class="col-sm-4">System:</dt><dd class="col-sm-8">${result.system_name}</dd>`;
-                }
-                if (result.talkgroup) {
-                    html += `<dt class="col-sm-4">Talkgroup:</dt><dd class="col-sm-8">${result.talkgroup}</dd>`;
-                }
-                if (result.duration_s !== undefined) {
-                    html += `<dt class="col-sm-4">Duration:</dt><dd class="col-sm-8">${result.duration_s.toFixed(1)}s</dd>`;
-                }
-                if (result.merged !== undefined) {
-                    html += `<dt class="col-sm-4">Merged:</dt><dd class="col-sm-8">${result.merged ? 'Yes' : 'No'}</dd>`;
-                }
-
-                html += '</dl></div><div class="col-md-6">';
-                html += '<h6 class="text-muted mb-2">Detection Results</h6>';
-                html += '<dl class="row small">';
-
-                if (result.tones_detected !== undefined) {
-                    html += `<dt class="col-sm-4">Tones:</dt><dd class="col-sm-8">${result.tones_detected}</dd>`;
-                }
-
-                if (result.tone_types && Object.keys(result.tone_types).length > 0) {
-                    html += `<dt class="col-sm-4">Types:</dt><dd class="col-sm-8">`;
-                    html += Object.entries(result.tone_types)
-                        .map(([type, count]) => `${type}: ${count}`)
-                        .join(', ');
-                    html += '</dd>';
-                }
-
-                if (result.triggers_fired && result.triggers_fired.length > 0) {
-                    html += `<dt class="col-sm-4">Triggers:</dt><dd class="col-sm-8">`;
-                    html += result.triggers_fired.map(t => `<span class="badge bg-info">${t}</span>`).join(' ');
-                    html += '</dd>';
-                } else {
-                    html += `<dt class="col-sm-4">Triggers:</dt><dd class="col-sm-8"><em class="text-muted">None</em></dd>`;
-                }
-
-                if (result.transcript) {
-                    html += `<dt class="col-sm-4">Transcript:</dt><dd class="col-sm-8"><small>${result.transcript}...</small></dd>`;
-                }
-
-                html += '</dl></div></div>';
-                detailsDiv.innerHTML = html;
-            } else {
-                alertDiv.className = 'alert alert-danger';
-                let errorMsg = 'Unknown error';
-                if (data && typeof data === 'object') {
-                    errorMsg = data.message || data.error || JSON.stringify(data);
-                } else if (typeof data === 'string') {
-                    errorMsg = data;
-                }
-                alertDiv.textContent = 'Error: ' + errorMsg;
-                document.getElementById('resultDetails').innerHTML = '';
-            }
-        } catch (err) {
-            console.error('Upload error:', err);
-            alertDiv.className = 'alert alert-danger';
-            alertDiv.textContent = 'Upload failed: ' + err.message;
-        }
-    });
-    
-    console.log('Event listener attached');
-})();
-</script>
-{% endblock extra_js %}
+    <script src="{{ url_for('static', filename='js/dashboard/upload.js') }}"></script>
+{% endblock %}

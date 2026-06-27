@@ -1,0 +1,16 @@
+{# 404 Not Found #}
+{% extends "base_site/base.html" %}
+{% block title %}Page Not Found - iCAD Dispatch{% endblock %}
+
+{% block content %}
+    <div class="row py-5 justify-content-center text-center">
+        <div class="col-12 col-md-6">
+            <h1 class="display-1 fw-bold" style="color: var(--primary_brand);">404</h1>
+            <h2 class="mb-3">Page Not Found</h2>
+            <p class="text-muted mb-4">The page you requested doesn't exist or has been moved.</p>
+            <a href="/dashboard" class="btn primary-button">
+                <i class="bi bi-house-door-fill me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+{% endblock %}

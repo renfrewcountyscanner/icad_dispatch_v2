@@ -45,6 +45,56 @@ function showAlert(message, type) {
 
 }
 
+/**
+ * Show a styled confirmation dialog (replaces native confirm()).
+ * Returns a Promise<boolean> that resolves true if confirmed.
+ *
+ * Falls back to native confirm() if the modal element is unavailable.
+ *
+ * @param {Object} opts
+ * @param {string} [opts.title]    Modal title.
+ * @param {string} [opts.body]     Body message (plain text, escaped).
+ * @param {string} [opts.confirmText] Confirm button label.
+ * @param {string} [opts.confirmClass] Confirm button class (e.g. 'btn-danger').
+ */
+function confirmAction(opts) {
+    opts = opts || {};
+    const modalEl = document.getElementById('globalConfirmModal');
+    if (!modalEl || typeof bootstrap === 'undefined') {
+        return Promise.resolve(window.confirm(opts.body || 'Are you sure?'));
+    }
+
+    const titleEl = document.getElementById('globalConfirmTitle');
+    const bodyEl = document.getElementById('globalConfirmBody');
+    const okBtn = document.getElementById('globalConfirmOk');
+
+    titleEl.textContent = opts.title || 'Please Confirm';
+    bodyEl.textContent = opts.body || 'Are you sure?';
+    okBtn.textContent = opts.confirmText || 'Confirm';
+    okBtn.className = 'btn ' + (opts.confirmClass || 'btn-danger');
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const onOk = () => {
+            settled = true;
+            modal.hide();
+            resolve(true);
+        };
+        const onHidden = () => {
+            okBtn.removeEventListener('click', onOk);
+            modalEl.removeEventListener('hidden.bs.modal', onHidden);
+            if (!settled) resolve(false);
+        };
+
+        okBtn.addEventListener('click', onOk);
+        modalEl.addEventListener('hidden.bs.modal', onHidden);
+        modal.show();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const messages = document.querySelectorAll('.flash-message');
     messages.forEach(message => {

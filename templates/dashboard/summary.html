@@ -5,35 +5,9 @@
 {% block extra_styles %}
     <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.css" rel="stylesheet" integrity="sha384-wn0toyEaGbOiHLoVsGIbRhHaxw3FPoMRaO7YcrgSHlXTEf0rLvG/kOfM8lSi7LVj" crossorigin="anonymous">
     <style>
-        .filter-row {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
+        .filter-row   { margin-bottom: 1rem; }
         .filter-row select,
-        .filter-row input {
-            background: #2d2d44;
-            border: 1px solid #444;
-            color: #fff;
-            font-size: 0.85rem;
-            padding: 0.4rem 0.6rem;
-            border-radius: 0.3rem;
-        }
-        .filter-row select:focus,
-        .filter-row input:focus {
-            background: #3d3d54;
-            border-color: #666;
-            color: #fff;
-            outline: none;
-        }
-        .table-dark-custom {
-            --bs-table-bg: #1a1a2e;
-            --bs-table-striped-bg: #252540;
-            --bs-table-hover-bg: #2d2d4a;
-            color: #fff;
-        }
+        .filter-row input { font-size: 0.85rem; padding: 0.4rem 0.6rem; border-radius: 0.3rem; }
         #summaryTable th, #summaryTable td {
             vertical-align: middle;
             font-size: 0.85rem;
@@ -45,22 +19,12 @@
             white-space: nowrap;
             cursor: pointer;
         }
+        .transcript-cell:hover { color: #6ea8fe; }
         .transcript-expanded {
             white-space: pre-wrap;
             max-width: none;
         }
-        .export-btn {
-            margin-left: auto;
-        }
-        .stats-row {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            margin-bottom: 0.75rem;
-            font-size: 0.85rem;
-        }
-        .stat-item { color: #ccc; }
-        .stat-value { color: #fff; font-weight: 600; }
+        .export-btn { margin-left: auto; }
     </style>
 {% endblock %}
 

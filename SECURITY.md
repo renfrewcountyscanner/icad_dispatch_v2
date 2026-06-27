@@ -13,8 +13,7 @@
 
 Instead, report privately:
 
-1. Email: `security@yourdomain.com` (replace with your contact)
-2. Or use [GitHub Private Vulnerability Reporting](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/security/advisories/new)
+1. Use [GitHub Private Vulnerability Reporting](https://github.com/renfrewcountyscanner/icad_dispatch_v2/security/advisories/new)
 
 ### What to Include
 
@@ -58,13 +57,14 @@ See the full [Security Hardening Guide](docs/security.md).
 This repository is **publicly visible on GitHub**. Under no circumstances should the following files be committed:
 
 | File | Why |
-|---|---|
+|---|---|---|
 | `.env` | Contains real passwords, API keys, and secrets |
 | `.env.local` | Local override with real secrets |
 | `.env.production` | Production secrets |
-| `docker-compose.production.yml` | Contains real domain names and fallback passwords |
 | `var/secret_key.txt` | Auto-generated Flask secret key |
 | `*.pem`, `*.key`, `*.p12` | TLS certificates and private keys |
+
+Note: `docker-compose.production.yml` is safe to commit — all secrets reference `${VAR}` from `.env`. No real credentials are stored in it.
 
 ### If You Accidentally Commit a Secret
 
@@ -87,7 +87,7 @@ The public map is designed to be publicly accessible. It displays the same infor
 
 ### Container Runs as Root
 
-The official Docker image runs as root to avoid audio permission issues. This is a known tradeoff. For hardened deployments, you can modify the Dockerfile to use a non-root user.
+Containers run as a non-root user (icad_dispatch, UID 9911) via gosu entrypoint. Volume mounts must be owned by UID 9911 (see install scripts).
 
 ### Rate Limiting
 

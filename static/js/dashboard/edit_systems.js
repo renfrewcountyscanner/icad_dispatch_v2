@@ -264,7 +264,13 @@ function initFormListeners() {
 
     on("regenerateApiKeyBtn", "click", async () => {
         if (!mustHaveSystem()) return;
-        if (!confirm("Generate a NEW key?")) return;
+        const ok = await confirmAction({
+            title: "Regenerate API Key",
+            body: "Generating a new key will immediately break any SDR software using the old key. You will need to update your uploader configuration. Continue?",
+            confirmText: "Regenerate",
+            confirmClass: "btn-warning",
+        });
+        if (!ok) return;
 
         const csrf = document.querySelector("#updateSystemGeneralForm [name=_csrf_token]")?.value ?? "";
         const rsp = await apiJson(`/api/systems/${currentSystemId}/apikey`, {
@@ -683,7 +689,11 @@ async function onSftpClearKeyClick(evt) {
 
     if (!textarea || !form) return;
 
-    if (!confirm("Clear the stored SSH key for this system? This cannot be undone.")) {
+    if (!(await confirmAction({
+        title: "Clear SSH Key",
+        body: "Clear the stored SSH key for this system? This cannot be undone.",
+        confirmText: "Clear Key",
+    }))) {
         return;
     }
 
@@ -1388,7 +1398,11 @@ async function saveDiscordFieldFromModal(formEl) {
 }
 
 async function confirmDeleteDiscordField(embed_field_id) {
-    if (!window.confirm("Delete this Discord field? This cannot be undone.")) return;
+    if (!(await confirmAction({
+        title: "Delete Discord Field",
+        body: "Delete this Discord field? This cannot be undone.",
+        confirmText: "Delete",
+    }))) return;
 
     // pick a CSRF token from either field modal or settings form
     const csrf =
@@ -3268,10 +3282,9 @@ const INTEGRATION_TESTS = [
         endpoint: (id) => `/api/systems/${id}/n8n/test`,
         canRun: () => {
             const url = val("#n8nWebhookURL");
-            const secret = val("#n8nJwtSecret"); // from your HTML
-            return !!(url && secret);
+            return !!url;
         },
-        watch: ["#n8nWebhookURL", "#n8nJwtSecret"]
+        watch: ["#n8nWebhookURL"]
     },
     {
         key: "ntfy",
@@ -3406,10 +3419,8 @@ function handlePostFormSubmission(endPoint, formId, formType) {
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                console.log("Submission Success:", result.message);
                 showAlert(result.message, "success");
             } else {
-                console.log("Submission Error:", result.message);
                 showAlert(result.message, "danger");
             }
             return result;
@@ -3441,10 +3452,8 @@ function handleDeleteFormSubmission(endPoint, formId, formType) {
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                console.log("Delete Submission Success:", result.message);
                 showAlert(result.message, "success");
             } else {
-                console.log("Delete Submission Error:", result.message);
                 showAlert(result.message, "danger");
             }
             return result;
@@ -3500,8 +3509,6 @@ function clearAllForms() {
     toggleBtn.addEventListener("click", () => {
         const turningOn = apiKeyEl.readOnly; // currently locked -> turning edit on
         if (turningOn) {
-            // optional: warn before enabling edit
-            if (!confirm("Enable editing for the API key?")) return;
             setEditable(true);
             apiKeyEl.focus();
             apiKeyEl.select();

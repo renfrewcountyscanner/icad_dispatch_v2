@@ -3,10 +3,33 @@ import sqlite3
 from pathlib import Path
 from flask import Blueprint, request, jsonify, render_template, current_app, session
 from .decorators import login_required, csrf_protect, admin_required
-from lib.user_module import get_users, create_user, delete_user, get_user_systems, add_user_system
+from lib.user_module import (
+    get_users,
+    create_user,
+    delete_user,
+    get_user_systems,
+    add_user_system,
+    update_user,
+    set_user_password,
+    delete_user_system,
+)
 from lib.system_module import get_systems
 
 bp_admin = Blueprint("admin", __name__)
+
+# Minimum password length enforced for admin-managed accounts.
+MIN_PASSWORD_LENGTH = 8
+
+
+def _validate_password(password: str) -> str | None:
+    """Return an error message if the password is too weak, else None."""
+    if not password or len(password) < MIN_PASSWORD_LENGTH:
+        return f"Password must be at least {MIN_PASSWORD_LENGTH} characters"
+    if not any(c.isdigit() for c in password):
+        return "Password must contain at least one number"
+    if password.isalnum():
+        return "Password must contain at least one symbol"
+    return None
 
 # ───────────────────────────────────────────────────────────────
 #  GET /admin
@@ -334,8 +357,9 @@ def admin_users_create():
     if not username or not password:
         return jsonify(success=False, message="Username and password required"), 400
 
-    if len(password) < 4:
-        return jsonify(success=False, message="Password must be at least 4 characters"), 400
+    pw_error = _validate_password(password)
+    if pw_error:
+        return jsonify(success=False, message=pw_error), 400
 
     # Create user
     res = create_user(db, username, password, is_admin=is_admin)
@@ -350,6 +374,88 @@ def admin_users_create():
         add_user_system(db, user_id, int(sys_id), perm)
 
     return jsonify(success=True, message="User created successfully")
+
+
+# ───────────────────────────────────────────────────────────────
+#  PATCH /admin/users/<user_id> (edit user)
+# ───────────────────────────────────────────────────────────────
+@bp_admin.route("/users/<int:user_id>", methods=["PATCH"])
+@csrf_protect
+@login_required
+def admin_users_update(user_id):
+    """Update an existing user: username, admin/active flags, password, systems."""
+    if not session.get("is_admin"):
+        return jsonify(success=False, message="Admin required"), 403
+
+    db = current_app.config["db"]
+
+    existing = get_users(db, user_id=user_id)
+    if not existing:
+        return jsonify(success=False, message="User not found"), 404
+
+    data = request.get_json(silent=True) or {}
+
+    # Build the field updates (username / flags)
+    updates = {}
+    if "username" in data:
+        new_username = str(data["username"]).strip()
+        if not new_username:
+            return jsonify(success=False, message="Username cannot be empty"), 400
+        updates["user_username"] = new_username
+    if "is_admin" in data:
+        # Never allow the root user (id 1) to lose admin status.
+        if user_id == 1 and not data["is_admin"]:
+            return jsonify(success=False, message="Cannot remove admin from root user"), 400
+        updates["is_admin"] = 1 if data["is_admin"] else 0
+    if "is_active" in data:
+        if user_id == 1 and not data["is_active"]:
+            return jsonify(success=False, message="Cannot deactivate root user"), 400
+        updates["is_active"] = 1 if data["is_active"] else 0
+
+    if updates:
+        res = update_user(db, user_id, **updates)
+        if not res.get("success"):
+            return jsonify(success=False, message=res.get("message", "Update failed")), 400
+
+    # Optional password reset
+    new_password = data.get("password")
+    if new_password:
+        pw_error = _validate_password(new_password)
+        if pw_error:
+            return jsonify(success=False, message=pw_error), 400
+        pw_res = set_user_password(db, user_id, new_password)
+        if not pw_res.get("success"):
+            return jsonify(success=False, message="Failed to update password"), 400
+
+    # Optional system reassignment (full replace if "systems" provided)
+    if "systems" in data and isinstance(data["systems"], dict):
+        current = get_user_systems(db, user_id)
+        desired = {int(k): v for k, v in data["systems"].items()}
+
+        # Remove assignments no longer wanted, then (re)add desired ones.
+        all_assignments = db.execute_query(
+            "SELECT user_system_id, radio_system_id FROM user_systems WHERE user_id = ?",
+            (user_id,),
+            fetch_mode="all",
+        )
+        rows = all_assignments.get("result") or [] if all_assignments.get("success") else []
+        for row in rows:
+            if row["radio_system_id"] not in desired:
+                delete_user_system(db, row["user_system_id"])
+
+        for sys_id, perm in desired.items():
+            if perm not in ("read", "write"):
+                perm = "read"
+            if sys_id in current:
+                # Update existing assignment's permission in place.
+                db.execute_commit(
+                    "UPDATE user_systems SET permission_level = ? WHERE user_id = ? AND radio_system_id = ?",
+                    (perm, user_id, sys_id),
+                )
+            else:
+                add_user_system(db, user_id, sys_id, perm)
+
+    return jsonify(success=True, message="User updated successfully")
 
 
 # ───────────────────────────────────────────────────────────────

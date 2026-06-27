@@ -1300,21 +1300,27 @@ function initToneFinderPage() {
     if (els.reprocessAllBtn) {
         els.reprocessAllBtn.addEventListener("click", async () => {
             const btn = els.reprocessAllBtn;
+            const rsid = els.sysSel?.value || null;
+
+            const scope = rsid ? "the selected system" : "ALL systems";
+            const confirmed = await confirmAction({
+                title: "Reprocess All Triggers",
+                body: `This will re-evaluate every stored tone event for ${scope} against all current triggers. On large datasets this may take a while. Continue?`,
+                confirmText: "Reprocess",
+                confirmClass: "btn-warning",
+            });
+            if (!confirmed) return;
+
             btn.disabled = true;
             btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Reprocessing…';
-            console.log("[Reprocess] Button clicked, starting reprocess...");
             try {
-                const rsid = els.sysSel?.value || null;
                 const body = rsid ? JSON.stringify({ radio_system_id: rsid }) : "{}";
-                console.log("[Reprocess] Sending POST to /api/tone-finder/reprocess-triggers with body:", body);
                 const resp = await fetch("/api/tone-finder/reprocess-triggers", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrf() },
                     body
                 });
-                console.log("[Reprocess] Response status:", resp.status);
                 const data = await resp.json();
-                console.log("[Reprocess] Response data:", data);
                 if (data.success) {
                     showAlert(`Reprocessed ${data.result.updated} calls (${data.result.errors} errors)`, "success");
                     maybeLoad();

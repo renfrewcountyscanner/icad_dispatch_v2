@@ -34,7 +34,7 @@ This guide walks you through the minimum steps to:
 
 ## 2) Get the system API token
 
-The `api/call-upload` endpoint requires a **system-scoped API key**.
+The `api/api/call-upload` endpoint requires a **system-scoped API key**.
 
 Uploads must include:
 
@@ -75,7 +75,7 @@ Now any upload containing tones will be stored and show up in **Tone Hits**.
 Your upload endpoint is **RDIO compatible**, meaning it accepts the same general multipart form format RDIO expects.
 
 ### Endpoint
-`POST api/call-upload`
+`POST api/api/call-upload`
 
 ### Required field
 - `audio` = file (multipart upload)
@@ -131,7 +131,7 @@ Configure the plugin/uploader to send:
 ### Quick success signals
 When things are working you’ll see:
 
-- HTTP **201** response from `api/call-upload` for normal imports
+- HTTP **201** response from `api/api/call-upload` for normal imports
 - HTTP **202** when a “tone-only stub” is stored (split mode) and it’s waiting for voice
 - entries appearing in **Tone Finder → Tone Hits** (when Tone Finder is enabled and tones are present)
 
@@ -185,7 +185,7 @@ Fix: enable Tone Finder for that system first.
 
 ### Example: curl upload (multipart)
 ^^^bash
-curl -X POST "https://YOUR_HOST/call-upload" \
+curl -X POST "https://your-host.com/api/call-upload" \
   -H "Authorization: Bearer YOUR_SYSTEM_API_KEY" \
   -F "system=6643" \
   -F "talkgroup=12345" \
@@ -202,7 +202,7 @@ curl -X POST "https://YOUR_HOST/call-upload" \
     "radio_system_id": 12,
     "merged": false,
     "triggers_fired": [],
-    "audio_url": "https://YOUR_HOST/static/audio/12_12345_1765987420.mp3"
+    "audio_url": "https://your-host.com/static/audio/12_12345_1765987420.mp3"
   }
 }
 ^^^

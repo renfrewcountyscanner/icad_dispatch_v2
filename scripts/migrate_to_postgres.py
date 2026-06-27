@@ -109,7 +109,7 @@ def create_postgres_table(pg_conn, table_name, columns, foreign_keys=None):
     
     # Add foreign keys
     for fk in foreign_keys:
-        col_defs.append(f'FOREIGN KEY ("{fk['from']}") REFERENCES "{fk['table']}" ("{fk['to']}") ON DELETE CASCADE')
+        col_defs.append(f'FOREIGN KEY ("{fk["from"]}") REFERENCES "{fk["table"]}" ("{fk["to"]}") ON DELETE CASCADE')
     
     # Handle UNIQUE constraints
     # (PRAGMA doesn't give us unique constraints easily, we'll skip for now and rely on data)
@@ -157,7 +157,7 @@ def migrate_table(sqlite_conn, pg_conn, table_name):
     
     # Build INSERT statement
     placeholders = ', '.join(['%s'] * len(columns))
-    insert_sql = f'INSERT INTO "{table_name}" ({', '.join(col_names)}) VALUES ({placeholders})'
+    insert_sql = f'INSERT INTO "{table_name}" ({", ".join(col_names)}) VALUES ({placeholders})'
     
     # Batch insert in chunks of 1000
     chunk_size = 1000

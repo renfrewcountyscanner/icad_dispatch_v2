@@ -53,7 +53,6 @@ build/
 
 # Docker
 *.dockerignore
-docker-compose.production.yml
 
 # AI Config
 .claude/

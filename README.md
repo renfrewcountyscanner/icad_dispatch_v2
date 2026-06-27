@@ -4,7 +4,7 @@ Real-time Emergency Services Dispatch System for Fire, EMS, and Public Safety ag
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](docs/installation/docker.md)
-[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-green)](https://YOUR_GITHUB_USERNAME.github.io/icad_dispatch_v2/)
+[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-green)](https://renfrewcountyscanner.github.io/icad_dispatch_v2/)
 
 ---
 
@@ -141,9 +141,11 @@ docker compose version
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
 cd icad_dispatch_v2
 ```
+
+> **Shortcut:** Run `./install.sh` for an interactive guided setup that creates users, generates secrets, builds containers, and starts everything automatically. See the [One-Click Installer](docs/installation/one-click.md).
 
 ### Step 3: Create Your Settings File
 
@@ -300,6 +302,34 @@ sudo systemctl reload nginx
    - **Username:** `root`
    - **Password:** The `ROOT_PASSWORD` from your `.env` file
 3. **Immediately change the password** via the user menu (top right)
+
+---
+
+## Upgrading
+
+To upgrade to the latest version:
+
+```bash
+cd /opt/icad_dispatch
+git pull origin main
+docker compose -f docker-compose.production.yml build
+docker compose -f docker-compose.production.yml up -d
+```
+
+**What this does:**
+1. Downloads the latest code from GitHub
+2. Rebuilds containers with updated code
+3. Restarts everything
+
+Database migrations run automatically on startup.
+
+**To upgrade from a version before v2.5 (before the entrypoint fix):**
+
+```bash
+chown -R 9911:9911 log/ var/ audio/
+```
+
+The new entrypoint script handles this automatically on subsequent starts.
 
 ---
 

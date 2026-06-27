@@ -82,7 +82,7 @@ sudo chown icad:icad /opt/icad_dispatch
 ```bash
 sudo -u icad bash
 cd /opt/icad_dispatch
-git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git .
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git .
 
 python3.12 -m venv venv
 source venv/bin/activate

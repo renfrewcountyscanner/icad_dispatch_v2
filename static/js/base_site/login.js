@@ -16,10 +16,17 @@ document.addEventListener('DOMContentLoaded', function () {
     loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        if (!loginForm.checkValidity()) return;
+        if (!loginForm.checkValidity()) {
+            loginForm.classList.add('was-validated');
+            return;
+        }
 
         loginErrorDiv.classList.remove('show');
         loginErrorDiv.textContent = '';
+
+        // Show loading state on the button.
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
 
         const formData = new FormData(loginForm);
         const token = formData.get('_csrf_token');
@@ -69,6 +76,10 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error(err);
             loginErrorDiv.classList.add('show');
             loginErrorDiv.textContent = String(err?.message || err);
+        } finally {
+            // Restore the button unless we've already navigated away.
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
         }
     });
 });

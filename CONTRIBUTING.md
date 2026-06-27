@@ -10,7 +10,7 @@ Be respectful, constructive, and inclusive. We're all here to help emergency ser
 
 ### Reporting Bugs
 
-1. Check [existing issues](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/issues) first
+1. Check [existing issues](https://github.com/renfrewcountyscanner/icad_dispatch_v2/issues) first
 2. Open a new issue with:
    - Clear title
    - Steps to reproduce
@@ -20,7 +20,7 @@ Be respectful, constructive, and inclusive. We're all here to help emergency ser
 
 ### Suggesting Features
 
-1. Open a [GitHub Discussion](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/discussions) first
+1. Open a [GitHub Discussion](https://github.com/renfrewcountyscanner/icad_dispatch_v2/discussions) first
 2. Describe the use case (which emergency service, what problem it solves)
 3. If there's consensus, open an issue to track implementation
 
@@ -41,7 +41,7 @@ Be respectful, constructive, and inclusive. We're all here to help emergency ser
 ### With Docker (Recommended)
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
 cd icad_dispatch_v2
 cp .env.example .env
 # Edit .env for local development
@@ -84,8 +84,8 @@ docker compose build
 
 ## Questions?
 
-- [GitHub Discussions](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/discussions)
-- [Discord Community](YOUR_DISCORD_INVITE_LINK) (if applicable)
+- [GitHub Discussions](https://github.com/renfrewcountyscanner/icad_dispatch_v2/discussions)
+- [Discord Community](https://discord.gg/3VK7gSD)
 
 ---
 

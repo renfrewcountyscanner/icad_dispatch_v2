@@ -1,0 +1,74 @@
+# Production docker-compose using local build
+# Use this file for development or if you want to build locally
+# Run: docker compose -f docker-compose.production.yml up -d
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: icad_dispatch
+      POSTGRES_USER: icad
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      # WARNING: only bind to localhost in production to avoid exposing the DB
+      - "127.0.0.1:5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U icad -d icad_dispatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  icad_dispatch:
+    build: .
+    image: icad_dispatch_v2:local
+    environment:
+      - LOG_LEVEL=2
+      - PUBLIC_MAP_URL=http://public_map:5000/api/push-call
+      - PUBLIC_MAP_API_KEY=${PUBLIC_MAP_API_KEY}
+      - PUBLIC_MAP_BASE_URL=${PUBLIC_MAP_BASE_URL:-https://map.YOUR_DOMAIN.COM}
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_DATABASE=icad_dispatch
+      - PG_USER=icad
+      - PG_PASSWORD=${PG_PASSWORD}
+    env_file:
+      - .env
+    ports:
+      - "9911:9911"
+    volumes:
+      - ./var:/app/var
+      - ./log:/app/log
+      - ./audio:/app/static/audio
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  public_map:
+    build:
+      context: .
+      dockerfile: public_map/Dockerfile
+    image: icad_public_map:local
+    ports:
+      - "5000:5000"
+    environment:
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_DATABASE=icad_dispatch
+      - PG_USER=icad
+      - PG_PASSWORD=${PG_PASSWORD}
+      - BASE_URL=${PUBLIC_MAP_BASE_URL:-https://map.YOUR_DOMAIN.COM}
+      - SECRET_KEY=${MAP_SECRET_KEY}
+      - PUBLIC_MAP_API_KEY=${PUBLIC_MAP_API_KEY}
+    volumes:
+      - ./audio:/app/static/audio:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

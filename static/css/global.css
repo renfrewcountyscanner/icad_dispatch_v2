@@ -5,6 +5,9 @@
     --secondary_brand: #353535;
     --secondary_brand_light: #7e7d7d;
 
+    /* Alias used by empty-state icons on the edit pages */
+    --alertpage_red_light: #ca555a;
+
 
 
     --primary_back: #ffffff;

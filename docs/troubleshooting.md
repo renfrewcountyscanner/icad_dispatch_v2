@@ -110,6 +110,25 @@ docker compose -f docker-compose.production.yml logs -f icad_dispatch
 
 ---
 
+### "Log directory is not writable" or permission denied
+
+**Cause:** The container runs as user `UID 9911`, but the host directories are owned by a different user.
+
+**Fix:**
+```bash
+# Create the user and group if they don't exist
+sudo groupadd -g 9911 icad_dispatch 2>/dev/null || true
+sudo useradd -M -s /usr/sbin/nologin -u 9911 -g icad_dispatch icad_dispatch 2>/dev/null || true
+
+# Fix ownership of the mounted directories
+sudo chown -R 9911:9911 var log audio
+
+# Restart the container
+docker compose -f docker-compose.production.yml restart icad_dispatch
+```
+
+---
+
 ## Dashboard Issues
 
 ### "Can't log in — invalid credentials"
@@ -301,8 +320,8 @@ docker exec icad_dispatch_v2-postgres-1 psql -U icad -d icad_dispatch -c "SELECT
 If none of these solutions work:
 
 1. **Check logs**: `docker compose -f docker-compose.production.yml logs -f icad_dispatch`
-2. **Search issues**: [GitHub Issues](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/issues)
-3. **Start a discussion**: [GitHub Discussions](https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/discussions)
+2. **Search issues**: [GitHub Issues](https://github.com/renfrewcountyscanner/icad_dispatch_v2/issues)
+3. **Start a discussion**: [GitHub Discussions](https://github.com/renfrewcountyscanner/icad_dispatch_v2/discussions)
 4. **Include in your report**:
    - iCAD version (from dashboard footer)
    - Docker version (`docker --version`)

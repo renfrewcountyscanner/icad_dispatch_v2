@@ -46,7 +46,7 @@ class N8nSender:
 
     @property
     def enabled(self) -> bool:
-        return bool(self.settings.enabled and self.settings.webhook_url and self.settings.jwt_passphrase)
+        return bool(self.settings.enabled and self.settings.webhook_url)
 
     # Factory from system_row (handles both canonical and aliased keys)
     @staticmethod
@@ -106,12 +106,17 @@ class N8nSender:
             map_url = ctx.get("map_image_url")
             if map_url:
                 payload["map_image_url"] = map_url
-        token = self._build_jwt(ctx)
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
         }
+
+        if self.settings.jwt_passphrase:
+            try:
+                token = self._build_jwt(ctx)
+                headers["Authorization"] = f"Bearer {token}"
+            except Exception as e:
+                self.log.warning("N8nSender: JWT generation failed: %s — sending without auth", e)
 
         url = self.settings.webhook_url
         timeout_s = self.settings.timeout_s

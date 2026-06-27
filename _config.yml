@@ -10,7 +10,7 @@
 # channels (Discord, Telegram, Email, Pushover, n8n, Make, Ntfy).
 #
 # License: MIT
-# Docs:    https://YOUR_GITHUB_USERNAME.github.io/icad_dispatch_v2/
+# Docs:    https://renfrewcountyscanner.github.io/icad_dispatch_v2/
 # ─────────────────────────────────────────────────────────────────────────────
 
 title: iCAD Dispatch v2
@@ -33,7 +33,7 @@ kramdown:
   syntax_highlighter: rouge
 
 github:
-  repository_url: https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2
+  repository_url: https://github.com/renfrewcountyscanner/icad_dispatch_v2
 
 # Navigation
 header_pages:

@@ -1,7 +1,11 @@
+# Minimal compose: only icad_dispatch (no DB, no public_map).
+# For full stack with PostgreSQL + public_map, use:
+#   docker compose -f docker-compose.production.yml up -d
+
 services:
   icad_dispatch:
-    image: ghcr.io/renfrewcountyscanner/icad_dispatch_v2:latest
-    user: "9911:9911"
+    build: .
+    image: icad_dispatch_v2:local
     environment:
       - LOG_LEVEL=2
     env_file:

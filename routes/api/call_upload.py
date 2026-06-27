@@ -509,6 +509,8 @@ def call_upload():
             talkgroup_name=call_data.get("talkgroupLabel") or call_data.get("talkgroup_name"),
         )
 
+        # Make call_id available to downstream dispatch templates
+        call_data["call_id"] = call_id
 
         route_logger.info(
             "%s stored call_id=%s radio_system_id=%s file_path=%s url=%s",
@@ -2571,39 +2573,158 @@ def reprocess_call_tones(call_id):
             return jsonify({"error": "Audio file not found"}), 404
 
         tone_cfg = _load_tone_cfg(db, radio_system_id)
-        if not tone_cfg.get("tone_detection_enabled"):
-            return jsonify({"error": "Tone detection not enabled for this system"}), 400
+        if not tone_cfg.get("tone_finder_enabled"):
+            return jsonify({"error": "Tone finder not enabled for this system"}), 400
 
         audio_segment = AudioSegment.from_file(str(audio_path))
 
         detect_result = tone_detect(
             audio_segment,
-            tone_cfg.get("sample_rate", 8000),
-            tone_cfg.get("min_tone_duration", 0.05),
-            tone_cfg.get("freq_min", 0),
-            tone_cfg.get("freq_max", 4000),
+            matching_threshold=tone_cfg["matching_threshold"],
+            tone_a_min_length=tone_cfg["tone_a_min_length"],
+            tone_b_min_length=tone_cfg["tone_b_min_length"],
+            fe_snr_above_noise_db=tone_cfg["fe_snr_above_noise_db"],
+            two_tone_max_gap_between_a_b=0.5,
+            two_tone_bw_hz=25.0,
+            two_tone_min_pair_separation_hz=tone_cfg["two_tone_min_pair_separation_hz"],
+            hi_low_interval=tone_cfg["hi_low_interval"],
+            hi_low_min_alternations=tone_cfg["hi_low_min_alternations"],
+            hi_low_tone_bw_hz=25.0,
+            hi_low_min_pair_separation_hz=25.0,
+            long_tone_min_length=tone_cfg["long_tone_min_length"],
+            long_tone_bw_hz=25.0,
+            pulsed_bw_hz=20.0,
+            pulsed_min_cycles=tone_cfg["pulsed_min_cycles"],
+            pulsed_min_on_ms=tone_cfg["pulsed_min_on_ms"],
+            pulsed_max_on_ms=tone_cfg["pulsed_max_on_ms"],
+            pulsed_min_off_ms=tone_cfg["pulsed_min_off_ms"],
+            pulsed_max_off_ms=tone_cfg["pulsed_max_off_ms"],
+            dtmf_min_ms=tone_cfg.get("dtmf_min_ms", 100),
+            dtmf_merge_ms=tone_cfg.get("dtmf_merge_ms", 75),
+            dtmf_start_offset_ms=tone_cfg.get("dtmf_start_offset_ms", -20),
+            dtmf_end_offset_ms=tone_cfg.get("dtmf_end_offset_ms", 20),
+            dtmf_sequence_gap_s=tone_cfg.get("dtmf_sequence_gap_s", 0.3),
         )
 
+        # Delete existing tone events (cascade handles tone_trigger_map via FK)
         db.execute_commit("DELETE FROM call_tone_events WHERE call_id = ?", (call_id,))
-        db.execute_commit("DELETE FROM tone_trigger_map WHERE call_id = ?", (call_id,))
 
-        for tone in detect_result.tones:
-            db.execute_commit("""
-                INSERT INTO call_tone_events
-                (call_id, start_time, end_time, frequency_a, frequency_b, tone_type, matched_trigger_id)
-                VALUES (?, ?, ?, ?, ?, ?, NULL)
-            """, (call_id, tone.start_time, tone.end_time, tone.freq_a, tone.freq_b, tone.tone_type))
-
-        db.execute_commit(
-            "UPDATE call_records SET has_tone = 1 WHERE call_id = ?",
-            (call_id,)
+        # Persist newly detected tones
+        detect_has_tones = bool(
+            detect_result.two_tone_result or detect_result.long_result
+            or detect_result.hi_low_result or detect_result.pulsed_result
+            or detect_result.dtmf_result or detect_result.mdc_result
         )
-        route_logger.info("Reprocessed %d tones for call_id=%s", len(detect_result.tones), call_id)
-        
+
+        tone_count = 0
+        if detect_has_tones:
+            # Count tones for response
+            tone_count = (
+                len(detect_result.two_tone_result)
+                + len(detect_result.long_result)
+                + len(detect_result.hi_low_result)
+                + len(getattr(detect_result, "pulsed_result", []))
+                + len(detect_result.mdc_result)
+                + len(detect_result.dtmf_result)
+            )
+
+            # Re-evaluate triggers with new tone detection
+            trigger_data = _load_triggers(db, radio_system_id)
+            fired_trigger_data: list[dict] = []
+            matched_tone_ids: set[str] = set()
+            tone_ids_by_trig: dict[int, set[str]] = {}
+
+            now_ts = time.time()
+            for trig in trigger_data:
+                if _cooling_down(trig, now_ts):
+                    continue
+                if not _tg_allows_trigger(trig, call_row["talkgroup"]):
+                    continue
+                hits = _tones_matching_trigger(trig, detect_result)
+                if hits:
+                    matched_tone_ids.update(hits)
+                    tone_ids_by_trig[trig["alert_trigger_id"]] = hits
+                    fired_trigger_data.append(trig)
+                    _set_trigger_fired(db, trig["alert_trigger_id"], now_ts)
+
+            # Deduplicate fired triggers
+            seen_ids: set[int] = set()
+            unique_fired: list[dict] = []
+            for trig in fired_trigger_data:
+                tid = trig.get("alert_trigger_id")
+                if tid in seen_ids:
+                    continue
+                seen_ids.add(tid)
+                unique_fired.append(trig)
+            fired_trigger_data = unique_fired
+
+            # Persist tones with trigger links
+            _persist_tone_sets(db, call_id, detect_result,
+                               matched_tone_ids, fired_trigger_data, tone_ids_by_trig)
+
+            # Re-insert trigger_fires rows
+            for trig in fired_trigger_data:
+                _insert_trigger_fire(db, call_id, trig["alert_trigger_id"], int(now_ts))
+
+            # Re-dispatch notifications if triggers fired
+            if fired_trigger_data:
+                route_logger.info("Re-dispatching %d triggers for call_id=%s",
+                                  len(fired_trigger_data), call_id)
+
+                # Build payload like the original upload
+                talkgroup = call_row["talkgroup"]
+                start_epoch = call_row["start_epoch_s"]
+                audio_duration = call_row["duration_s"]
+                file_path = call_row["file_path"]
+                storage_cfg = _load_storage_cfg(db, radio_system_id) or {}
+                audio_url = file_path if file_path.startswith("http") else f"/audio/{file_path.replace('static/audio/', '')}"
+
+                payload = {
+                    "call_id": call_id,
+                    "radio_system_id": radio_system_id,
+                    "talkgroup": talkgroup,
+                    "talkgroup_name": "",
+                    "duration_s": audio_duration,
+                    "start_epoch_s": int(start_epoch),
+                    "audio_url": audio_url,
+                    "tone_detect": {
+                        "two_tone": detect_result.two_tone_result,
+                        "long_tone": detect_result.long_result,
+                        "hi_low_tone": detect_result.hi_low_result,
+                        "pulsed_tone": detect_result.pulsed_result,
+                        "dtmf_tone": detect_result.dtmf_result,
+                        "mdc_tone": detect_result.mdc_result,
+                    },
+                }
+
+                # Get transcript for dispatch
+                transcript_res = db.execute_query(
+                    "SELECT text_full FROM call_transcripts WHERE call_id = ?",
+                    (call_id,), fetch_mode="one"
+                )
+                transcript_text = None
+                transcript_segments = None
+                if transcript_res.get("success") and transcript_res.get("result"):
+                    transcript_text = transcript_res["result"].get("text_full")
+
+                _dispatch_triggers(
+                    db,
+                    fired_trigger_data,
+                    payload,
+                    detect_result,
+                    transcript_text=transcript_text,
+                    transcript_segments=transcript_segments,
+                    tz=current_app.config["TIMEZONE"],
+                )
+
+        route_logger.info("Reprocessed %d tones for call_id=%s (triggers_fired=%d)",
+                          tone_count, call_id, len(fired_trigger_data) if detect_has_tones else 0)
+
         return jsonify({
             "success": True,
             "call_id": call_id,
-            "tone_count": len(detect_result.tones)
+            "tone_count": tone_count,
+            "triggers_fired": len(fired_trigger_data) if detect_has_tones else 0,
         })
         
     except Exception as e:

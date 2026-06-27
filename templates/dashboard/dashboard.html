@@ -1,105 +1,15 @@
-{# templates/tone_finder.html #}
+{# templates/dashboard/dashboard.html #}
 {% extends "dashboard/base.html" %}
 {% block title %}Dashboard - iCAD Dispatch{% endblock %}
-
-{% include "partials/_dashboard_trigger_modals.html" %}
 
 {# ───────────────────────────── Extra CSS ───────────────────────────── #}
 {% block extra_styles %}
     <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.3.2/r-3.0.5/rr-1.5.0/sc-2.4.3/datatables.min.css" rel="stylesheet" integrity="sha384-wn0toyEaGbOiHLoVsGIbRhHaxw3FPoMRaO7YcrgSHlXTEf0rLvG/kOfM8lSi7LVj" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard/tone_finder.css') }}">
     <style>
-        /* Stats inline row */
-        .stats-inline {
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-            padding: 0.5rem 0;
-            margin-bottom: 0.75rem;
-            flex-wrap: wrap;
-        }
-        .stats-inline .stat {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-size: 0.85rem;
-        }
-        .stats-inline .stat-label { color: #888; }
-        .stats-inline .stat-value { color: #fff; font-weight: 600; }
-        
-        /* Incident type badges */
-        .badge-other { background-color: #6c757d; }
-        .badge-fire { background-color: #dc3545; }
-        .badge-medical { background-color: #0d6efd; }
-        .badge-traffic { background-color: #ffc107; color: #000; }
-        .badge-rescue { background-color: #20c997; color: #000; }
-        .badge-utilities { background-color: #343a40; }
-        .badge-hazmat { background-color: #d4a017; color: #000; }
-        
-        /* Filter rows */
-        .filter-row-top {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        .filter-row-bottom {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-        .filter-row-top select,
-        .filter-row-top input {
-            background: #2d2d44;
-            border: 1px solid #444;
-            color: #fff;
-            font-size: 0.8rem;
-            padding: 0.3rem 0.5rem;
-        }
-        .filter-row-top select:focus,
-        .filter-row-top input:focus {
-            background: #3d3d54;
-            border-color: #666;
-            color: #fff;
-            outline: none;
-        }
-        
-        /* Live pill */
-        .live-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            background: #27ae60;
-            color: #fff;
-            padding: 0.2rem 0.5rem;
-            border-radius: 1rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .live-pill::before {
-            content: '';
-            width: 5px;
-            height: 5px;
-            background: #fff;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        
-        /* Table */
-        .table-dark-custom {
-            --bs-table-bg: #1a1a2e;
-            --bs-table-striped-bg: #252540;
-            --bs-table-hover-bg: #2d2d4a;
-            color: #fff;
-        }
-        
+        .filter-row-top      { margin-bottom: 0.5rem; }
+        .filter-row-bottom    { margin-bottom: 0.75rem; justify-content: flex-end; }
+
         /* Table column sizing — explicit so DataTables doesn't guess wrong */
         #callsTable th, #callsTable td { white-space: nowrap; vertical-align: middle; }
 
@@ -107,37 +17,21 @@
         #callsTable th:nth-child(5),
         #callsTable td:nth-child(5) { white-space: normal; min-width: 160px; }
 
-        /* Trigger pills — constrained so they don't blow out the column */
-        .trigger-pill {
-            display: inline-block;
-            background: #3d3d4d;
-            color: #fff;
-            padding: 0.15rem 0.45rem;
-            border-radius: 0.3rem;
-            font-size: 0.68rem;
-            margin: 0.1rem 0.1rem 0.1rem 0;
-            max-width: 220px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            vertical-align: middle;
-        }
-
         /* Action buttons — prevent them from squishing */
         #callsTable .btn-group { white-space: nowrap; }
-        .action-btn { padding: 0.15rem 0.35rem; font-size: 0.75rem; }
     </style>
 {% endblock %}
 
 {# ───────────────────────────── Page body ───────────────────────────── #}
 {% block content %}
+    {% include "partials/_dashboard_trigger_modals.html" %}
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
     <h1 class="mt-4">Tone Hits</h1>
 
     <!-- ── Stats inline row ─────────────────────────────────────────── -->
     <div class="stats-inline" id="statsRow">
         <div class="stat">
-            <span class="stat-label">Subscribers:</span>
+            <span class="stat-label">Total Calls:</span>
             <span class="stat-value" id="statTotalCalls">-</span>
         </div>
         <div class="stat">
@@ -336,7 +230,7 @@
                                 <i class="bi bi-stop-fill"></i>
                             </button>
                             <div class="flex-grow-1 text-muted small">
-                                Audio controls are in the footer bar below ↓
+                                Use the now-playing bar at the bottom to control playback.
                             </div>
                         </div>
                     </div>
@@ -410,39 +304,6 @@
                         <i class="bi bi-trash"></i> Delete Call
                     </button>
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Trigger modal -->
-    <div id="triggerModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content bg-dark border-secondary">
-                <div class="modal-header py-2 border-secondary">
-                    <h5 class="modal-title fs-6">Add New Trigger</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="triggerForm" class="modal-body py-3">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}"/>
-                    <div class="row g-2">
-                        <div class="col-4">
-                            <label class="form-label small">System</label>
-                            <select name="radio_system_id" id="trigSystemId" class="form-select form-select-sm" required></select>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label small">Talkgroup</label>
-                            <input type="text" name="talkgroup_pattern" id="trigTalkgroup" class="form-control form-control-sm" placeholder="e.g. 101,203-209">
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label small">Trigger Name</label>
-                            <input type="text" name="alert_trigger_name" id="trigName" class="form-control form-control-sm" placeholder="e.g. Station 1">
-                        </div>
-                    </div>
-                </form>
-                <div class="modal-footer py-2 border-secondary">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" form="triggerForm" id="trigSaveBtn" class="btn btn-primary btn-sm">Save</button>
                 </div>
             </div>
         </div>

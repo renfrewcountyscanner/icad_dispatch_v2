@@ -9,7 +9,8 @@ auth = Blueprint('auth', __name__)
 @auth.route('/login', methods=['POST'])
 @csrf_protect
 def auth_login():
-    username = request.form.get("loginEmail", "").strip()
+    # Accept the new field name (loginUsername); fall back to the legacy name.
+    username = (request.form.get("loginUsername") or request.form.get("loginEmail") or "").strip()
     password = request.form.get("loginPassword", "")
     remember = request.form.get("rememberMe") is not None     # ✅ checkbox
 
@@ -58,9 +59,9 @@ def auth_change_password():
     if not username:
         msg = "No username provided."
         log.error(msg)
-        if not wants_json:
+        if wants_json:
             return jsonify(success=False, message=msg), 400
-        flash(msg, "error")
+        flash(msg, "danger")
         return redirect(url_for("dashboard.dashboard_index"))
 
     if not new_password:

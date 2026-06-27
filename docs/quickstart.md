@@ -53,7 +53,7 @@ This downloads the app code from GitHub to your server.
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2.git
+git clone https://github.com/renfrewcountyscanner/icad_dispatch_v2.git
 cd icad_dispatch_v2
 ```
 
@@ -441,5 +441,5 @@ cat backup.sql | docker exec -i icad_dispatch_v2-postgres-1 psql -U icad -d icad
 Prefer automation? Use the [one-click installer](installation/one-click.md):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/icad_dispatch_v2/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/renfrewcountyscanner/icad_dispatch_v2/main/install.sh | bash
 ```

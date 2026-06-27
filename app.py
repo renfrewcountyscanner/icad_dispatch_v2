@@ -53,6 +53,44 @@ if db is None:
     main_logger.error("No database could be initialized.")
     sys.exit(1)
 
+# ── Root user bootstrap (create admin on first run) ─────────────────────────
+_root_username = os.getenv("ROOT_USERNAME", "root").strip()
+_root_password = os.getenv("ROOT_PASSWORD", "").strip()
+
+if _root_password:
+    try:
+        user_res = db.execute_query("SELECT COUNT(*) as cnt FROM users", fetch_mode="one")
+        if user_res.get("success") and user_res["result"]["cnt"] == 0:
+            import bcrypt
+            from lib.user_module import set_session_keys
+            hashed = bcrypt.hashpw(_root_password.encode("utf-8"), bcrypt.gensalt())
+            db.execute_commit(
+                "INSERT INTO users (user_username, user_password, is_admin, is_active) VALUES (?, ?, 1, 1)",
+                (_root_username, hashed)
+            )
+            main_logger.warning(
+                "Bootstrap: created root user '%s'. Change the password after first login.",
+                _root_username
+            )
+    except Exception as e:
+        main_logger.error("Bootstrap: failed to create root user: %s", e)
+
+# ── Security: warn if default/weak secrets are in use ──────────────────────
+_weak_secrets = [
+    ("ROOT_PASSWORD", ["changeme", "password", "123", "admin"]),
+    ("PUBLIC_MAP_API_KEY", ["icad-public-map", "change-me", "changeme"]),
+    ("MAP_SECRET_KEY", ["change-me", "changeme", "default"]),
+    ("PG_PASSWORD", ["icad_dispatch_password", "password", "123", "postgres"]),
+]
+for env_var, bad_patterns in _weak_secrets:
+    val = os.getenv(env_var, "")
+    if val and any(p.lower() in val.lower() for p in bad_patterns):
+        main_logger.warning(
+            "SECURITY: %s appears to be a weak/default value. "
+            "Change it before exposing this service to the internet.",
+            env_var
+        )
+
 if not raw_tz:
     tz_name = DEFAULT_TIMEZONE
 else:

@@ -28,6 +28,9 @@
     <!-- Dashboard CSS -->
     <link href="{{ url_for('static', filename='css/dashboard/dashboard.css') }}" rel="stylesheet">
 
+    <!-- Shared dashboard utilities (tables, filters, stats, badges) -->
+    <link href="{{ url_for('static', filename='css/dashboard/_shared.css') }}" rel="stylesheet">
+
     <!-- Per Page Extra Styles -->
     {% block extra_styles %}
     {% endblock %}
@@ -63,6 +66,23 @@
     </div>
 </div>
 
+<!-- Reusable Confirmation Modal (used by confirmAction() in global.js) -->
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title" id="globalConfirmTitle">Please Confirm</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="globalConfirmBody">Are you sure?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="globalConfirmCancel">Cancel</button>
+                <button type="button" class="btn btn-danger" id="globalConfirmOk">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div aria-live="polite" aria-atomic="true" class="position-relative">
     <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -73,7 +93,7 @@
 <!-- Footer -->
 <footer class="footer text-center py-3">
     <div class="container">
-        <span>&copy; <span id="currentYear"></span> Renfrew County Emergency Services &bull; v{{ app_version }}</span>
+        <span>&copy; <span id="currentYear"></span> iCAD Dispatch &bull; v{{ app_version }}</span>
     </div>
 </footer>
 
