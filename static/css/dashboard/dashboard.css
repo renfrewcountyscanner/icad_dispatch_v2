@@ -121,3 +121,254 @@ body.ap-sidebar-hover #sidebarMenu.offcanvas-md:not(:hover):not(:focus-within) .
         color: var(--primary_light_text);
     }
 }
+
+/* Unified dashboard visual system.
+   Keep page-specific CSS for layout only; shared color/surface/control
+   styling lives here so the dashboard reads as one application. */
+:root {
+    --ap-bg: #11151d;
+    --ap-bg-soft: #151a24;
+    --ap-surface: #1b202b;
+    --ap-surface-2: #222838;
+    --ap-surface-3: #2a3142;
+    --ap-border: rgba(255,255,255,.10);
+    --ap-border-strong: rgba(255,255,255,.16);
+    --ap-text: rgba(255,255,255,.92);
+    --ap-muted: rgba(222,226,230,.68);
+    --ap-muted-2: rgba(222,226,230,.48);
+    --ap-accent: #ca555a;
+    --ap-accent-strong: #ca1c23;
+    --ap-blue: #6ea8fe;
+    --ap-radius: .5rem;
+    --ap-radius-sm: .35rem;
+    --ap-shadow: 0 .75rem 1.75rem rgba(0,0,0,.24);
+}
+
+html[data-bs-theme="dark"],
+[data-bs-theme="dark"] body {
+    background: var(--ap-bg);
+    color: var(--ap-text);
+}
+
+body > .container-fluid {
+    background:
+        radial-gradient(circle at top right, rgba(202,85,90,.08), transparent 30rem),
+        linear-gradient(180deg, var(--ap-bg-soft), var(--ap-bg) 22rem);
+}
+
+.main-content {
+    padding-top: 1.1rem;
+    padding-bottom: 2rem;
+}
+
+.main-content > h1,
+.main-content .ap-page-title {
+    margin: .75rem 0 1rem;
+    color: var(--ap-text);
+    font-size: 1.45rem;
+    font-weight: 650;
+    letter-spacing: 0;
+}
+
+.navbar-header,
+.footer {
+    background: rgba(17,21,29,.96) !important;
+    border-color: var(--ap-border) !important;
+    backdrop-filter: blur(8px);
+}
+
+body.ap-sidebar-hover #sidebarMenu.offcanvas-md,
+body.ap-sidebar-hover #sidebarMenu.offcanvas-md .offcanvas-body {
+    background: rgba(17,21,29,.98) !important;
+}
+
+body.ap-sidebar-hover #sidebarMenu.offcanvas-md {
+    border-right: 1px solid var(--ap-border);
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: var(--ap-shadow);
+}
+
+body.ap-sidebar-hover #sidebarMenu .nav-link {
+    border-radius: var(--ap-radius-sm);
+    margin: .08rem .45rem;
+    color: var(--ap-muted);
+}
+
+body.ap-sidebar-hover #sidebarMenu .nav-link:hover,
+body.ap-sidebar-hover #sidebarMenu .nav-link.active {
+    color: #fff;
+    background: rgba(202,85,90,.18);
+}
+
+body.ap-sidebar-hover #sidebarMenu .nav-link.active {
+    border: 1px solid rgba(202,85,90,.36);
+}
+
+.ap-toolbar-card,
+.ap-content-card,
+.main-content > .card,
+.main-content .ap-panel {
+    background: var(--ap-surface) !important;
+    border: 1px solid var(--ap-border) !important;
+    border-radius: var(--ap-radius) !important;
+    box-shadow: var(--ap-shadow);
+    color: var(--ap-text);
+}
+
+.ap-toolbar-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.ap-toolbar-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--ap-accent);
+}
+
+.main-content .card .card,
+.main-content .modal .card {
+    box-shadow: none;
+}
+
+.form-control,
+.form-select,
+.form-check-input {
+    background-color: var(--ap-surface-2) !important;
+    border-color: var(--ap-border-strong) !important;
+    color: var(--ap-text) !important;
+    border-radius: var(--ap-radius-sm) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--ap-surface-3) !important;
+    border-color: rgba(110,168,254,.58) !important;
+    color: var(--ap-text) !important;
+    box-shadow: 0 0 0 .18rem rgba(110,168,254,.16) !important;
+}
+
+.form-control::placeholder { color: var(--ap-muted-2) !important; }
+.form-label, .form-check-label { color: var(--ap-muted); }
+.form-text, .text-muted { color: var(--ap-muted) !important; }
+
+.btn {
+    border-radius: var(--ap-radius-sm);
+}
+
+.btn-primary {
+    background-color: var(--ap-accent-strong) !important;
+    border-color: var(--ap-accent) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--ap-accent) !important;
+    border-color: #dc7478 !important;
+}
+
+.btn-outline-secondary {
+    color: var(--ap-muted) !important;
+    border-color: var(--ap-border-strong) !important;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff !important;
+    background: rgba(255,255,255,.07) !important;
+}
+
+.modal-content.bg-dark,
+.modal-content {
+    background: var(--ap-surface) !important;
+    border: 1px solid var(--ap-border) !important;
+    border-radius: var(--ap-radius) !important;
+    color: var(--ap-text);
+    box-shadow: var(--ap-shadow);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--ap-border) !important;
+}
+
+.stats-inline,
+.stats-row,
+.filter-row,
+.filter-row-top,
+.filter-row-bottom {
+    background: rgba(27,32,43,.72);
+    border: 1px solid var(--ap-border);
+    border-radius: var(--ap-radius);
+    padding: .65rem .75rem;
+    margin-bottom: .75rem;
+}
+
+.table-dark-custom,
+.dt-theme .table {
+    --bs-table-bg: var(--ap-surface) !important;
+    --bs-table-striped-bg: rgba(255,255,255,.025) !important;
+    --bs-table-hover-bg: rgba(110,168,254,.08) !important;
+    --bs-table-color: var(--ap-text) !important;
+    --bs-table-border-color: var(--ap-border) !important;
+    border: 1px solid var(--ap-border);
+    border-radius: var(--ap-radius);
+    overflow: hidden;
+}
+
+.table-dark-custom thead th,
+.dt-theme table.dataTable > thead > tr > th {
+    background: var(--ap-surface-2) !important;
+    color: var(--ap-text) !important;
+    border-color: var(--ap-border) !important;
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+}
+
+.table-dark-custom tbody td,
+.dt-theme table.dataTable tbody td {
+    border-color: rgba(255,255,255,.06) !important;
+}
+
+.call-detail-stat,
+.call-transcript-box,
+.call-item,
+.calls-panel,
+.map-panel,
+.ap-settings-shell,
+.tone-acc .accordion-item {
+    background: var(--ap-surface) !important;
+    border-color: var(--ap-border) !important;
+    border-radius: var(--ap-radius) !important;
+}
+
+.call-item:hover,
+.call-item.active {
+    background: var(--ap-surface-2) !important;
+}
+
+.call-item.active {
+    border-color: rgba(110,168,254,.55) !important;
+}
+
+.calls-header,
+.save-bar,
+.call-detail-section {
+    border-color: var(--ap-border) !important;
+}
+
+.call-detail-empty,
+#noResults,
+#initialMessage {
+    color: var(--ap-muted) !important;
+}
+
+.page-loader {
+    background-color: rgba(17,21,29,.82) !important;
+    backdrop-filter: blur(2px);
+}

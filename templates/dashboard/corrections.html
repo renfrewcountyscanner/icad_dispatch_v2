@@ -15,9 +15,9 @@
             min-width: 300px;
             display: flex;
             flex-direction: column;
-            background: var(--secondary_back);
-            border-radius: 0.5rem;
-            border: 1px solid #333;
+            background: var(--ap-surface);
+            border-radius: var(--ap-radius);
+            border: 1px solid var(--ap-border);
             overflow: hidden;
         }
         @media (max-width: 992px) {
@@ -27,19 +27,19 @@
         }
         .calls-header {
             padding: 0.75rem 1rem;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--ap-border);
             display: flex;
             gap: 0.5rem;
             align-items: center;
         }
         .calls-header select,
         .calls-header input {
-            background: #2d2d44;
-            border: 1px solid #444;
+            background: var(--ap-surface-2);
+            border: 1px solid var(--ap-border-strong);
             color: #fff;
             font-size: 0.8rem;
             padding: 0.3rem 0.5rem;
-            border-radius: 0.25rem;
+            border-radius: var(--ap-radius-sm);
         }
         .calls-list {
             flex: 1;
@@ -47,16 +47,16 @@
             padding: 0.5rem;
         }
         .call-item {
-            background: #252540;
-            border: 1px solid #333;
+            background: var(--ap-surface-2);
+            border: 1px solid var(--ap-border);
             border-radius: 0.35rem;
             padding: 0.6rem 0.75rem;
             margin-bottom: 0.4rem;
             cursor: pointer;
             transition: background 0.15s;
         }
-        .call-item:hover { background: #2d2d4a; }
-        .call-item.active { border-color: #0d6efd; background: #1a2a4a; }
+        .call-item:hover { background: var(--ap-surface-3); }
+        .call-item.active { border-color: rgba(110,168,254,.58); background: rgba(110,168,254,.12); }
         .call-item .call-meta {
             display: flex;
             gap: 0.5rem;
@@ -89,9 +89,9 @@
         }
         .map-panel {
             flex: 1;
-            background: #1a1a2e;
-            border-radius: 0.5rem;
-            border: 1px solid #333;
+            background: var(--ap-surface);
+            border-radius: var(--ap-radius);
+            border: 1px solid var(--ap-border);
             overflow: hidden;
             position: relative;
         }
@@ -109,12 +109,12 @@
             gap: 0.35rem;
         }
         .map-overlay-controls input {
-            background: #2d2d44;
-            border: 1px solid #444;
+            background: var(--ap-surface-2);
+            border: 1px solid var(--ap-border-strong);
             color: #fff;
             font-size: 0.8rem;
             padding: 0.3rem 0.5rem;
-            border-radius: 0.25rem;
+            border-radius: var(--ap-radius-sm);
             width: 220px;
         }
         .save-bar {
@@ -122,8 +122,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #1a1a2e;
-            border-top: 1px solid #333;
+            background: var(--ap-surface);
+            border-top: 1px solid var(--ap-border);
             padding: 0.6rem 1rem;
             display: flex;
             gap: 0.75rem;
@@ -136,19 +136,19 @@
             font-family: monospace;
         }
         .save-bar input[type="text"] {
-            background: #2d2d44;
-            border: 1px solid #444;
+            background: var(--ap-surface-2);
+            border: 1px solid var(--ap-border-strong);
             color: #fff;
             font-size: 0.8rem;
             padding: 0.3rem 0.5rem;
-            border-radius: 0.25rem;
+            border-radius: var(--ap-radius-sm);
             flex: 1;
         }
-        .leaflet-container { background: #1a1a2e; }
+        .leaflet-container { background: var(--ap-surface); }
         .loading-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(26, 26, 46, 0.9);
+            background: rgba(17,21,29,.86);
             display: flex;
             align-items: center;
             justify-content: center;
