@@ -203,6 +203,7 @@ def call_upload():
         "radio_system_id": radio_system_id,
         "duration": audio_duration,
         "start_time": start_epoch,
+        "system_name": _load_system_name(db, radio_system_id),
     })
 
     talkgroup = call_data.get("talkgroup", 0)
@@ -418,10 +419,8 @@ def call_upload():
 
         if transcribe_cfg.get("enabled", 0):
             try:
-                # Remove Tones From Audio Segment
+                # Remove tones and normalize before sending to Whisper.
                 audio_tones_muted = mute_detected_tones(audio_segment, call_data)
-
-                # Create normalized audio segment
                 audio_normalized = normalize_audio_loudnorm(audio_tones_muted)
 
                 # Build a shorter version ONLY for transcription (optional)
@@ -435,13 +434,20 @@ def call_upload():
                     replacement_ms=replacement_ms,
                 )
 
-
                 wav_bytes = audiosegment_to_wav_bytes(audio_for_transcribe)
+                transcribe_request_cfg = _build_transcribe_request_cfg(
+                    transcribe_cfg,
+                    system_name=call_data.get("system_name") or "",
+                    talkgroup=talkgroup,
+                    talkgroup_name=call_data.get("talkgroupLabel") or call_data.get("talkgroup_name"),
+                    trigger_data=trigger_data,
+                    fired_trigger_data=fired_trigger_data,
+                )
 
                 transcribe_response = transcribe_audio(
                     audio=wav_bytes,
                     filename=file_name.replace(".mp3", ".wav"),
-                    transcribe_config=transcribe_cfg,
+                    transcribe_config=transcribe_request_cfg,
                     timeout=120.0,
                 )
 
@@ -658,7 +664,7 @@ def call_upload():
         result={
             "call_id": call_id,
             "radio_system_id": radio_system_id,
-            "system_name": _load_system_name(db, radio_system_id),
+            "system_name": call_data.get("system_name") or _load_system_name(db, radio_system_id),
             "talkgroup": talkgroup,
             "duration_s": audio_duration,
             "merged": merged,
@@ -2292,6 +2298,47 @@ def _derive_town_hint_from_triggers(fired_trigger_data: List[Dict[str, Any]]) ->
     return ", ".join(towns)
 
 
+def _collect_trigger_name_hints(*groups: Optional[List[Dict[str, Any]]], limit: int = 12) -> List[str]:
+    """Return a compact list of unique trigger names for transcription hints."""
+    hints: List[str] = []
+    seen: set[str] = set()
+    for group in groups:
+        if not group:
+            continue
+        for trig in group:
+            if not isinstance(trig, dict):
+                continue
+            name = str(trig.get("alert_trigger_name") or "").strip()
+            if not name:
+                continue
+            key = name.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            hints.append(name)
+            if len(hints) >= limit:
+                return hints
+    return hints
+
+
+def _build_transcribe_request_cfg(
+    transcribe_cfg: Dict[str, Any],
+    *,
+    system_name: str,
+    talkgroup: Any,
+    talkgroup_name: Optional[str],
+    trigger_data: Optional[List[Dict[str, Any]]] = None,
+    fired_trigger_data: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    cfg = dict(transcribe_cfg or {})
+    cfg["system_name"] = system_name
+    cfg["talkgroup"] = talkgroup
+    cfg["talkgroup_name"] = talkgroup_name
+    cfg["trigger_names"] = _collect_trigger_name_hints(trigger_data)
+    cfg["fired_trigger_names"] = _collect_trigger_name_hints(fired_trigger_data)
+    return cfg
+
+
 def _load_address_extraction_service(
         db: PostgreSQLDatabase,
         radio_system_id: int,
@@ -2591,6 +2638,10 @@ def _rerun_transcription_for_reprocess(
         talkgroup: Any,
         start_epoch: Any,
         route_logger,
+        system_name: str | None = None,
+        talkgroup_name: str | None = None,
+        trigger_data: Optional[List[Dict[str, Any]]] = None,
+        fired_trigger_data: Optional[List[Dict[str, Any]]] = None,
 ) -> Optional[Dict[str, Any]]:
     if not transcribe_cfg.get("enabled"):
         return None
@@ -2607,10 +2658,18 @@ def _rerun_transcription_for_reprocess(
         )
         wav_bytes = audiosegment_to_wav_bytes(audio_for_transcribe)
         file_name = create_audio_filename(radio_system_id, talkgroup, int(start_epoch))
+        transcribe_request_cfg = _build_transcribe_request_cfg(
+            transcribe_cfg,
+            system_name=system_name or "",
+            talkgroup=talkgroup,
+            talkgroup_name=talkgroup_name,
+            trigger_data=trigger_data,
+            fired_trigger_data=fired_trigger_data,
+        )
         resp = transcribe_audio(
             audio=wav_bytes,
             filename=file_name.replace(".mp3", ".wav"),
-            transcribe_config=transcribe_cfg,
+            transcribe_config=transcribe_request_cfg,
             timeout=120.0,
         )
         route_logger.info("Transcription done for reprocess call")
@@ -2795,6 +2854,10 @@ def reprocess_call_tones(call_id):
             talkgroup=talkgroup,
             start_epoch=start_epoch,
             route_logger=route_logger,
+            system_name=call_row.get("system_name") or _load_system_name(db, radio_system_id),
+            talkgroup_name=call_row.get("talkgroup_name"),
+            trigger_data=trigger_data,
+            fired_trigger_data=fired_trigger_data,
         )
         if isinstance(transcribe_response, dict):
             _rerun_ai_enrichment_for_reprocess(
