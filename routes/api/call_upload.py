@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import requests
+import tempfile
 from dataclasses import is_dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -2541,6 +2542,120 @@ def _maybe_classify_incident_for_call(
     }
 
 
+def _tone_payload_from_detection(detect_result: ToneDetectionResult) -> Dict[str, Any]:
+    """Return the canonical tone_detect shape used by audio helpers and dispatch."""
+    return {
+        "tone_detect": {
+            "two_tone": detect_result.two_tone_result,
+            "long_tone": detect_result.long_result,
+            "hi_low_tone": detect_result.hi_low_result,
+            "pulsed_tone": getattr(detect_result, "pulsed_result", []),
+            "dtmf_tone": detect_result.dtmf_result,
+            "mdc_tone": detect_result.mdc_result,
+        }
+    }
+
+
+def _load_reprocess_audio(audio_file: str) -> Tuple[Path, Optional[str]]:
+    """Return a local path to stored call audio and an optional temp path to delete."""
+    if not audio_file.strip():
+        raise FileNotFoundError("Audio file not found")
+
+    if audio_file.startswith("http"):
+        resp = requests.get(audio_file, timeout=30)
+        resp.raise_for_status()
+        tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
+        try:
+            tmp.write(resp.content)
+            tmp.close()
+            return Path(tmp.name), tmp.name
+        except Exception:
+            tmp.close()
+            Path(tmp.name).unlink(missing_ok=True)
+            raise
+
+    audio_path = Path(audio_file)
+    if not audio_path.is_absolute():
+        audio_path = Path("static/audio") / audio_path
+    if not audio_path.exists():
+        raise FileNotFoundError("Audio file not found")
+    return audio_path, None
+
+
+def _rerun_transcription_for_reprocess(
+        *,
+        audio_segment: AudioSegment,
+        detect_result: ToneDetectionResult,
+        transcribe_cfg: Dict[str, Any],
+        radio_system_id: int,
+        talkgroup: Any,
+        start_epoch: Any,
+        route_logger,
+) -> Optional[Dict[str, Any]]:
+    if not transcribe_cfg.get("enabled"):
+        return None
+
+    tone_payload = _tone_payload_from_detection(detect_result)
+    try:
+        audio_tones_muted = mute_detected_tones(audio_segment, tone_payload)
+        audio_normalized = normalize_audio_loudnorm(audio_tones_muted)
+        replacement_ms = int(transcribe_cfg.get("tone_replacement_ms") or 0)
+        audio_for_transcribe, _ = reduce_detected_tones_for_transcribe(
+            audio_normalized,
+            tone_payload,
+            replacement_ms=replacement_ms,
+        )
+        wav_bytes = audiosegment_to_wav_bytes(audio_for_transcribe)
+        file_name = create_audio_filename(radio_system_id, talkgroup, int(start_epoch))
+        resp = transcribe_audio(
+            audio=wav_bytes,
+            filename=file_name.replace(".mp3", ".wav"),
+            transcribe_config=transcribe_cfg,
+            timeout=120.0,
+        )
+        route_logger.info("Transcription done for reprocess call")
+        return resp if isinstance(resp, dict) else None
+    except AudioConversionError as ace:
+        route_logger.error("Audio conversion error during reprocess transcription: %s", ace)
+    except Exception as e:
+        route_logger.error("Transcription error during reprocess: %s", e)
+    return None
+
+
+def _rerun_ai_enrichment_for_reprocess(
+        *,
+        db: PostgreSQLDatabase,
+        radio_system_id: int,
+        call_id: int,
+        transcribe_response: Dict[str, Any],
+        fired_trigger_data: List[dict],
+        route_logger,
+) -> None:
+    if not transcribe_response.get("text"):
+        return
+
+    town_hint = _derive_town_hint_from_triggers(fired_trigger_data) if fired_trigger_data else None
+    call_data = {"radio_system_id": radio_system_id}
+    _maybe_extract_address_for_call(
+        db=db,
+        radio_system_id=radio_system_id,
+        call_id=call_id,
+        transcript_response=transcribe_response,
+        call_data=call_data,
+        route_logger=route_logger,
+        town_hint=town_hint,
+    )
+    _maybe_classify_incident_for_call(
+        db=db,
+        radio_system_id=radio_system_id,
+        call_id=call_id,
+        transcript_response=transcribe_response,
+        call_data=call_data,
+        route_logger=route_logger,
+    )
+    save_call_transcript(db, call_id, transcribe_response)
+
+
 @api_call_upload.route("/reprocess/<int:call_id>", methods=["POST"])
 @token_or_login_required
 def reprocess_call_tones(call_id):
@@ -2566,22 +2681,10 @@ def reprocess_call_tones(call_id):
         radio_system_id = call_row["radio_system_id"]
         audio_file = call_row["file_path"]
 
-        import tempfile
-        if audio_file.startswith("http"):
-            import requests as req
-            resp = req.get(audio_file, timeout=30)
-            resp.raise_for_status()
-            tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
-            tmp.write(resp.content)
-            tmp.close()
-            audio_path = Path(tmp.name)
-            _tmp_audio = tmp.name
-        else:
-            audio_path = Path(audio_file)
-            if not audio_path.is_absolute():
-                audio_path = Path("static/audio") / audio_path
-            if not audio_path.exists():
-                return jsonify({"error": "Audio file not found"}), 404
+        try:
+            audio_path, _tmp_audio = _load_reprocess_audio(str(audio_file or ""))
+        except FileNotFoundError:
+            return jsonify({"error": "Audio file not found"}), 404
 
         tone_cfg = _load_tone_cfg(db, radio_system_id)
         if not tone_cfg.get("tone_finder_enabled"):
@@ -2684,61 +2787,30 @@ def reprocess_call_tones(call_id):
         file_path = call_row["file_path"]
 
         route_logger.info("AI pipeline: call_id=%s", call_id)
-        transcribe_cfg = _load_transcribe_cfg(db, radio_system_id)
-        transcribe_response = None
-        if transcribe_cfg.get("enabled"):
-            try:
-                tone_dict = {
-                    "tone_detect": {
-                        "two_tone_result": detect_result.two_tone_result,
-                        "long_result": detect_result.long_result,
-                        "hi_low_result": detect_result.hi_low_result,
-                        "pulsed_result": getattr(detect_result, "pulsed_result", []),
-                        "dtmf_result": detect_result.dtmf_result,
-                        "mdc_result": detect_result.mdc_result,
-                    }
-                }
-                audio_tones_muted = mute_detected_tones(audio_segment, tone_dict)
-                audio_normalized = normalize_audio_loudnorm(audio_tones_muted)
-                replacement_ms = int(transcribe_cfg.get("tone_replacement_ms") or 0)
-                audio_for_transcribe, _ = reduce_detected_tones_for_transcribe(
-                    audio_normalized, tone_dict, replacement_ms=replacement_ms,
-                )
-                wav_bytes = audiosegment_to_wav_bytes(audio_for_transcribe)
-                file_name = create_audio_filename(radio_system_id, talkgroup, int(start_epoch))
-                transcribe_response = transcribe_audio(
-                    audio=wav_bytes,
-                    filename=file_name.replace(".mp3", ".wav"),
-                    transcribe_config=transcribe_cfg,
-                    timeout=120.0,
-                )
-                route_logger.info("Transcription done for call_id=%s", call_id)
-            except AudioConversionError as ace:
-                route_logger.error("Audio conversion error: call_id=%s err=%s", call_id, ace)
-            except Exception as e:
-                route_logger.error("Transcription error: call_id=%s err=%s", call_id, e)
-
-        if isinstance(transcribe_response, dict) and transcribe_response.get("text"):
-            town_hint = _derive_town_hint_from_triggers(fired_trigger_data) if fired_trigger_data else None
-            call_data = {"radio_system_id": radio_system_id}
-            _maybe_extract_address_for_call(
-                db=db, radio_system_id=radio_system_id, call_id=call_id,
-                transcript_response=transcribe_response, call_data=call_data,
-                route_logger=route_logger, town_hint=town_hint,
-            )
-            _maybe_classify_incident_for_call(
-                db=db, radio_system_id=radio_system_id, call_id=call_id,
-                transcript_response=transcribe_response, call_data=call_data,
+        transcribe_response = _rerun_transcription_for_reprocess(
+            audio_segment=audio_segment,
+            detect_result=detect_result,
+            transcribe_cfg=_load_transcribe_cfg(db, radio_system_id),
+            radio_system_id=radio_system_id,
+            talkgroup=talkgroup,
+            start_epoch=start_epoch,
+            route_logger=route_logger,
+        )
+        if isinstance(transcribe_response, dict):
+            _rerun_ai_enrichment_for_reprocess(
+                db=db,
+                radio_system_id=radio_system_id,
+                call_id=call_id,
+                transcribe_response=transcribe_response,
+                fired_trigger_data=fired_trigger_data,
                 route_logger=route_logger,
             )
-            save_call_transcript(db, call_id, transcribe_response)
 
         # ───── Re-dispatch notifications if triggers fired ─────
         if detect_has_tones and fired_trigger_data:
             route_logger.info("Re-dispatching %d triggers for call_id=%s",
                               len(fired_trigger_data), call_id)
 
-            storage_cfg = _load_storage_cfg(db, radio_system_id) or {}
             audio_url = file_path if file_path.startswith("http") else f"/audio/{file_path.replace('static/audio/', '')}"
 
             payload = {
@@ -2749,14 +2821,7 @@ def reprocess_call_tones(call_id):
                 "duration_s": audio_duration,
                 "start_epoch_s": int(start_epoch),
                 "audio_url": audio_url,
-                "tone_detect": {
-                    "two_tone": detect_result.two_tone_result,
-                    "long_tone": detect_result.long_result,
-                    "hi_low_tone": detect_result.hi_low_result,
-                    "pulsed_tone": detect_result.pulsed_result,
-                    "dtmf_tone": detect_result.dtmf_result,
-                    "mdc_tone": detect_result.mdc_result,
-                },
+                "tone_detect": _tone_payload_from_detection(detect_result)["tone_detect"],
             }
 
             # Enrich payload with AI results saved to DB above
