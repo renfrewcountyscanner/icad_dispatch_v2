@@ -313,7 +313,17 @@ async function revertCorrection() {
 
 function initCorrectionsPage() {
     initMap();
-    loadCalls();
+    const initialCallId = Number(new URLSearchParams(window.location.search).get("call_id"));
+    loadCalls().then(() => {
+        if (Number.isFinite(initialCallId) && initialCallId > 0) {
+            const found = callsData.some(c => Number(c.call_id) === initialCallId);
+            if (found) {
+                selectCall(initialCallId);
+            } else {
+                showAlert("Call is not in the current corrections list.", "warning");
+            }
+        }
+    });
 
     document.getElementById("filterSelect").addEventListener("change", renderCallsList);
     document.getElementById("searchInput").addEventListener("input", debounce(renderCallsList, 200));

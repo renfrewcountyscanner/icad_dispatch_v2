@@ -25,6 +25,22 @@
             max-width: none;
         }
         .export-btn { margin-left: auto; }
+        .status-badges { display: flex; gap: 0.25rem; flex-wrap: wrap; min-width: 140px; }
+        .status-badges .badge { font-size: 0.68rem; font-weight: 600; }
+        .call-action-cell { white-space: nowrap; }
+        .call-detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+        .call-detail-stat { background: #1f1f35; border: 1px solid #34344a; border-radius: 0.35rem; padding: 0.65rem 0.75rem; }
+        .call-detail-stat .label { color: #9aa0ac; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.02em; }
+        .call-detail-stat .value { color: #fff; font-weight: 600; margin-top: 0.15rem; overflow-wrap: anywhere; }
+        .call-detail-section { border-top: 1px solid #34344a; padding-top: 1rem; margin-top: 1rem; }
+        .call-detail-section h6 { color: #cfd3dc; margin-bottom: 0.65rem; }
+        .call-detail-empty { color: #8d93a1; font-style: italic; }
+        .call-transcript-box { max-height: 260px; overflow-y: auto; white-space: pre-wrap; background: #151525; border: 1px solid #34344a; border-radius: 0.35rem; padding: 0.75rem; }
+        .call-segment-list { max-height: 220px; overflow-y: auto; }
+        .call-segment-item { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 0.75rem; padding: 0.45rem 0; border-bottom: 1px solid #2b2b42; }
+        .tone-list, .trigger-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        @media (max-width: 992px) { .call-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 576px) { .call-detail-grid { grid-template-columns: 1fr; } }
     </style>
 {% endblock %}
 
@@ -68,7 +84,9 @@
                 <th>Date/Time</th>
                 <th>Township</th>
                 <th>Incident</th>
+                <th>Status</th>
                 <th>Transcript</th>
+                <th>Actions</th>
                 <th class="d-none">ID</th>
             </tr>
         </thead>
@@ -81,6 +99,41 @@
 
     <div id="initialMessage" class="text-muted text-center mt-5">
         <p class="fs-5">Select a radio system and date range, then click <strong>Run Query</strong>.</p>
+    </div>
+
+    <div class="modal fade" id="callDetailModal" tabindex="-1" aria-labelledby="callDetailTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title" id="callDetailTitle">Call Detail</h5>
+                        <div class="text-muted small" id="callDetailSubtitle">Loading…</div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="callDetailLoading" class="text-center py-5">
+                        <div class="spinner-border" role="status"></div>
+                        <div class="mt-2 text-muted">Loading call detail…</div>
+                    </div>
+                    <div id="callDetailError" class="alert alert-danger d-none" role="alert"></div>
+                    <div id="callDetailBody" class="d-none"></div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-sm btn-outline-info d-none" id="callCorrectionLink" href="/dashboard/corrections">
+                            <i class="bi bi-geo-alt"></i> Map Corrections
+                        </a>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-warning" id="callReprocessBtn" disabled>
+                            <i class="bi bi-arrow-clockwise"></i> Reprocess
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
 

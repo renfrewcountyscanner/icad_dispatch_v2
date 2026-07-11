@@ -123,13 +123,19 @@ def list_summary_calls():
                 r.get("address_geocoded_json")
             )
 
+        transcript = (r.get("text_full") or "").strip()
         rows.append({
             "call_id": r["call_id"],
             "start_epoch": r["start_epoch_s"],
             "system_name": r.get("system_name") or "",
-            "transcript": (r.get("text_full") or "").strip(),
+            "transcript": transcript,
             "township": township,
             "incident_category": r.get("incident_category") or "",
+            "has_transcript": bool(transcript),
+            "has_address_extracted": bool(r.get("address_extracted_json")),
+            "has_address_geocoded": bool(r.get("address_geocoded_json")),
+            "has_incident": bool(r.get("incident_category")),
+            "has_trigger": bool(trigger_names),
         })
 
     return jsonify(success=True, result=rows)
