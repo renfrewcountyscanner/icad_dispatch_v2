@@ -69,7 +69,7 @@ Note: `docker-compose.production.yml` is safe to commit — all secrets referenc
 ### If You Accidentally Commit a Secret
 
 1. **Immediately rotate the exposed credential** (change password, revoke API key, etc.)
-2. **Purge from git history**: `git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch <file>' --prune-empty --tag-name-filter cat -- --all`
+2. **Purge from git history** with `git filter-repo` or GitHub's documented secret-removal procedure. Do not rely on deleting the file in a new commit.
 3. **Force push**: `git push --force origin main`
 4. **Verify on GitHub** that the file no longer appears in commit history
 

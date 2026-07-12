@@ -2,6 +2,19 @@
 .env
 .env.*
 .env_example
+!.env.example
+
+# Local credentials and certificates
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
 
 # Database
 *.db
@@ -13,14 +26,22 @@ log/*.log
 log/*.log.*
 log/*.log-*
 log/*.gz
+log/*
+!log/LOG.MD
 
 # Secrets
 var/secret_key.txt
 var/sessions/
+var/*
+!var/VAR.MD
 
 # Audio (can be large — recursive)
 audio/**/*.mp3
 audio/**/*.wav
+audio/**
+!audio/AUDIO.MD
+static/audio/**
+!static/audio/AUDIO.MD
 
 # Backup files
 *.bak

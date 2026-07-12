@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+python3 scripts/check_no_secrets.py --staged
