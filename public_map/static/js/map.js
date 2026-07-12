@@ -206,6 +206,16 @@ function setLiveStatus(status) {
     else badge.classList.add('offline');
 }
 
+function updateMapHeaderSummary() {
+    const scopeBadge = document.getElementById('mapScopeBadge');
+    const countBadge = document.getElementById('mapCountBadge');
+    const systemSelect = document.getElementById('systemFilter');
+    const scopeLabel = systemSelect?.selectedOptions?.[0]?.textContent || 'All systems';
+
+    if (scopeBadge) scopeBadge.textContent = scopeLabel;
+    if (countBadge) countBadge.textContent = `${visibleCalls.length} calls`;
+}
+
 // ── Data Loading ───────────────────────────────────────────────────
 async function loadCalls() {
     const timeRange = document.getElementById('timeRange');
@@ -810,6 +820,8 @@ function updateStats() {
 
     const topTG = Object.entries(byTG).sort((a, b) => b[1] - a[1])[0];
     document.getElementById('statTopTG').textContent = topTG ? topTG[0] : '—';
+
+    updateMapHeaderSummary();
 }
 
 function updateTicker() {

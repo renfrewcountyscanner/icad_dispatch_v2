@@ -163,42 +163,54 @@
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
     {# Default map center for this deployment. Override lat/lng/zoom as needed. #}
     <span id="mapDefaults" data-lat="45.4215" data-lng="-75.6972" data-zoom="8" hidden></span>
-    <h1 class="mt-4 mb-3">Call Location Corrections</h1>
-
-    <div class="corrections-container">
-        <!-- Calls List Panel -->
-        <div class="calls-panel">
-            <div class="calls-header">
-                <select id="filterSelect" class="form-select form-select-sm" aria-label="Filter calls">
-                    <option value="all">All Recent (72h)</option>
-                    <option value="no_location">Needs Location</option>
-                    <option value="corrected">Corrected</option>
-                </select>
-                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search address/transcript..." aria-label="Search calls">
+    <div class="ap-page-shell mt-4">
+        <div class="ap-page-banner">
+            <div>
+                <div class="text-uppercase small text-body-secondary">Map Cleanup</div>
+                <h1 class="mb-1">Call Location Corrections</h1>
+                <div class="ap-page-banner-subtitle">Review unresolved calls, adjust placements, and keep the public map accurate.</div>
             </div>
-            <div class="calls-list" id="callsList">
-                <div class="text-muted text-center mt-4">Loading calls…</div>
+            <div class="ap-page-banner-meta">
+                <span class="badge text-bg-secondary">Map corrections</span>
+                <span class="badge text-bg-secondary">Drag and save</span>
             </div>
         </div>
 
-        <!-- Map Panel -->
-        <div class="map-panel">
-            <div id="correctionMap"></div>
-            <div class="loading-overlay" id="mapLoader">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                    Loading map…
+        <div class="corrections-container">
+            <!-- Calls List Panel -->
+            <div class="calls-panel">
+                <div class="calls-header">
+                    <select id="filterSelect" class="form-select form-select-sm" aria-label="Filter calls">
+                        <option value="all">All Recent (72h)</option>
+                        <option value="no_location">Needs Location</option>
+                        <option value="corrected">Corrected</option>
+                    </select>
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search address/transcript..." aria-label="Search calls">
+                </div>
+                <div class="calls-list" id="callsList">
+                    <div class="text-muted text-center mt-4">Loading calls…</div>
                 </div>
             </div>
-            <div class="map-overlay-controls">
-                <input type="text" id="addressSearch" placeholder="Search address…" title="Type an address and press Enter to locate" aria-label="Search address on map">
-            </div>
-            <div class="save-bar">
-                <span class="coord-display" id="coordDisplay">Lat: — | Lon: —</span>
-                <input type="text" id="addressDisplay" placeholder="Address (editable)…" aria-label="Corrected address" title="The address stored with this correction. You can edit it directly.">
-                <input type="text" id="notesInput" placeholder="Notes (optional)…" style="flex:1" aria-label="Correction notes">
-                <button class="btn btn-sm btn-success" id="saveBtn" disabled>Save</button>
-                <button class="btn btn-sm btn-outline-danger" id="revertBtn" disabled>Revert</button>
+
+            <!-- Map Panel -->
+            <div class="map-panel">
+                <div id="correctionMap"></div>
+                <div class="loading-overlay" id="mapLoader">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        Loading map…
+                    </div>
+                </div>
+                <div class="map-overlay-controls">
+                    <input type="text" id="addressSearch" placeholder="Search address…" title="Type an address and press Enter to locate" aria-label="Search address on map">
+                </div>
+                <div class="save-bar">
+                    <span class="coord-display" id="coordDisplay">Lat: — | Lon: —</span>
+                    <input type="text" id="addressDisplay" placeholder="Address (editable)…" aria-label="Corrected address" title="The address stored with this correction. You can edit it directly.">
+                    <input type="text" id="notesInput" placeholder="Notes (optional)…" style="flex:1" aria-label="Correction notes">
+                    <button class="btn btn-sm btn-success" id="saveBtn" disabled>Save</button>
+                    <button class="btn btn-sm btn-outline-danger" id="revertBtn" disabled>Revert</button>
+                </div>
             </div>
         </div>
     </div>

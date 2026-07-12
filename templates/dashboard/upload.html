@@ -3,62 +3,64 @@
 {% block title %}Upload Audio - iCAD Dispatch{% endblock %}
 
 {% block content %}
-<div class="row g-3 mt-3">
-    <div class="col-12">
-        <div class="card ap-toolbar-card border-0">
-            <div class="card-body py-3 px-4">
-                <span class="fw-semibold">Upload Audio</span>
-            </div>
+<div class="ap-page-shell mt-4">
+    <div class="ap-page-banner">
+        <div>
+            <div class="text-uppercase small text-body-secondary">Manual Processing</div>
+            <h1 class="mb-1">Upload Audio</h1>
+            <div class="ap-page-banner-subtitle">Submit a file directly to the processing pipeline.</div>
+        </div>
+        <div class="ap-page-banner-meta">
+            <span class="badge text-bg-secondary">Audio upload</span>
+            <span class="badge text-bg-secondary">Single file</span>
         </div>
     </div>
 
-    <div class="col-12">
-        <div class="card ap-content-card border-0 px-4 py-4">
-            <div class="card-body">
-                <form id="uploadForm" method="POST" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="systemSelect" class="form-label">Radio System</label>
-                        <select class="form-select" id="systemSelect" name="system" required>
-                            <option value="">Select a system...</option>
-                            {% for system in systems.result %}
-                            <option value="{{ system.system_decimal }}">{{ system.system_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="talkgroup" class="form-label">Talkgroup ID</label>
-                        <input type="number" class="form-control" id="talkgroup" name="talkgroup" placeholder="e.g., 101" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="audioFile" class="form-label">Audio File</label>
-                        <input type="file" class="form-control" id="audioFile" name="audio" accept="audio/*" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="deleteAfter" name="delete_after">
-                            <label class="form-check-label" for="deleteAfter">
-                                Delete audio file after processing
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">
-                        <i class="bi bi-upload"></i> Upload &amp; Process
-                    </button>
-
-                    <div class="progress mt-3 d-none" id="uploadProgress" style="height: 6px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                             role="progressbar" style="width: 100%;"></div>
-                    </div>
-                </form>
-
-                <div id="uploadResult" class="mt-4 d-none">
-                    <div class="alert" role="alert"></div>
-                    <div id="resultDetails" class="mt-3"></div>
+    <div class="ap-page-panel">
+        <div class="ap-page-panel-body">
+            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="systemSelect" class="form-label">Radio System</label>
+                    <select class="form-select" id="systemSelect" name="system" required>
+                        <option value="">Select a system...</option>
+                        {% for system in systems.result %}
+                        <option value="{{ system.system_decimal }}">{{ system.system_name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
+
+                <div class="mb-3">
+                    <label for="talkgroup" class="form-label">Talkgroup ID</label>
+                    <input type="number" class="form-control" id="talkgroup" name="talkgroup" placeholder="e.g., 101" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="audioFile" class="form-label">Audio File</label>
+                    <input type="file" class="form-control" id="audioFile" name="audio" accept="audio/*" required>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="deleteAfter" name="delete_after">
+                        <label class="form-check-label" for="deleteAfter">
+                            Delete audio file after processing
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="uploadSubmitBtn">
+                    <i class="bi bi-upload"></i> Upload &amp; Process
+                </button>
+
+                <div class="progress mt-3 d-none" id="uploadProgress" style="height: 6px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                         role="progressbar" style="width: 100%;"></div>
+                </div>
+            </form>
+
+            <div id="uploadResult" class="mt-4 d-none">
+                <div class="alert" role="alert"></div>
+                <div id="resultDetails" class="mt-3"></div>
             </div>
         </div>
     </div>

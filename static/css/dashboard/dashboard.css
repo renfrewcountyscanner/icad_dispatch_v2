@@ -216,6 +216,110 @@ body.ap-sidebar-hover #sidebarMenu .nav-link.active {
     color: var(--ap-text);
 }
 
+.ap-page-shell,
+.ap-panel-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ap-page-banner,
+.ap-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-border);
+    border-radius: var(--ap-radius);
+    box-shadow: var(--ap-shadow);
+}
+
+.ap-page-banner h1,
+.ap-page-banner h2,
+.ap-panel-header h1,
+.ap-panel-header h2 {
+    margin: 0;
+    color: var(--ap-text);
+    font-weight: 650;
+    letter-spacing: 0;
+}
+
+.ap-page-banner-meta,
+.ap-panel-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
+.ap-page-banner .badge,
+.ap-panel-header .badge {
+    border: 1px solid var(--ap-border);
+    font-weight: 600;
+}
+
+.ap-page-banner-subtitle,
+.ap-panel-subtitle {
+    margin-top: .25rem;
+    color: var(--ap-muted);
+    max-width: 72ch;
+}
+
+.ap-page-panel,
+.ap-panel-card {
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-border);
+    border-radius: var(--ap-radius);
+    box-shadow: var(--ap-shadow);
+    overflow: hidden;
+}
+
+.ap-page-panel-body,
+.ap-panel-body {
+    padding: 1rem 1.25rem 1.25rem;
+}
+
+.ap-page-toolbar,
+.ap-panel-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: .9rem 1.25rem;
+    border-bottom: 1px solid var(--ap-border);
+}
+
+.ap-page-actions,
+.ap-panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+}
+
+.ap-page-stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.ap-page-stat {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    color: var(--ap-muted);
+    font-size: .85rem;
+}
+
+.ap-page-stat strong {
+    color: var(--ap-text);
+    font-weight: 600;
+}
+
 .ap-toolbar-card {
     position: relative;
     overflow: hidden;

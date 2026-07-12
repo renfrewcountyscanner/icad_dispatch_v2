@@ -14,52 +14,57 @@
 {% block content %}
     {% include 'partials/_dashboard_trigger_modals.html' %}
 
-    <div class="row mb-3">
-        <div class="col-12 d-flex mt-3">
-            <div class="card ap-toolbar-card border-0 flex-fill px-4 py-4">
-                <div class="card-body d-flex flex-column p-0">
-
-                    <div class="row g-2">
-                        <!-- System selector -->
-                        <div class="col-auto d-flex align-items-center gap-2">
-                            <label for="triggerSystemSelect" class="mb-0 fw-semibold">System:</label>
-                            <select id="triggerSystemSelect" class="form-select form-select-sm w-auto"></select>
-                        </div>
-
-                        <!-- Trigger selector -->
-                        <div class="col-auto d-flex align-items-center gap-2">
-                            <label for="triggerSelect" class="mb-0 fw-semibold">Trigger:</label>
-                            <div id="triggerSelectGroup">
-                            <select id="triggerSelect" class="form-select form-select-sm w-auto"></select>
-                            </div>
-                        </div>
-
-                        <!-- Add button -->
-                        <div class="col-auto d-flex align-items-center ms-auto">
-                            <button id="addTriggerBtn" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                    data-bs-target="#triggerModal">
-                                Add Trigger
-                            </button>
-                        </div>
-                    </div>
-
-                </div><!-- /card-body -->
+    <div class="ap-page-shell mt-4">
+        <div class="ap-page-banner">
+            <div>
+                <div class="text-uppercase small text-body-secondary">Rules And Matching</div>
+                <h1 class="mb-1">Edit Triggers</h1>
+                <div class="ap-page-banner-subtitle">Manage trigger definitions, tone sets, and matching rules by system.</div>
+            </div>
+            <div class="ap-page-banner-meta">
+                <span class="badge text-bg-secondary">Trigger editor</span>
+                <span class="badge text-bg-secondary">Per-system scope</span>
             </div>
         </div>
-    </div>
 
-    <!-- Empty-state card -->
-    <div id="noTriggerCard" class="card ap-content-card border-0 px-4 py-4">
-        <div class="card-body text-center py-5">
-            <h3><i class="bi bi-x-octagon" style="color: var(--alertpage_red_light);"></i></h3>
-            <h5 class="fw-semibold mb-0">Select or add a Trigger</h5>
-        </div>
-    </div>
+        <div class="ap-page-panel">
+            <div class="ap-page-toolbar">
+                <div class="ap-page-actions">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="triggerSystemSelect" class="mb-0 fw-semibold">System:</label>
+                        <select id="triggerSystemSelect" class="form-select form-select-sm w-auto"></select>
+                    </div>
 
-    <!-- Editor card -->
-    <div id="triggerEditCard" class="card ap-content-card border-0 px-4 py-4 d-none">
-        <div class="card-body p-0">
-            {% include 'partials/_dashboard_edit_trigger.html' %}
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="triggerSelect" class="mb-0 fw-semibold">Trigger:</label>
+                        <div id="triggerSelectGroup">
+                            <select id="triggerSelect" class="form-select form-select-sm w-auto"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="addTriggerBtn" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#triggerModal">
+                    Add Trigger
+                </button>
+            </div>
+
+            <div class="ap-page-panel-body">
+                <!-- Empty-state card -->
+                <div id="noTriggerCard" class="card ap-content-card border-0 px-4 py-4">
+                    <div class="card-body text-center py-5">
+                        <h3><i class="bi bi-x-octagon" style="color: var(--alertpage_red_light);"></i></h3>
+                        <h5 class="fw-semibold mb-0">Select or add a Trigger</h5>
+                    </div>
+                </div>
+
+                <!-- Editor card -->
+                <div id="triggerEditCard" class="card ap-content-card border-0 px-4 py-4 d-none">
+                    <div class="card-body p-0">
+                        {% include 'partials/_dashboard_edit_trigger.html' %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}

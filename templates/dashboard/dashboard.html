@@ -26,14 +26,14 @@
 {% block content %}
     {% include "partials/_dashboard_trigger_modals.html" %}
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
-    <div class="tone-dashboard-shell mt-4">
-        <div class="tone-dashboard-banner">
+    <div class="ap-page-shell tone-dashboard-shell mt-4">
+        <div class="ap-page-banner tone-dashboard-banner">
             <div>
                 <div class="tone-dashboard-kicker text-uppercase small text-body-secondary">Dispatch Review</div>
                 <h1 class="mb-1">Tone Hits</h1>
                 <div class="text-body-secondary">Live tone activity, trigger matching, and incident review.</div>
             </div>
-            <div class="tone-dashboard-banner-meta">
+            <div class="ap-page-banner-meta tone-dashboard-banner-meta">
                 <span class="badge text-bg-secondary">Live</span>
                 <span class="badge text-bg-secondary" id="dashboardHitCountBadge">Calls -</span>
                 <span class="badge text-bg-secondary" id="dashboardSystemBadge">Systems -</span>

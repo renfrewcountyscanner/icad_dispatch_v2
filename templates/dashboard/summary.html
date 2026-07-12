@@ -46,59 +46,77 @@
 
 {% block content %}
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
-    <h1 class="mt-4">Call Summary</h1>
+    <div class="ap-page-shell mt-4">
+        <div class="ap-page-banner">
+            <div>
+                <div class="text-uppercase small text-body-secondary">Search And Export</div>
+                <h1 class="mb-1">Call Summary</h1>
+                <div class="ap-page-banner-subtitle">Query calls by system and date range, then export or inspect the result set.</div>
+            </div>
+            <div class="ap-page-banner-meta">
+                <span class="badge text-bg-secondary">Query builder</span>
+                <span class="badge text-bg-secondary">Exportable results</span>
+            </div>
+        </div>
 
-    <div class="filter-row">
-        <select id="systemSelect" class="form-select form-select-sm" style="min-width: 160px;">
-            <option value="">Select System…</option>
-            {% for sys in systems %}
-                <option value="{{ sys.radio_system_id }}">{{ sys.system_name }}</option>
-            {% endfor %}
-        </select>
+        <div class="ap-page-panel">
+            <div class="ap-page-toolbar">
+                <div class="ap-page-actions">
+                    <select id="systemSelect" class="form-select form-select-sm" style="min-width: 160px;">
+                        <option value="">Select System…</option>
+                        {% for sys in systems %}
+                            <option value="{{ sys.radio_system_id }}">{{ sys.system_name }}</option>
+                        {% endfor %}
+                    </select>
 
-        <input type="date" id="dateFrom" class="form-control form-control-sm" style="width: 140px;" placeholder="From">
-        <input type="date" id="dateTo" class="form-control form-control-sm" style="width: 140px;" placeholder="To">
+                    <input type="date" id="dateFrom" class="form-control form-control-sm" style="width: 140px;" placeholder="From">
+                    <input type="date" id="dateTo" class="form-control form-control-sm" style="width: 140px;" placeholder="To">
 
-        <button class="btn btn-sm btn-primary" id="runQueryBtn">
-            <i class="bi bi-search"></i> Run Query
-        </button>
+                    <button class="btn btn-sm btn-primary" id="runQueryBtn">
+                        <i class="bi bi-search"></i> Run Query
+                    </button>
 
-        <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
-            <i class="bi bi-x-lg"></i> Clear
-        </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
+                        <i class="bi bi-x-lg"></i> Clear
+                    </button>
+                </div>
 
-        <button class="btn btn-sm btn-success export-btn d-none" id="exportBtn">
-            <i class="bi bi-download"></i> Export to Text
-        </button>
-    </div>
+                <button class="btn btn-sm btn-success export-btn d-none" id="exportBtn">
+                    <i class="bi bi-download"></i> Export to Text
+                </button>
+            </div>
 
-    <div class="stats-row d-none" id="statsRow">
-        <span class="stat-item">Results: <span class="stat-value" id="resultCount">0</span></span>
-        <span class="stat-item">System: <span class="stat-value" id="systemLabel">—</span></span>
-        <span class="stat-item">Range: <span class="stat-value" id="rangeLabel">—</span></span>
-    </div>
+            <div class="ap-page-panel-body">
+                <div class="stats-row d-none" id="statsRow">
+                    <span class="stat-item">Results: <span class="stat-value" id="resultCount">0</span></span>
+                    <span class="stat-item">System: <span class="stat-value" id="systemLabel">—</span></span>
+                    <span class="stat-item">Range: <span class="stat-value" id="rangeLabel">—</span></span>
+                </div>
 
-    <table id="summaryTable" class="table table-dark-custom table-striped table-hover table-sm w-100 d-none">
-        <thead>
-            <tr>
-                <th>Date/Time</th>
-                <th>Township</th>
-                <th>Incident</th>
-                <th>Status</th>
-                <th>Transcript</th>
-                <th>Actions</th>
-                <th class="d-none">ID</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+                <table id="summaryTable" class="table table-dark-custom table-striped table-hover table-sm w-100 d-none">
+                    <thead>
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Township</th>
+                            <th>Incident</th>
+                            <th>Status</th>
+                            <th>Transcript</th>
+                            <th>Actions</th>
+                            <th class="d-none">ID</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
 
-    <div id="noResults" class="text-muted text-center mt-5 d-none">
-        <p class="fs-5">No calls found for the selected criteria.</p>
-    </div>
+                <div id="noResults" class="text-muted text-center mt-5 d-none">
+                    <p class="fs-5">No calls found for the selected criteria.</p>
+                </div>
 
-    <div id="initialMessage" class="text-muted text-center mt-5">
-        <p class="fs-5">Select a radio system and date range, then click <strong>Run Query</strong>.</p>
+                <div id="initialMessage" class="text-muted text-center mt-5">
+                    <p class="fs-5">Select a radio system and date range, then click <strong>Run Query</strong>.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade" id="callDetailModal" tabindex="-1" aria-labelledby="callDetailTitle" aria-hidden="true">
