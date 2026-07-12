@@ -2394,6 +2394,7 @@ def _load_address_extraction_service(
         "geocode_country": row["geocode_country"],
         "geocode_state": row["geocode_state"],
         "google_maps_api_key": row["google_maps_api_key"],
+        "nominatim_base_url": row.get("nominatim_base_url"),
         "openai_api_key": row["openai_api_key"],
         "openai_model": row["openai_model"],
         "bounds_min_lat": row.get("bounds_min_lat"),

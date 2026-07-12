@@ -508,6 +508,7 @@ def get_systems(
                    rsae.openai_api_key                  AS address_extraction_openai_api_key,
                    rsae.openai_model                    AS address_extraction_openai_model,
                    rsae.google_maps_api_key             AS address_extraction_google_maps_api_key,
+                   rsae.nominatim_base_url              AS address_extraction_nominatim_base_url,
                    rsae.geocode_country                 AS address_extraction_geocode_country,
                    rsae.geocode_state                   AS address_extraction_geocode_state,
                    rsae.geocode_city                    AS address_extraction_geocode_city,
@@ -801,6 +802,7 @@ def get_systems(
                 "openai_api_key": row.get("address_extraction_openai_api_key"),
                 "openai_model": row.get("address_extraction_openai_model"),
                 "google_maps_api_key": row.get("address_extraction_google_maps_api_key"),
+                "nominatim_base_url": row.get("address_extraction_nominatim_base_url"),
                 "geocode_country": row.get("address_extraction_geocode_country"),
                 "geocode_state": row.get("address_extraction_geocode_state"),
                 "geocode_city": row.get("address_extraction_geocode_city"),
@@ -2190,6 +2192,7 @@ def update_system_address_extraction_settings(db: PostgreSQLDatabase, data: dict
       - openai_api_key (str)
       - openai_model (str)
       - google_maps_api_key (str)
+      - nominatim_base_url (str)
       - geocode_country (str)
       - geocode_state (str)
       - geocode_city (str)
@@ -2252,6 +2255,7 @@ def update_system_address_extraction_settings(db: PostgreSQLDatabase, data: dict
     # --- Handle the other string fields ---
     for key in (
             "openai_api_key", "openai_model", "google_maps_api_key",
+            "nominatim_base_url",
             "geocode_country", "geocode_state", "geocode_city"
     ):
         if key in data:
@@ -2323,6 +2327,7 @@ def get_system_address_extraction_settings(
                aes.openai_api_key,
                aes.openai_model,
                aes.google_maps_api_key,
+               aes.nominatim_base_url,
                aes.geocode_country,
                aes.geocode_state,
                aes.geocode_city,
@@ -2375,6 +2380,7 @@ def get_system_address_extraction_settings(
             "openai_api_key": row["openai_api_key"],
             "openai_model": row["openai_model"],
             "google_maps_api_key": row["google_maps_api_key"],
+            "nominatim_base_url": row["nominatim_base_url"],
             "geocode_country": row["geocode_country"],
             "geocode_state": row["geocode_state"],
             "geocode_city": row["geocode_city"],

@@ -56,6 +56,9 @@ class AddressExtractionSettings:
     # Google Maps config
     google_maps_api_key: Optional[str] = None
 
+    # Nominatim geocoder endpoint
+    nominatim_base_url: Optional[str] = None
+
     # Base region hints (what you edited on the form: country/state/city)
     geocode_country: Optional[str] = None
     geocode_state: Optional[str] = None
@@ -99,6 +102,7 @@ class AddressExtractionSettings:
             openai_api_key=cfg.get("openai_api_key"),
             openai_model=cfg.get("openai_model"),
             google_maps_api_key=cfg.get("google_maps_api_key"),
+            nominatim_base_url=cfg.get("nominatim_base_url") or cfg.get("nominatim_url"),
             geocode_country=cfg.get("geocode_country") or cfg.get("country"),
             geocode_state=cfg.get("geocode_state") or cfg.get("state"),
             geocode_city=cfg.get("geocode_city") or cfg.get("city"),
@@ -272,12 +276,12 @@ class AddressGeocoder:
     Google Maps as optional fallback.
     """
 
-    _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
     _GOOGLE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 
     def __init__(
         self,
         google_api_key: Optional[str] = None,
+        nominatim_base_url: Optional[str] = None,
         *,
         country: Optional[str] = None,
         regions: Optional[Dict[str, List[str]]] = None,
@@ -292,6 +296,13 @@ class AddressGeocoder:
         self.log = logger or logging.getLogger("geocoding")
 
         self.google_api_key = (google_api_key or "").strip()
+        base_nominatim = (nominatim_base_url or os.environ.get("NOMINATIM_BASE_URL") or "http://192.168.90.115").strip().rstrip("/")
+        if base_nominatim.endswith("/search") or base_nominatim.endswith("/search.php"):
+            self.nominatim_base_url = base_nominatim
+        elif base_nominatim.endswith("/nominatim"):
+            self.nominatim_base_url = base_nominatim + "/search"
+        else:
+            self.nominatim_base_url = base_nominatim + "/nominatim/search"
         self.regions = regions or {}
         self.country = (country or "us").lower()
         self.city_hint = (city_hint or "").strip()
@@ -315,12 +326,13 @@ class AddressGeocoder:
             self.log.warning("No regions configured; county validation disabled")
 
         self.log.info(
-            "AddressGeocoder initialized: states=%s, counties=%d, bounds=%s, region=%s, google_key=%s",
+            "AddressGeocoder initialized: states=%s, counties=%d, bounds=%s, region=%s, google_key=%s, nominatim=%s",
             self.target_states,
             len(self.target_counties),
             "yes" if self.bounds else "no",
             self.region or "none",
             "yes" if self.google_api_key else "no",
+            self.nominatim_base_url,
         )
 
     # -----------------------------------------------------------------
@@ -518,6 +530,15 @@ class AddressGeocoder:
         """
         self._nominatim_rate_limit()
 
+        street_level_query = bool(
+            re.search(r"\b\d+[a-z]?\b", query)
+            or re.search(
+                r"\b(street|st|road|rd|avenue|ave|boulevard|blvd|drive|dr|lane|ln|court|ct|highway|hwy|trail|trl|way|parkway|pkwy|place|pl|crescent|cres|terrace|ter|circle|cir|route|rte|expressway|expwy|freeway|fwy)\b",
+                query,
+                re.IGNORECASE,
+            )
+        )
+
         params: Dict[str, str] = {
             "q": query,
             "format": "json",
@@ -546,7 +567,7 @@ class AddressGeocoder:
 
         try:
             resp = requests.get(
-                self._NOMINATIM_URL,
+                self.nominatim_base_url,
                 params=params,
                 headers=headers,
                 timeout=self.timeout,
@@ -573,6 +594,14 @@ class AddressGeocoder:
         for result in data:
             parsed = self._parse_nominatim_result(result)
             if not parsed:
+                continue
+
+            if street_level_query and not (parsed.get("house_number") or parsed.get("road")):
+                self.log.info(
+                    "[Filter] Rejecting non-street Nominatim result for street query: %r -> %r",
+                    query,
+                    parsed["formatted_address"],
+                )
                 continue
 
             validated = self._validate_region(parsed)
@@ -609,6 +638,10 @@ class AddressGeocoder:
         # Extract county
         county = addr.get("county") or addr.get("state_district")
 
+        # Extract street detail
+        house_number = addr.get("house_number")
+        road = addr.get("road") or addr.get("pedestrian") or addr.get("path")
+
         # Extract city
         city = (
             addr.get("city")
@@ -630,6 +663,10 @@ class AddressGeocoder:
             "formatted_address": display_name,
             "state": state_code,
             "county": county,
+            "road": road,
+            "house_number": house_number,
+            "result_type": result.get("type"),
+            "result_class": result.get("class"),
             "city": city,
             "postal_code": postal,
             "country": country,
@@ -1268,6 +1305,7 @@ class AddressExtractionService:
         # Instantiate geocoder from settings
         self.geocoder = AddressGeocoder(
             google_api_key=settings.google_maps_api_key,
+            nominatim_base_url=settings.nominatim_base_url,
             country=(settings.geocode_country or "us").lower(),
             regions=region_map or None,
             city_hint=settings.geocode_city,

@@ -2152,6 +2152,7 @@ def systems_address_extraction_settings(radio_system_id: int):
             "geocode_country": row["geocode_country"],
             "geocode_state": row["geocode_state"],
             "google_maps_api_key": row["google_maps_api_key"],
+            "nominatim_base_url": row.get("nominatim_base_url"),
             "openai_api_key": row["openai_api_key"],
             "openai_model": row["openai_model"],
             "bounds_min_lat": row["bounds_min_lat"],
@@ -2181,11 +2182,12 @@ def systems_address_extraction_settings(radio_system_id: int):
         "country": "geocode_country",
         "state": "geocode_state",
         "city": "geocode_city",
+        "nominatim_url": "nominatim_base_url",
     }
 
     allowed = {
         "address_extraction_enabled", "openai_api_key", "openai_model",
-        "google_maps_api_key", "geocode_country", "geocode_state", "geocode_city",
+        "google_maps_api_key", "nominatim_base_url", "geocode_country", "geocode_state", "geocode_city",
         "bounds_min_lat", "bounds_max_lat", "bounds_min_lng", "bounds_max_lng",
         "radio_system_id",
     }
@@ -2259,6 +2261,7 @@ def systems_address_extraction_settings(radio_system_id: int):
         "geocode_country": row["geocode_country"],
         "geocode_state": row["geocode_state"],
         "google_maps_api_key": row["google_maps_api_key"],
+        "nominatim_base_url": row.get("nominatim_base_url"),
         "openai_api_key": row["openai_api_key"],
         "openai_model": row["openai_model"],
         "bounds_min_lat": row["bounds_min_lat"],

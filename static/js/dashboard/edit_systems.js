@@ -2008,12 +2008,16 @@ function populateUpdateAddressExtraction(system_data) {
     // API keys: DON'T show actual key; just hint that one is stored
     const openKeyEl   = document.getElementById("addressOpenAiKey");
     const googleKeyEl = document.getElementById("addressGoogleKey");
+    const nominatimUrlEl = document.getElementById("addressNominatimBaseUrl");
 
     if (openKeyEl) {
         openKeyEl.value = s.openai_api_key;
     }
     if (googleKeyEl) {
         googleKeyEl.value = s.google_maps_api_key;
+    }
+    if (nominatimUrlEl) {
+        nominatimUrlEl.value = s.nominatim_base_url ?? "";
     }
 
     // Default region
@@ -2077,6 +2081,7 @@ async function refreshAddressExtraction() {
     const oai = byId("addressOpenAiKey");
     const mdl = byId("addressOpenAiModel");
     const gk  = byId("addressGoogleKey");
+    const nu  = byId("addressNominatimBaseUrl");
     const cty = byId("addressGeocodeCountry");
     const st  = byId("addressGeocodeState");
     const ci  = byId("addressGeocodeCity");
@@ -2085,6 +2090,7 @@ async function refreshAddressExtraction() {
     if (oai) oai.value = s.openai_api_key       || "";
     if (mdl) mdl.value = s.openai_model         || "";
     if (gk)  gk.value  = s.google_maps_api_key  || "";
+    if (nu)  nu.value  = s.nominatim_base_url   || "";
     if (cty) cty.value = s.geocode_country      || "";
     if (st)  st.value  = s.geocode_state        || "";
     if (ci)  ci.value  = s.geocode_city         || "";
@@ -2163,6 +2169,11 @@ function gatherAddressExtractionSettingsFormData() {
     const googleKey = q("#addressGoogleKey").trim();
     if (googleKey) {
         data.google_key = googleKey;
+    }
+
+    const nominatimBaseUrl = q("#addressNominatimBaseUrl").trim();
+    if (nominatimBaseUrl) {
+        data.nominatim_url = nominatimBaseUrl;
     }
 
     // Include cities so the Save button persists the full tab state
