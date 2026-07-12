@@ -3213,7 +3213,22 @@ def bulk_add_geocoding_roads(
     try:
         db.begin()
 
-        added = 0
+        existing_res = db.execute_query(
+            """
+            SELECT road_name, city_name FROM geocoding_roads
+            WHERE address_extraction_setting_id = ?
+            """,
+            (address_extraction_setting_id,),
+            fetch_mode="all",
+        )
+        if not existing_res.get("success"):
+            raise RuntimeError(existing_res.get("message") or "Could not load existing roads")
+
+        existing = {
+            ((row.get("road_name") or "").casefold(), (row.get("city_name") or "").casefold())
+            for row in existing_res.get("result") or []
+        }
+        pending: list[tuple] = []
         for idx, road in enumerate(roads):
             name = (road.get("road_name") or "").strip()
             road_type = (road.get("road_type") or "").strip() or None
@@ -3224,36 +3239,30 @@ def bulk_add_geocoding_roads(
                 module_logger.warning("Skipping invalid road: %s", road)
                 continue
 
-            dup = db.execute_query(
-                """
-                SELECT road_id FROM geocoding_roads
-                WHERE address_extraction_setting_id = ? AND road_name = ? AND (city_name = ? OR (city_name IS NULL AND ? IS NULL))
-                """,
-                (address_extraction_setting_id, name, city_name, city_name),
-                fetch_mode="one"
-            )
-            if dup.get("success") and dup.get("result"):
+            key = (name.casefold(), (city_name or "").casefold())
+            if key in existing:
                 module_logger.warning("Road %s already exists, skipping", name)
                 continue
+            existing.add(key)
+            pending.append((address_extraction_setting_id, name, road_type, city_name, priority))
 
-            res = db.execute_commit(
+        if pending:
+            res = db.execute_many(
                 """
                 INSERT INTO geocoding_roads
                     (address_extraction_setting_id, road_name, road_type, city_name, priority)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (address_extraction_setting_id, name, road_type, city_name, priority),
-                return_row_id=True
+                pending,
             )
             if not res["success"]:
-                raise RuntimeError(f"Failed to insert {name}: {res['message']}")
-            added += 1
+                raise RuntimeError(f"Failed to insert roads: {res['message']}")
 
         db.commit()
         return {
             "success": True,
-            "message": f"Added {added} road(s).",
-            "result": added
+            "message": f"Added {len(pending)} road(s).",
+            "result": len(pending)
         }
 
     except Exception as e:

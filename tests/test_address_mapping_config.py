@@ -22,9 +22,10 @@ class _RoadBulkDb:
 
     def execute_query(self, _query, params, **_kwargs):
         self.duplicate_check_params = params
-        return {"success": True, "result": None}
+        return {"success": True, "result": []}
 
-    def execute_commit(self, _query, _params, **_kwargs):
+    def execute_many(self, _query, params, **_kwargs):
+        self.insert_params = params
         return {"success": True}
 
 
@@ -63,10 +64,10 @@ def test_fuzzy_road_matching_ignores_house_number():
     assert corrected.raw_text == "12 Renn Drive, ON"
 
 
-def test_bulk_road_duplicate_check_binds_null_city_twice():
+def test_bulk_road_import_batches_new_roads():
     db = _RoadBulkDb()
 
     result = bulk_add_geocoding_roads(db, 7, [{"road_name": "Example Road"}])
 
     assert result["success"] is True
-    assert db.duplicate_check_params == (7, "Example Road", None, None)
+    assert db.insert_params == [(7, "Example Road", None, None, 10)]
