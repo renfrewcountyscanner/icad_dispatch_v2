@@ -22,7 +22,7 @@ jobs:
           node-version: "22"
       - run: pip install -r requirements-dev.txt
       - run: python scripts/check_no_secrets.py
-      - run: pytest -q
+      - run: python -m pytest -q tests
       - run: python -m compileall -q app.py lib routes public_map/app.py
       - run: node --check static/js/dashboard/operations.js
       - run: node --check static/js/dashboard/corrections.js
