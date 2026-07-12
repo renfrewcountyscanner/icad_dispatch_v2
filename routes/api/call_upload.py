@@ -50,6 +50,7 @@ from lib.alert_trigger_module import get_triggers_full
 from lib.address_extractor_module import (
     AddressExtractionService,
     AddressExtractorError,
+    is_dispatch_unit_label,
 )
 from lib.system_module import (
     get_system_address_extraction_settings, update_system_storage_settings, get_system_storage_settings, get_systems, get_system_incident_classification_settings,
@@ -2267,9 +2268,9 @@ def _derive_town_hint_from_triggers(fired_trigger_data: List[Dict[str, Any]]) ->
     """
     Derive a township/city hint from fired trigger names.
 
-    Trigger names like "FIRE - Whitewater Region" or "EMS - Pembroke Base"
-    contain municipality information. We strip common prefixes and join
-    unique names to give the LLM geocoder better local context.
+    Trigger names like "FIRE - Whitewater Region" may contain municipality
+    information. Dispatch-unit labels such as "EMS - Pembroke Base" are
+    explicitly excluded because they are not incident locations.
 
     Returns a comma-separated hint string or None if no triggers fired.
     """
@@ -2288,6 +2289,8 @@ def _derive_town_hint_from_triggers(fired_trigger_data: List[Dict[str, Any]]) ->
             if name.startswith(prefix):
                 name = name[len(prefix):]
                 break
+        if is_dispatch_unit_label(name):
+            continue
         if name and name not in seen:
             seen.add(name)
             towns.append(name)

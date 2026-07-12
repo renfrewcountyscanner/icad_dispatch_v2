@@ -14,6 +14,16 @@ import requests
 
 module_logger = logging.getLogger("icad_dispatch.address_extraction_module")
 
+# Dispatch labels identify a unit/station, not the incident municipality. They
+# frequently occur immediately before the dispatched address (for example,
+# "Pembroke Base, Priority Green at ...") and must never constrain geocoding.
+_DISPATCH_UNIT_LABEL = re.compile(r"\b(?:base|station|dispatch|communications)\b", re.IGNORECASE)
+
+
+def is_dispatch_unit_label(value: Optional[str]) -> bool:
+    """Return whether a city/town candidate is actually a dispatch unit label."""
+    return bool(value and _DISPATCH_UNIT_LABEL.search(value.strip()))
+
 
 class AddressExtractorError(Exception):
     """Generic error during address extraction."""
@@ -1089,6 +1099,9 @@ VERY IMPORTANT INSTRUCTIONS:
    - BAD: "Highway 401 westbound near mile marker 582" (no city → will map to wrong place)
    - GOOD: "Highway 401 westbound near mile marker 582, Napanee, ON"
    - If the transcript does NOT clearly name a city, use the town_hint above.
+7. DISPATCH UNIT LABELS ARE NOT LOCATIONS. Terms such as "Pembroke Base",
+   "Base", "Station", "Dispatch", or "Communications" identify a responding
+   unit. Never use them as city/town values and never include them in raw_text.
 
 INVALID INPUTS - MUST RETURN EMPTY:
 - "Copy that"
@@ -1243,10 +1256,19 @@ If no valid address is found, return:
         except (TypeError, ValueError):
             confidence = 0.0
 
+        city = (data.get("city") or "").strip() or None
+        if is_dispatch_unit_label(city):
+            self.log.info("AddressExtractorLLM: discarding dispatch unit label as city: %r", city)
+            raw_text = ", ".join(
+                part.strip() for part in raw_text.split(",")
+                if not is_dispatch_unit_label(part)
+            ).strip()
+            city = None
+
         return ExtractedAddress(
             raw_text=raw_text,
             street=data.get("street"),
-            city=data.get("city"),
+            city=city,
             county=data.get("county"),
             state=data.get("state"),
             postal_code=data.get("postal_code"),
