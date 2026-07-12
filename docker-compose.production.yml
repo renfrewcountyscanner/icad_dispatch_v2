@@ -63,7 +63,7 @@ services:
       - BASE_URL=${PUBLIC_MAP_BASE_URL:-https://map.YOUR_DOMAIN.COM}
       - SECRET_KEY=${MAP_SECRET_KEY}
       - PUBLIC_MAP_API_KEY=${PUBLIC_MAP_API_KEY}
-      - NOMINATIM_BASE_URL=${NOMINATIM_BASE_URL:-http://192.168.90.115}
+      - NOMINATIM_BASE_URL=${NOMINATIM_BASE_URL:-http://192.168.90.115/nominatim}
       - PUBLIC_MAP_CORS_ORIGINS=${PUBLIC_MAP_CORS_ORIGINS:-https://map.firepage.ca,http://192.168.90.104:5000}
     volumes:
       - ./audio:/app/static/audio:ro
