@@ -26,133 +26,151 @@
 {% block content %}
     {% include "partials/_dashboard_trigger_modals.html" %}
     <input type="hidden" id="csrfToken" value="{{ csrf_token }}"/>
-    <h1 class="mt-4">Tone Hits</h1>
+    <div class="tone-dashboard-shell mt-4">
+        <div class="tone-dashboard-banner">
+            <div>
+                <div class="tone-dashboard-kicker text-uppercase small text-body-secondary">Dispatch Review</div>
+                <h1 class="mb-1">Tone Hits</h1>
+                <div class="text-body-secondary">Live tone activity, trigger matching, and incident review.</div>
+            </div>
+            <div class="tone-dashboard-banner-meta">
+                <span class="badge text-bg-secondary">Live</span>
+                <span class="badge text-bg-secondary" id="dashboardHitCountBadge">Calls -</span>
+                <span class="badge text-bg-secondary" id="dashboardSystemBadge">Systems -</span>
+            </div>
+        </div>
 
-    <!-- ── Stats inline row ─────────────────────────────────────────── -->
-    <div class="stats-inline" id="statsRow">
-        <div class="stat">
-            <span class="stat-label">Total Calls:</span>
-            <span class="stat-value" id="statTotalCalls">-</span>
+        <div class="tone-dashboard-controls">
+            <!-- ── Stats inline row ─────────────────────────────────────────── -->
+            <div class="stats-inline" id="statsRow">
+                <div class="stat">
+                    <span class="stat-label">Total Calls:</span>
+                    <span class="stat-value" id="statTotalCalls">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Triggers:</span>
+                    <span class="stat-value" id="statTriggered">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Transcribed:</span>
+                    <span class="stat-value" id="statTranscribed">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Avg Duration:</span>
+                    <span class="stat-value" id="statAvgDuration">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Incidents:</span>
+                    <span id="incidentBadges">
+                        <span class="badge badge-other">Other: 0</span>
+                        <span class="badge badge-fire">Fire: 0</span>
+                        <span class="badge badge-medical">Medical: 0</span>
+                        <span class="badge badge-traffic">Traffic: 0</span>
+                        <span class="badge badge-rescue">Rescue: 0</span>
+                        <span class="badge badge-utilities">Utilities: 0</span>
+                        <span class="badge badge-hazmat">HazMat: 0</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="tone-dashboard-filterbar">
+                <!-- ── Filter row top ───────────────────────────────────────────── -->
+                <div class="tone-filter-row tone-filter-row-top">
+                    <select class="form-select form-select-sm" id="systemSelect">
+                        <option value="">All Systems</option>
+                    </select>
+
+                    <select class="form-select form-select-sm" id="toneType">
+                        <option value="">All Types</option>
+                        <option value="two_tone">Two-Tone</option>
+                        <option value="long">Long</option>
+                        <option value="hi_low">Hi/Low</option>
+                        <option value="pulsed">Pulsed</option>
+                        <option value="mdc">MDC</option>
+                        <option value="dtmf">DTMF</option>
+                    </select>
+
+                    <select class="form-select form-select-sm" id="triggerSelect">
+                        <option value="">All Triggers</option>
+                    </select>
+
+                    <select class="form-select form-select-sm" id="incidentSelect">
+                        <option value="">All Incidents</option>
+                        <option value="Fire">Fire</option>
+                        <option value="Medical">Medical</option>
+                        <option value="Traffic">Traffic</option>
+                        <option value="Rescue">Rescue</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="HazMat">HazMat</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <input type="date" class="form-control form-control-sm" id="dateFrom" placeholder="From">
+                    <input type="date" class="form-control form-control-sm" id="dateTo" placeholder="To">
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="triggerOnly">
+                        <label class="form-check-label text-muted small" for="triggerOnly">Trigger Fire Only</label>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-secondary" id="clearFilters">Clear</button>
+                    <button class="btn btn-sm btn-outline-warning" id="reprocessAllBtn" title="Re-match all stored tone events against current triggers">
+                        <i class="bi bi-arrow-repeat"></i> Reprocess All
+                    </button>
+                </div>
+
+                <!-- ── Filter row bottom ───────────────────────────────────────── -->
+                <div class="tone-filter-row tone-filter-row-bottom">
+                    <span class="live-pill">LIVE</span>
+
+                    <button class="btn btn-sm btn-link text-white p-0" id="refreshBtn" title="Refresh">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+
+                    <select class="form-select form-select-sm" id="autoRefresh">
+                        <option value="0">Off</option>
+                        <option value="15000">Every 15s</option>
+                        <option value="30000">Every 30s</option>
+                        <option value="60000">Every 60s</option>
+                    </select>
+                </div>
+            </div>
         </div>
-        <div class="stat">
-            <span class="stat-label">Triggers:</span>
-            <span class="stat-value" id="statTriggered">-</span>
-        </div>
-        <div class="stat">
-            <span class="stat-label">Transcribed:</span>
-            <span class="stat-value" id="statTranscribed">-</span>
-        </div>
-        <div class="stat">
-            <span class="stat-label">Avg Duration:</span>
-            <span class="stat-value" id="statAvgDuration">-</span>
-        </div>
-        <div class="stat">
-            <span class="stat-label">Incidents:</span>
-            <span id="incidentBadges">
-                <span class="badge badge-other">Other: 0</span>
-                <span class="badge badge-fire">Fire: 0</span>
-                <span class="badge badge-medical">Medical: 0</span>
-                <span class="badge badge-traffic">Traffic: 0</span>
-                <span class="badge badge-rescue">Rescue: 0</span>
-                <span class="badge badge-utilities">Utilities: 0</span>
-                <span class="badge badge-hazmat">HazMat: 0</span>
-            </span>
+
+        <div class="tone-dashboard-table-shell">
+            <div class="tone-dashboard-table-toolbar">
+                <div class="small text-muted" id="bulkSelHint">
+                    <span id="bulkSelectedCount">0</span> selected
+                </div>
+                <div class="btn-group">
+                    <button id="bulkDeleteBtn" type="button" class="btn btn-sm btn-danger" disabled>
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+
+            <table id="callsTable" class="table table-dark-custom table-striped table-hover table-sm w-100">
+                <thead>
+                <tr>
+                    <th style="width: 1.5rem;">
+                        <input type="checkbox" id="selectAllRows" aria-label="Select all visible"/>
+                    </th>
+                    <th>Time</th>
+                    <th class="col-badge">Type</th>
+                    <th class="col-badge">Radio System</th>
+                    <th class="col-badge">Tones Triggered</th>
+                    <th>Tones</th>
+                    <th>Talkgroup</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                    <th class="d-none">ID</th>
+                    <th class="d-none">EPOCH</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
-
-    <!-- ── Filter row top ───────────────────────────────────────────── -->
-    <div class="filter-row-top">
-        <select class="form-select form-select-sm" id="systemSelect" style="width: auto; min-width: 120px;">
-            <option value="">All Systems</option>
-        </select>
-        
-        <select class="form-select form-select-sm" id="toneType" style="width: auto; min-width: 100px;">
-            <option value="">All Types</option>
-            <option value="two_tone">Two-Tone</option>
-            <option value="long">Long</option>
-            <option value="hi_low">Hi/Low</option>
-            <option value="pulsed">Pulsed</option>
-            <option value="mdc">MDC</option>
-            <option value="dtmf">DTMF</option>
-        </select>
-        
-        <select class="form-select form-select-sm" id="triggerSelect" style="width: auto; min-width: 140px;">
-            <option value="">All Triggers</option>
-        </select>
-        
-        <select class="form-select form-select-sm" id="incidentSelect" style="width: auto; min-width: 100px;">
-            <option value="">All Incidents</option>
-            <option value="Fire">Fire</option>
-            <option value="Medical">Medical</option>
-            <option value="Traffic">Traffic</option>
-            <option value="Rescue">Rescue</option>
-            <option value="Utilities">Utilities</option>
-            <option value="HazMat">HazMat</option>
-            <option value="Other">Other</option>
-        </select>
-        
-        <input type="date" class="form-control form-control-sm" id="dateFrom" style="width: 120px;" placeholder="From">
-        <input type="date" class="form-control form-control-sm" id="dateTo" style="width: 120px;" placeholder="To">
-        
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="triggerOnly">
-            <label class="form-check-label text-muted small" for="triggerOnly">Trigger Fire Only</label>
-        </div>
-        
-        <button class="btn btn-sm btn-outline-secondary" id="clearFilters">Clear</button>
-        <button class="btn btn-sm btn-outline-warning" id="reprocessAllBtn" title="Re-match all stored tone events against current triggers">
-            <i class="bi bi-arrow-repeat"></i> Reprocess All
-        </button>
-    </div>
-
-    <!-- ── Filter row bottom ───────────────────────────────────────── -->
-    <div class="filter-row-bottom">
-        <span class="live-pill">LIVE</span>
-        
-        <button class="btn btn-sm btn-link text-white p-0" id="refreshBtn" title="Refresh">
-            <i class="bi bi-arrow-clockwise"></i>
-        </button>
-        
-        <select class="form-select form-select-sm" id="autoRefresh" style="width: auto;">
-            <option value="0">Off</option>
-            <option value="15000">Every 15s</option>
-            <option value="30000">Every 30s</option>
-            <option value="60000">Every 60s</option>
-        </select>
-    </div>
-
-    <!-- ── Hits table ──────────────────────────────────────────────── -->
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="small text-muted" id="bulkSelHint">
-            <span id="bulkSelectedCount">0</span> selected
-        </div>
-        <div class="btn-group">
-            <button id="bulkDeleteBtn" type="button" class="btn btn-sm btn-danger" disabled>
-                <i class="bi bi-trash"></i> Delete
-            </button>
-        </div>
-    </div>
-
-    <table id="callsTable" class="table table-dark-custom table-striped table-hover table-sm w-100">
-        <thead>
-        <tr>
-            <th style="width: 1.5rem;">
-                <input type="checkbox" id="selectAllRows" aria-label="Select all visible"/>
-            </th>
-            <th>Time</th>
-            <th class="col-badge">Type</th>
-            <th class="col-badge">Radio System</th>
-            <th class="col-badge">Tones Triggered</th>
-            <th>Tones</th>
-            <th>Talkgroup</th>
-            <th>Duration</th>
-            <th>Actions</th>
-            <th class="d-none">ID</th>
-            <th class="d-none">EPOCH</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
 
     <!-- Delete modals and other modals... -->
     <div id="bulkDeleteModal" class="modal fade" tabindex="-1">

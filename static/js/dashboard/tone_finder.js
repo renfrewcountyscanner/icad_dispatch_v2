@@ -170,6 +170,22 @@ function sanitizeDtmf(s) {
     return seq;
 }
 
+function updateDashboardBanner({ systemLabel = "All Systems", systemCount = null, hitCount = null } = {}) {
+    const systemBadge = document.getElementById("dashboardSystemBadge");
+    const hitBadge = document.getElementById("dashboardHitCountBadge");
+
+    if (systemBadge) {
+        systemBadge.textContent = systemCount == null
+            ? `System ${systemLabel}`
+            : `${systemCount} systems`;
+    }
+    if (hitBadge) {
+        hitBadge.textContent = hitCount == null
+            ? "Calls -"
+            : `${hitCount} calls`;
+    }
+}
+
 /* ====================================================================
    2) TRIGGER MATCHING HELPERS
    ==================================================================== */
@@ -725,6 +741,11 @@ async function fetchSystems() {
             els.sysSel.appendChild(opt);
         });
 
+        updateDashboardBanner({
+            systemLabel: "All Systems",
+            systemCount: result.length
+        });
+
         // Also populate trigger modal system dropdown
         if (els.trigSystemId) {
             els.trigSystemId.innerHTML = '';
@@ -1013,6 +1034,13 @@ async function loadCalls(ev) {
         if (elTranscribed) elTranscribed.textContent = transcribed;
         if (elAvgDur)      elAvgDur.textContent      = avgDur;
 
+        updateDashboardBanner({
+            systemLabel: els.sysSel.value
+                ? (els.sysSel.options[els.sysSel.selectedIndex]?.textContent || "Selected system")
+                : "All Systems",
+            hitCount: totalCalls
+        });
+
         ["Fire","Medical","Traffic","Rescue","Utilities","HazMat","Other"].forEach(type => {
             const el = document.querySelector(`.badge-${type.toLowerCase()}`);
             if (el) el.textContent = `${type}: ${incCounts[type] || 0}`;
@@ -1158,6 +1186,8 @@ function initToneFinderPage() {
         bulkModal: document.getElementById("bulkDeleteModal"),
         bulkCountInModal: document.getElementById("bulkCountInModal"),
         bulkConfirmBtn: document.getElementById("bulkDeleteConfirmBtn"),
+        dashboardSystemBadge: document.getElementById("dashboardSystemBadge"),
+        dashboardHitCountBadge: document.getElementById("dashboardHitCountBadge"),
 
         // “Create Trigger” modal (lightweight)
         triggerModal: document.getElementById("triggerModal"),
