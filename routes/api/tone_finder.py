@@ -17,13 +17,13 @@ New capabilities
 """
 import json
 import os
-import datetime
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlparse
 
 from flask import Blueprint, request, jsonify, current_app, render_template
 from ..decorators import login_required, csrf_protect
+from lib.date_ranges import local_date_range_to_epochs
 
 bp_tone = Blueprint("api_tone_finder", __name__)
 
@@ -74,13 +74,28 @@ def list_calls():
 
     trigger_only = request.args.get("trigger_only") in ("1", "true", "yes")
     trigger_id = request.args.get("trigger_id")
+    if trigger_id:
+        try:
+            trigger_id = int(trigger_id)
+        except ValueError:
+            return _err("invalid trigger_id", 400)
 
     # Date filters
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
 
-    limit  = max(1, min(int(request.args.get("limit", 100)), 1000))
-    offset = max(0, int(request.args.get("offset", 0)))
+    try:
+        limit = max(1, min(int(request.args.get("limit", 100)), 1000))
+        offset = max(0, int(request.args.get("offset", 0)))
+    except ValueError:
+        return _err("limit and offset must be integers", 400)
+
+    try:
+        from_ts, to_ts = local_date_range_to_epochs(
+            date_from, date_to, current_app.config.get("TIMEZONE")
+        )
+    except ValueError as exc:
+        return _err(str(exc), 400)
 
     # ── SQL build ────────────────────────────────────────────────
     tone_filter  = []
@@ -98,7 +113,7 @@ def list_calls():
                 WHERE ttm.alert_trigger_id = ?
             )
         """)
-        params.append(int(trigger_id))
+        params.append(trigger_id)
 
     if tone_type:
         tone_filter.append("cte.tone_type = ?")
@@ -107,13 +122,13 @@ def list_calls():
         tone_filter.append("cte.matches_trigger = 1")
 
     # Date filters
-    if date_from:
+    if from_ts is not None:
         tone_filter.append("cr.start_epoch_s >= ?")
-        params.append(datetime.strptime(date_from, "%Y-%m-%d").timestamp())
-    if date_to:
+        params.append(from_ts)
+    if to_ts is not None:
         # Include the entire day
         tone_filter.append("cr.start_epoch_s < ?")
-        params.append(datetime.strptime(date_to, "%Y-%m-%d").timestamp() + 86400)
+        params.append(to_ts)
 
     where_extra = f"WHERE {' AND '.join(tone_filter)}" if tone_filter else "WHERE 1=1"
 

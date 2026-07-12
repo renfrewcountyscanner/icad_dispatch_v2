@@ -18,6 +18,15 @@ def list_needs_correction():
     db = current_app.config["db"]
     logger = current_app.config["logger"]
 
+    status = request.args.get("status", "all")
+    if status not in {"all", "no_location", "corrected"}:
+        return _err("invalid status", 400)
+
+    try:
+        limit = max(1, min(int(request.args.get("limit", 500)), 500))
+    except ValueError:
+        return _err("limit must be an integer", 400)
+
     since = int(time.time()) - (72 * 3600)
 
     sql = """
@@ -41,10 +50,11 @@ def list_needs_correction():
         LEFT   JOIN radio_systems rs ON cr.radio_system_id = rs.radio_system_id
         LEFT   JOIN call_corrections cc ON cr.call_id = cc.call_id
         WHERE  cr.start_epoch_s >= ?
+          AND  (? != 'corrected' OR cc.call_id IS NOT NULL)
         ORDER  BY cr.start_epoch_s DESC
-        LIMIT  500
+        LIMIT  1000
     """
-    res = db.execute_query(sql, (since,), fetch_mode="all")
+    res = db.execute_query(sql, (since, status), fetch_mode="all")
     if not res["success"]:
         logger.error("needs-correction query failed: %s", res["message"])
         return _err("DB error", 500)
@@ -72,6 +82,9 @@ def list_needs_correction():
             except Exception:
                 pass
 
+        if status == "no_location" and has_location:
+            continue
+
         rows.append({
             "call_id": r["call_id"],
             "start_epoch": r["start_epoch_s"],
@@ -88,6 +101,9 @@ def list_needs_correction():
             "has_correction": bool(r.get("has_correction")),
             "notes": r.get("notes") or "",
         })
+
+        if len(rows) >= limit:
+            break
 
     return jsonify(success=True, result=rows)
 

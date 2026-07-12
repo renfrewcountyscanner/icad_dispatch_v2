@@ -15,37 +15,35 @@
 
 {% block content %}
     {% include 'partials/_dashboard_system_modals.html' %}
-    <div class="row g-3 mt-3">
-        <!-- TOP TOOLBAR CARD -->
-        <div class="col-12">
-            <div class="card ap-toolbar-card border-0">
-                <div class="card-body py-3 px-4">
-                    <div class="row align-items-center g-2">
-                        <div class="col-auto">
-                            <span id="liveFeedTitle" class="fw-semibold">Radio Systems</span>
-                        </div>
-
-                        <div class="col-auto ms-auto d-flex align-items-center gap-2">
-                            <label for="systemSelect" class="form-label mb-0 fw-semibold">Systems:</label>
-                            <select id="systemSelect" class="form-select form-select-sm w-auto"></select>
-                        </div>
-
-                        <div class="col-auto">
-                            <button id="addSystemBtn"
-                                    type="button"
-                                    class="btn btn-sm btn-primary"
-                                    data-bs-toggle="modal" data-bs-target="#addNewSystemModal">
-                                Add System
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    <div class="ap-page-shell mt-4">
+        <div class="ap-page-banner">
+            <div>
+                <div class="text-uppercase small text-body-secondary">Configuration</div>
+                <h1 class="mb-1">Radio Systems</h1>
+                <div class="ap-page-banner-subtitle">Manage system settings, talkgroups, and address extraction behavior.</div>
+            </div>
+            <div class="ap-page-banner-meta">
+                <span class="badge text-bg-secondary">System settings</span>
+                <span class="badge text-bg-secondary">Address extraction</span>
             </div>
         </div>
 
-        <!-- BOTTOM CONTENT CARD -->
-        <div class="col-12">
-            <div id="systemEditCard" class="card ap-content-card flex-fill border-0 px-4 py-4 d-none">
+        <div class="ap-page-panel">
+            <div class="ap-page-toolbar">
+                <span id="liveFeedTitle" class="fw-semibold">System Editor</span>
+                <div class="ap-page-actions">
+                    <label for="systemSelect" class="form-label mb-0 fw-semibold">System</label>
+                    <select id="systemSelect" class="form-select form-select-sm w-auto"></select>
+                    <button id="addSystemBtn"
+                            type="button"
+                            class="btn btn-sm btn-primary"
+                            data-bs-toggle="modal" data-bs-target="#addNewSystemModal">
+                        Add System
+                    </button>
+                </div>
+            </div>
+
+            <div id="systemEditCard" class="ap-page-panel-body d-none">
                 <div class="card-body d-flex flex-column flex-fill p-0">
                     <div class="flex-fill overflow-auto">
                         <div class="d-flex flex-column gap-2">
@@ -55,7 +53,7 @@
                 </div>
             </div>
 
-            <div id="noSystemCard" class="card ap-content-card flex-fill border-0 px-4 py-4">
+            <div id="noSystemCard" class="ap-page-panel-body">
                 <div class="card-body d-flex flex-column flex-fill p-0">
                     <div class="flex-fill overflow-auto">
                         <div class="d-flex flex-column gap-2">

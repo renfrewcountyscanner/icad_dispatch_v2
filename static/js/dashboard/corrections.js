@@ -57,7 +57,8 @@ function getCsrf() {
 
 async function loadCalls() {
     try {
-        const resp = await fetch("/api/calls/needs-correction");
+        const status = document.getElementById("filterSelect")?.value || "all";
+        const resp = await fetch(`/api/calls/needs-correction?status=${encodeURIComponent(status)}`);
         const data = await resp.json();
         if (!data.success) throw new Error(data.message || "API error");
         callsData = data.result || [];
@@ -69,16 +70,9 @@ async function loadCalls() {
 }
 
 function renderCallsList() {
-    const filter = document.getElementById("filterSelect").value;
     const search = document.getElementById("searchInput").value.toLowerCase().trim();
 
     let filtered = callsData;
-
-    if (filter === "no_location") {
-        filtered = filtered.filter(c => !c.has_location);
-    } else if (filter === "corrected") {
-        filtered = filtered.filter(c => c.has_correction);
-    }
 
     if (search) {
         filtered = filtered.filter(c =>
@@ -325,7 +319,7 @@ function initCorrectionsPage() {
         }
     });
 
-    document.getElementById("filterSelect").addEventListener("change", renderCallsList);
+    document.getElementById("filterSelect").addEventListener("change", loadCalls);
     document.getElementById("searchInput").addEventListener("input", debounce(renderCallsList, 200));
     document.getElementById("addressSearch").addEventListener("keydown", (e) => {
         if (e.key === "Enter") searchAddress();

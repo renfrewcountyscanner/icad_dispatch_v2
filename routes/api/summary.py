@@ -9,9 +9,9 @@ Returns a flat list of calls with full transcripts and trigger-based township in
 for a given radio system and date range.
 """
 import json
-import datetime
 from flask import Blueprint, request, jsonify, current_app
 from routes.decorators import login_required
+from lib.date_ranges import local_date_range_to_epochs
 
 bp_summary = Blueprint("api_summary", __name__)
 
@@ -66,10 +66,11 @@ def list_summary_calls():
         return _err("date_from and date_to are required", 400)
 
     try:
-        from_ts = datetime.datetime.strptime(date_from, "%Y-%m-%d").timestamp()
-        to_ts = datetime.datetime.strptime(date_to, "%Y-%m-%d").timestamp() + 86400
-    except ValueError:
-        return _err("invalid date format (expected YYYY-MM-DD)", 400)
+        from_ts, to_ts = local_date_range_to_epochs(
+            date_from, date_to, current_app.config.get("TIMEZONE")
+        )
+    except ValueError as exc:
+        return _err(str(exc), 400)
 
     # Township comes from trigger names (alert_triggers.alert_trigger_name)
     # Fallback to geocoded address if no triggers fired

@@ -48,6 +48,7 @@ let selectedTriggerIds = new Set();
 
 // ── Init ───────────────────────────────────────────────────────────
 function init() {
+    syncMapLayout();
     initAudioContext();
     initMap();
     initSocket();
@@ -55,6 +56,18 @@ function init() {
     initNotifications();
     initDesktopNotifications();
     loadCalls();
+
+    window.addEventListener('resize', debounce(syncMapLayout, 100));
+}
+
+// The map header can wrap on phones and compact desktops. Keep the fixed map
+// workspace below its measured height instead of relying on a hard-coded value.
+function syncMapLayout() {
+    const topBar = document.getElementById('topBar');
+    if (!topBar) return;
+
+    document.documentElement.style.setProperty('--topbar-h', `${topBar.offsetHeight}px`);
+    if (map) map.invalidateSize(false);
 }
 
 function initAudioContext() {
