@@ -94,6 +94,7 @@
         <label><input type="checkbox" class="inc-filter" value="HazMat" checked><span class="dot hazmat"></span> HazMat</label>
         <label><input type="checkbox" class="inc-filter" value="Other" checked><span class="dot other"></span> Other</label>
         <button id="tickerToggle" title="Toggle ticker"><i class="bi bi-newspaper"></i></button>
+        <button id="filterDrawerToggle" title="Show or hide incident filters"><i class="bi bi-funnel"></i></button>
     </div>
 
     <!-- Main Layout -->
@@ -101,6 +102,11 @@
         <!-- Map -->
         <div id="mapContainer">
             <div id="map"></div>
+            <section id="addressSearchPanel" class="d-none" aria-label="Address search">
+                <div class="address-search-header"><span>Address Search</span><button id="closeAddressSearch" type="button" title="Close"><i class="bi bi-x-lg"></i></button></div>
+                <form id="addressSearchForm"><input id="addressSearchInput" type="search" minlength="3" placeholder="Search an address" autocomplete="off"><button type="submit" title="Search"><i class="bi bi-search"></i></button></form>
+                <div id="addressSearchResults"></div>
+            </section>
 
             <!-- Legend -->
             <div id="legendPanel">

@@ -28,6 +28,7 @@
 
     {% if session.get('is_admin') %}
     {{ sidebar_divider() }}
+    {{ sidebar_link('Operations Health', '/dashboard/operations', 'bi bi-activity') }}
     {{ sidebar_link('User Management', '/admin/users', 'bi bi-people-fill') }}
     {{ sidebar_link('Database Import', '/admin', 'bi bi-database-fill-up') }}
     {% endif %}

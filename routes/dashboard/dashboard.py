@@ -51,4 +51,10 @@ def dashboard_summary():
 def dashboard_corrections():
     return render_template("dashboard/corrections.html")
 
+@dashboard.route("/operations", methods=["GET"])
+@login_required
+def dashboard_operations():
+    if not session.get("is_admin"):
+        abort(403)
+    return render_template("dashboard/operations.html")
 

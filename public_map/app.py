@@ -13,8 +13,9 @@ import time
 import psycopg2
 import logging
 import decimal
+import requests
 from datetime import datetime
-from collections import defaultdict, deque
+from urllib.parse import urljoin
 from functools import lru_cache
 
 from flask import Flask, send_from_directory, request, render_template, Response
@@ -44,6 +45,11 @@ PG_USER = os.environ.get("PG_USER")
 PG_PASSWORD = os.environ.get("PG_PASSWORD")
 
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+NOMINATIM_BASE_URL = os.environ.get("NOMINATIM_BASE_URL", "").rstrip("/")
+PUBLIC_MAP_CORS_ORIGINS = [
+    origin.strip() for origin in os.environ.get("PUBLIC_MAP_CORS_ORIGINS", BASE_URL).split(",")
+    if origin.strip()
+]
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError(
@@ -75,7 +81,7 @@ app.config["JSON_SORT_KEYS"] = False
 socketio = SocketIO(
     app,
     async_mode="eventlet",
-    cors_allowed_origins="*",
+    cors_allowed_origins=PUBLIC_MAP_CORS_ORIGINS,
     ping_interval=25,
     ping_timeout=60,
     logger=False,
@@ -83,34 +89,88 @@ socketio = SocketIO(
     json=json,  # Use standard json module; we'll handle Decimal in the data itself
 )
 
-# ── Rate limiting (in-memory, per-IP) ──────────────────────────────
-# 60 requests per minute per IP
-_rate_limit_buckets = defaultdict(list)
-
 def _check_rate_limit():
-    ip = request.remote_addr or "unknown"
-    now = time.time()
-    window = 60  # seconds
-    max_requests = 60
-    bucket = _rate_limit_buckets[ip]
-    # Prune old entries
-    bucket[:] = [t for t in bucket if now - t < window]
-    if len(bucket) >= max_requests:
+    """Shared, restart-safe 60 request/minute limiter keyed by client IP."""
+    try:
+        rows = get_icad_db().query(
+            """
+            WITH expired AS (
+                DELETE FROM public_map_rate_limits
+                WHERE bucket_start < NOW() - INTERVAL '2 hours'
+            ), allowed AS (
+                INSERT INTO public_map_rate_limits (bucket_start, client_ip, request_count)
+                VALUES (date_trunc('minute', NOW()), ?, 1)
+                ON CONFLICT (bucket_start, client_ip) DO UPDATE
+                    SET request_count = public_map_rate_limits.request_count + 1
+                    WHERE public_map_rate_limits.request_count < 60
+                RETURNING request_count
+            ) SELECT request_count FROM allowed
+            """,
+            (request.remote_addr or "unknown",),
+        )
+        return bool(rows)
+    except Exception as exc:
+        logger.warning("Public-map rate limiter unavailable: %s", exc)
         return False
-    bucket.append(now)
-    return True
 
-
-# ── Deduplication (prevent double-broadcast via push + poller) ────
-# Track last 1000 broadcast call IDs; old ones drop off automatically.
-_recently_broadcast = deque(maxlen=1000)
 
 def _is_duplicate(call_id: int) -> bool:
-    return call_id in _recently_broadcast
+    rows = get_icad_db().query(
+        "SELECT 1 FROM public_map_broadcasts WHERE call_id = ?",
+        (call_id,),
+        fetch_mode="one",
+    )
+    return bool(rows)
 
 def _mark_broadcast(call_id: int) -> None:
-    if call_id not in _recently_broadcast:
-        _recently_broadcast.append(call_id)
+    get_icad_db().query(
+        """
+        INSERT INTO public_map_broadcasts (call_id, broadcast_epoch)
+        VALUES (?, ?)
+        ON CONFLICT (call_id) DO UPDATE SET broadcast_epoch = EXCLUDED.broadcast_epoch
+        """,
+        (call_id, int(time.time())),
+    )
+
+
+def _error(message: str, status: int = 400):
+    return {"success": False, "message": message}, status
+
+
+def _json_object(value):
+    try:
+        parsed = json.loads(value) if value else None
+        return parsed if isinstance(parsed, dict) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_int(value: str | None, name: str, *, minimum: int | None = None, maximum: int | None = None) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if minimum is not None and parsed < minimum:
+        raise ValueError(f"{name} must be at least {minimum}")
+    if maximum is not None and parsed > maximum:
+        raise ValueError(f"{name} must be at most {maximum}")
+    return parsed
+
+
+def _parse_float(value: str | None, name: str, *, minimum: float | None = None, maximum: float | None = None) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a number") from exc
+    if minimum is not None and parsed < minimum:
+        raise ValueError(f"{name} must be at least {minimum:g}")
+    if maximum is not None and parsed > maximum:
+        raise ValueError(f"{name} must be at most {maximum:g}")
+    return parsed
 
 
 # ── DB helpers ─────────────────────────────────────────────────────
@@ -134,9 +194,13 @@ class PostgreSQLReadOnlyDB:
         cur = conn.cursor()
         cur.execute(sql, params)
         
-        # Get column names
-        col_names = [desc[0] for desc in cur.description] if cur.description else []
-        
+        # INSERT/UPDATE statements do not produce result rows.
+        if not cur.description:
+            cur.close()
+            conn.close()
+            return None if fetch_mode == "one" else []
+
+        col_names = [desc[0] for desc in cur.description]
         if fetch_mode == "one":
             row = cur.fetchone()
             result = dict(zip(col_names, row)) if row else None
@@ -259,6 +323,16 @@ def api_calls():
     system_id = request.args.get("system_id")
     incident = request.args.get("incident")
 
+    try:
+        parsed_from = _parse_float(from_epoch, "from", minimum=0)
+        parsed_to = _parse_float(to_epoch, "to", minimum=0)
+        parsed_after = _parse_float(after_epoch, "after", minimum=0)
+        parsed_hours = _parse_float(since_hours, "hours", minimum=1, maximum=720)
+        if parsed_from is not None and parsed_to is not None and parsed_to < parsed_from:
+            raise ValueError("to must be on or after from")
+    except ValueError as exc:
+        return _error(str(exc))
+
     filters = []
     params = []
     meta = {"count": 0}
@@ -266,7 +340,7 @@ def api_calls():
     # Time range handling (priority: from/to > after > hours)
     if from_epoch:
         try:
-            since_epoch = float(from_epoch)
+            since_epoch = parsed_from
             filters.append("cr.start_epoch_s >= ?")
             params.append(since_epoch)
             meta["from"] = since_epoch
@@ -275,7 +349,7 @@ def api_calls():
             params.append(time.time() - (24 * 3600))
     elif after_epoch:
         try:
-            since_epoch = float(after_epoch)
+            since_epoch = parsed_after
             filters.append("cr.start_epoch_s >= ?")
             params.append(since_epoch)
             meta["after"] = since_epoch
@@ -284,25 +358,29 @@ def api_calls():
             params.append(time.time() - (24 * 3600))
     else:
         try:
-            hours = float(since_hours)
+            hours = parsed_hours
         except ValueError:
-            hours = 24.0
+            return _error("hours must be a number")
         filters.append("cr.start_epoch_s >= ?")
         params.append(time.time() - (hours * 3600))
         meta["hours"] = hours
 
     if to_epoch:
         try:
-            until_epoch = float(to_epoch)
+            until_epoch = parsed_to
             filters.append("cr.start_epoch_s <= ?")
             params.append(until_epoch)
             meta["to"] = until_epoch
         except ValueError:
-            pass
+            return _error("alert_trigger_ids must be a comma-separated list of integers")
 
-    if system_id:
+    try:
+        parsed_system_id = _parse_int(system_id, "system_id", minimum=1)
+    except ValueError as exc:
+        return _error(str(exc))
+    if parsed_system_id:
         filters.append("cr.radio_system_id = ?")
-        params.append(int(system_id))
+        params.append(parsed_system_id)
 
     if incident:
         filters.append("ct.incident_category = ?")
@@ -482,9 +560,13 @@ def api_triggers():
         WHERE at.alert_trigger_enabled = 1
     """
     params = []
-    if system_id:
+    try:
+        parsed_system_id = _parse_int(system_id, "system_id", minimum=1)
+    except ValueError as exc:
+        return _error(str(exc))
+    if parsed_system_id:
         sql += " AND at.radio_system_id = ?"
-        params.append(int(system_id))
+        params.append(parsed_system_id)
 
     sql += " ORDER BY at.alert_trigger_name"
 
@@ -507,6 +589,46 @@ def api_triggers():
             "Expires": "0",
         },
     )
+
+
+@app.route("/api/geocode/search")
+def api_geocode_search():
+    """Search the deployment's local Nominatim instance without browser CORS exposure."""
+    if not _check_rate_limit():
+        return _error("Rate limit exceeded", 429)
+
+    query = (request.args.get("q") or "").strip()
+    if not NOMINATIM_BASE_URL:
+        return _error("Local address search is not configured", 503)
+    if len(query) < 3:
+        return _error("Search text must be at least 3 characters")
+    if len(query) > 200:
+        return _error("Search text is too long")
+
+    try:
+        rows = None
+        for endpoint in ("search", "search.php"):
+            response = requests.get(
+                urljoin(f"{NOMINATIM_BASE_URL}/", endpoint),
+                params={"format": "jsonv2", "limit": 5, "q": query},
+                headers={"Accept-Language": "en"},
+                timeout=5,
+            )
+            if response.status_code == 404:
+                continue
+            response.raise_for_status()
+            rows = response.json()
+            break
+        if rows is None:
+            raise requests.HTTPError("No supported Nominatim search endpoint found")
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Local Nominatim search failed: %s", exc)
+        return _error("Local address search is unavailable", 503)
+
+    return {"success": True, "result": [
+        {"display_name": row.get("display_name", ""), "lat": row.get("lat"), "lng": row.get("lon")}
+        for row in rows if row.get("lat") is not None and row.get("lon") is not None
+    ]}
 
 
 @app.route("/api/push-call", methods=["POST"])
@@ -640,6 +762,9 @@ def api_call_detail(call_id: int):
             "has_location": lat is not None and lng is not None,
             "is_corrected": is_corrected,
             "correction_notes": r.get("correction_notes") or "",
+            "location_source": "manual correction" if is_corrected else ("automatic geocode" if lat is not None and lng is not None else "no resolved location"),
+            "address_extracted": _json_object(r.get("address_extracted_json")),
+            "address_geocoded": _json_object(r.get("address_geocoded_json")),
         }
     })
     return Response(

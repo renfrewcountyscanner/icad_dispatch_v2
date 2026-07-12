@@ -730,7 +730,16 @@ function _renderSidebarContent(call) {
             <div class="detail-section">
                 <div class="section-label">Address</div>
                 <div class="section-value">${esc(call.address || '—')}</div>
+                <div class="section-value" style="font-size:.72rem;color:#888;margin-top:.2rem">Source: ${esc(call.location_source || 'not available')}</div>
             </div>
+
+            ${call.address_extracted || call.address_geocoded ? `
+            <div class="detail-section">
+                <div class="section-label">Location Evidence</div>
+                ${call.address_extracted ? `<div class="section-value" style="font-size:.78rem">Extracted: ${esc(call.address_extracted.raw_text || call.address_extracted.street || 'address detected')}</div>` : ''}
+                ${call.address_geocoded ? `<div class="section-value" style="font-size:.78rem;color:#aaa">Geocoder: ${esc(call.address_geocoded.formatted_address || 'coordinates resolved')}</div>` : ''}
+            </div>
+            ` : ''}
 
             <div class="detail-section">
                 <div class="section-label">System</div>
@@ -1050,6 +1059,8 @@ function initControls() {
     document.getElementById('helpBtn').addEventListener('click', toggleHelpModal);
 
     document.getElementById('searchAddressBtn').addEventListener('click', searchAddress);
+    document.getElementById('closeAddressSearch').addEventListener('click', closeAddressSearch);
+    document.getElementById('addressSearchForm').addEventListener('submit', submitAddressSearch);
     document.getElementById('myLocationBtn').addEventListener('click', () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -1061,6 +1072,9 @@ function initControls() {
 
     document.getElementById('tickerToggle').addEventListener('click', () => {
         document.getElementById('tickerBar').classList.toggle('hidden');
+    });
+    document.getElementById('filterDrawerToggle').addEventListener('click', () => {
+        document.getElementById('incidentBar').classList.toggle('filters-collapsed');
     });
 
     // Check URL for permalink
@@ -1294,19 +1308,32 @@ function injectTestCall() {
 }
 
 function searchAddress() {
-    const q = prompt('Search for an address or location:');
-    if (!q) return;
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`)
-        .then(r => r.json())
-        .then(results => {
-            if (results && results.length) {
-                const r = results[0];
-                map.setView([parseFloat(r.lat), parseFloat(r.lon)], 16);
-            } else {
-                showToastMsg('Address not found', 'warning');
-            }
-        })
-        .catch(() => showToastMsg('Search failed', 'danger'));
+    document.getElementById('addressSearchPanel').classList.remove('d-none');
+    document.getElementById('addressSearchInput').focus();
+}
+
+function closeAddressSearch() {
+    document.getElementById('addressSearchPanel').classList.add('d-none');
+}
+
+async function submitAddressSearch(event) {
+    event.preventDefault();
+    const query = document.getElementById('addressSearchInput').value.trim();
+    if (query.length < 3) return;
+    const resultsEl = document.getElementById('addressSearchResults');
+    resultsEl.innerHTML = '<div class="address-search-result">Searching...</div>';
+    try {
+        const response = await fetch(`/api/geocode/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Search failed');
+        resultsEl.innerHTML = data.result.length ? data.result.map(result => `<button class="address-search-result" type="button" data-lat="${Number(result.lat)}" data-lng="${Number(result.lng)}">${esc(result.display_name)}</button>`).join('') : '<div class="address-search-result">No matching address found.</div>';
+        resultsEl.querySelectorAll('[data-lat]').forEach(button => button.addEventListener('click', () => {
+            map.setView([Number(button.dataset.lat), Number(button.dataset.lng)], 16);
+            closeAddressSearch();
+        }));
+    } catch (error) {
+        resultsEl.innerHTML = `<div class="address-search-result">${esc(error.message)}</div>`;
+    }
 }
 
 // ── Utilities ─────────────────────────────────────────────────────
