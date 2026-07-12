@@ -266,6 +266,31 @@ function resetTrackedFormStates(label = "Select a system") {
     });
 }
 
+function updateSelectedSystemBanner(system_data = null, stateLabel = "Loaded") {
+    const titleEl = document.getElementById("selectedSystemTitle");
+    const subtitleEl = document.getElementById("selectedSystemSubtitle");
+    const idBadge = document.getElementById("selectedSystemIdBadge");
+    const decimalBadge = document.getElementById("selectedSystemDecimalBadge");
+    const stateBadge = document.getElementById("selectedSystemStateBadge");
+
+    if (!system_data) {
+        if (titleEl) titleEl.textContent = "Select a system";
+        if (subtitleEl) subtitleEl.textContent = "Choose a radio system to edit its settings.";
+        if (idBadge) idBadge.textContent = "ID -";
+        if (decimalBadge) decimalBadge.textContent = "Decimal -";
+        if (stateBadge) stateBadge.textContent = "Idle";
+        return;
+    }
+
+    if (titleEl) titleEl.textContent = system_data.system_name || "Unnamed system";
+    if (subtitleEl) {
+        subtitleEl.textContent = `Editing ${system_data.system_name || "this system"} across general, delivery, storage, AI, and address settings.`;
+    }
+    if (idBadge) idBadge.textContent = `ID ${system_data.radio_system_id ?? "-"}`;
+    if (decimalBadge) decimalBadge.textContent = `Decimal ${system_data.system_decimal ?? "-"}`;
+    if (stateBadge) stateBadge.textContent = stateLabel;
+}
+
 
 /*****************************************************
  *               On Loaded Event
@@ -320,7 +345,10 @@ function initEventListeners() {
         systemEditCard.classList.toggle("d-none", !editing);
         noSystemCard.classList.toggle("d-none", editing);
 
-        if (!editing) return;                // nothing selected; stop here
+        if (!editing) {
+            updateSelectedSystemBanner(null);
+            return;                // nothing selected; stop here
+        }
 
         systemEditCard.classList.remove("d-none");
 
@@ -776,6 +804,7 @@ function populateUpdateGeneral(system_data) {
     updateSystemName.value = system_data.system_name;
     updateSystemStreamURL.value = system_data.stream_url;
     updatePostToneDelay.value = system_data.post_tone_delay || 0;
+    updateSelectedSystemBanner(system_data, "Ready");
 
     markTrackedFormClean("updateSystemGeneralForm");
 }
