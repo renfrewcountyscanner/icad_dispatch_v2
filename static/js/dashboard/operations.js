@@ -1,6 +1,6 @@
 const metricLabels = {
     calls_received: "Calls received", calls_transcribed: "Transcribed", addresses_extracted: "Addresses extracted",
-    addresses_geocoded: "Geocoded", geocode_pending: "Need geocoding", corrections_applied: "Manual corrections"
+    addresses_geocoded: "Geocoded", geocode_pending: "Need geocoding", low_confidence_addresses: "Low confidence", corrections_applied: "Manual corrections"
 };
 
 function operationsCsrf() { return document.getElementById("csrfToken")?.value || ""; }

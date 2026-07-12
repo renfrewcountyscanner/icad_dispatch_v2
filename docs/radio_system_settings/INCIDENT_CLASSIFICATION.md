@@ -34,7 +34,7 @@ To enable Incident Classification for a radio system, you need:
 3. A valid **OpenAI API key** available either:
    - stored in the system’s Incident Classification settings, **or**
    - provided via the server environment variable `OPENAI_API_KEY`
-4. A selected **OpenAI model** (example: `gpt-4o-mini`)
+4. A selected **OpenAI model** (default: `gpt-5.4-mini`)
 
 If classification is enabled but the key/model is missing, classification will not run.
 
@@ -57,7 +57,8 @@ Tip: If you run multiple systems and want them all to share one key, using `OPEN
 
 ### 3) Model
 Choose one of the allowed models:
-- `gpt-4o-mini` (recommended default)
+- `gpt-5.4-mini` (recommended default)
+- `gpt-4o-mini` (legacy)
 - `gpt-4o`
 - `gpt-4.1-mini` (untested)
 - `gpt-4.1`      (untested)

@@ -121,6 +121,7 @@ def save_correction(call_id: int):
     lng = body.get("lng")
     address = (body.get("address") or "").strip()
     notes = (body.get("notes") or "").strip()
+    learn_alias = bool(body.get("learn_alias"))
 
     if lat is None or lng is None:
         return _err("lat and lng are required", 400)
@@ -153,6 +154,9 @@ def save_correction(call_id: int):
         logger.error("save correction failed: %s", ins["message"])
         return _err("DB error", 500)
 
+    if learn_alias and address:
+        _learn_address_alias(db, call_id, lat_f, lng_f, address, logger)
+
     # ── Update transcript text to reflect corrected address ─────────────────
     _update_transcript_with_correction(db, call_id, address, logger)
 
@@ -161,6 +165,50 @@ def save_correction(call_id: int):
 
     logger.info("Location corrected for call_id=%s by %s", call_id, username)
     return jsonify(success=True, result={"call_id": call_id, "lat": lat_f, "lng": lng_f})
+
+
+def _learn_address_alias(db, call_id: int, lat: float, lng: float, canonical_address: str, logger) -> None:
+    """Store the extracted phrase as a system-scoped coordinate alias after review."""
+    source = db.execute_query(
+        """
+        SELECT aes.address_extraction_setting_id, ct.address_extracted_json
+        FROM call_records cr
+        JOIN radio_system_address_extraction_settings aes
+          ON aes.radio_system_id = cr.radio_system_id
+        LEFT JOIN call_transcripts ct ON ct.call_id = cr.call_id
+        WHERE cr.call_id = ?
+        """,
+        (call_id,),
+        fetch_mode="one",
+    )
+    row = source.get("result") if source.get("success") else None
+    if not row or not row.get("address_extracted_json"):
+        return
+    try:
+        extracted = json.loads(row["address_extracted_json"])
+    except (TypeError, ValueError):
+        return
+    phrase = (extracted.get("raw_text") or extracted.get("street") or "").strip()
+    if not phrase:
+        return
+    saved = db.execute_commit(
+        """
+        INSERT INTO geocoding_address_aliases
+            (address_extraction_setting_id, heard_phrase, canonical_address, latitude, longitude)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (address_extraction_setting_id, heard_phrase) DO UPDATE SET
+            canonical_address = EXCLUDED.canonical_address,
+            latitude = EXCLUDED.latitude,
+            longitude = EXCLUDED.longitude,
+            enabled = 1,
+            created_epoch = EXCLUDED.created_epoch
+        """,
+        (row["address_extraction_setting_id"], phrase, canonical_address, lat, lng),
+    )
+    if saved.get("success"):
+        logger.info("Learned address alias for call_id=%s phrase=%r", call_id, phrase)
+    else:
+        logger.warning("Could not learn address alias for call_id=%s: %s", call_id, saved.get("message"))
 
 
 @bp_corrections.route("/calls/<int:call_id>/correct-location", methods=["DELETE"])

@@ -120,7 +120,11 @@ class AddressExtractionSettings:
             bounds_max_lat=_f(cfg.get("bounds_max_lat")),
             bounds_min_lng=_f(cfg.get("bounds_min_lng")),
             bounds_max_lng=_f(cfg.get("bounds_max_lng")),
-            geocode_cities=cfg.get("geocode_cities") or [],
+            geocode_cities=[
+                str(city.get("city_name") or "").strip() if isinstance(city, dict) else str(city or "").strip()
+                for city in (cfg.get("geocode_cities") or cfg.get("cities") or [])
+                if (city.get("city_name") if isinstance(city, dict) else city)
+            ],
             regions=regions,
             roads=cfg.get("roads") or [],
         )
@@ -173,6 +177,14 @@ class GeocodedAddress:
             "postal_code": self.postal_code,
             "country": self.country,
         }
+
+
+@dataclass
+class AddressAlias:
+    heard_phrase: str
+    canonical_address: str
+    latitude: float
+    longitude: float
 
 
 def _regions_list_to_map(regions: Optional[List[Dict[str, Any]]]) -> Dict[str, List[str]]:
@@ -1348,6 +1360,17 @@ class AddressExtractionService:
             timeout=15,
             logger=self.log,
         )
+        self.aliases = [
+            AddressAlias(
+                heard_phrase=str(alias.get("heard_phrase") or "").strip(),
+                canonical_address=str(alias.get("canonical_address") or "").strip(),
+                latitude=float(alias["latitude"]),
+                longitude=float(alias["longitude"]),
+            )
+            for alias in ((system_row or {}).get("address_extraction") or {}).get("aliases", [])
+            if alias.get("enabled", 1) and alias.get("heard_phrase") and alias.get("canonical_address")
+            and alias.get("latitude") is not None and alias.get("longitude") is not None
+        ]
 
     @property
     def enabled(self) -> bool:
@@ -1428,6 +1451,19 @@ class AddressExtractionService:
                 return {"extracted": fallback, "geocoded": geo}
             return {"extracted": None, "geocoded": None}
 
+        alias = self._matching_alias(addr)
+        if alias:
+            self.log.info("Address alias matched %r -> %r", alias.heard_phrase, alias.canonical_address)
+            addr.raw_text = alias.canonical_address
+            return {
+                "extracted": addr,
+                "geocoded": GeocodedAddress(
+                    lat=alias.latitude,
+                    lng=alias.longitude,
+                    formatted_address=alias.canonical_address,
+                ),
+            }
+
         # ── Stage 2: Fuzzy validation against local road database ──
         addr = self._fuzzy_validate_road(addr)
 
@@ -1439,6 +1475,13 @@ class AddressExtractionService:
         geo = self._validate_geocoded_road(geo)
 
         return {"extracted": addr, "geocoded": geo}
+
+    def _matching_alias(self, addr: ExtractedAddress) -> Optional[AddressAlias]:
+        haystack = " ".join(filter(None, [addr.raw_text, addr.street])).casefold()
+        for alias in sorted(self.aliases, key=lambda item: len(item.heard_phrase), reverse=True):
+            if alias.heard_phrase.casefold() in haystack:
+                return alias
+        return None
 
     def _fuzzy_validate_road(self, addr: ExtractedAddress) -> ExtractedAddress:
         """
@@ -1457,12 +1500,19 @@ class AddressExtractionService:
         if not road_names:
             return addr
 
-        # Exact match
-        if addr.street in road_names:
+        street_prefix = ""
+        street_name = addr.street.strip()
+        number_match = re.match(r"^(\d+[A-Za-z-]*)\s+(.+)$", street_name)
+        if number_match:
+            street_prefix = number_match.group(1) + " "
+            street_name = number_match.group(2).strip()
+
+        # Exact match, comparing road names without a house number.
+        if street_name in road_names:
             return addr
 
         # Fuzzy match
-        matches = difflib.get_close_matches(addr.street, road_names, n=1, cutoff=0.7)
+        matches = difflib.get_close_matches(street_name, road_names, n=1, cutoff=0.7)
         if matches:
             corrected = matches[0]
             original_street = addr.street  # save before mutation
@@ -1470,10 +1520,10 @@ class AddressExtractionService:
                 "Road fuzzy match: '%s' -> '%s' (system)",
                 original_street, corrected,
             )
-            addr.street = corrected
+            addr.street = street_prefix + corrected
             # Update raw_text to reflect correction if it contained the street
             if addr.raw_text:
-                addr.raw_text = addr.raw_text.replace(original_street, corrected)
+                addr.raw_text = addr.raw_text.replace(original_street, addr.street)
         else:
             self.log.warning(
                 "Extracted street '%s' not found in local road database (system)",

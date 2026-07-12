@@ -74,6 +74,7 @@ def _collect_prompt_hints(transcribe_config: dict) -> List[str]:
     ])
     hints.extend(transcribe_config.get("fired_trigger_names") or [])
     hints.extend(transcribe_config.get("trigger_names") or [])
+    hints.extend(transcribe_config.get("location_hints") or [])
     return _unique_hints(hints)
 
 

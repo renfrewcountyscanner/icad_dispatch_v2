@@ -239,7 +239,7 @@ class IncidentClassifierLLM:
         self.log = logger or module_logger
 
         self.openai_api_key = (openai_api_key or "").strip()
-        self.openai_model = (openai_model or "").strip() or "gpt-4o-mini"
+        self.openai_model = (openai_model or "").strip() or "gpt-5.4-mini"
         self.temperature = float(temperature)
         self.max_chars = int(max_chars)
 

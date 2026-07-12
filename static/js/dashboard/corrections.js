@@ -243,6 +243,7 @@ async function saveCorrection() {
         lng: draggedLon,
         address: document.getElementById("addressDisplay").value,
         notes: document.getElementById("notesInput").value,
+        learn_alias: document.getElementById("learnAlias").checked,
         _csrf_token: getCsrf()
     };
 

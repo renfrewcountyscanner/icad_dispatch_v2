@@ -910,7 +910,7 @@ def get_systems(
                 "incident_classification_setting_id": row.get("incident_classification_setting_id"),
                 "enabled": row.get("incident_classification_enabled") or 0,
                 "openai_api_key": row.get("incident_openai_api_key"),
-                "openai_model": row.get("incident_openai_model") or "gpt-4o-mini",
+                "openai_model": row.get("incident_openai_model") or "gpt-5.4-mini",
                 "min_confidence": row.get("incident_min_confidence") if row.get("incident_min_confidence") is not None else 0.0,
             }
 
@@ -3229,7 +3229,7 @@ def bulk_add_geocoding_roads(
                 SELECT road_id FROM geocoding_roads
                 WHERE address_extraction_setting_id = ? AND road_name = ? AND (city_name = ? OR (city_name IS NULL AND ? IS NULL))
                 """,
-                (address_extraction_setting_id, name, city_name),
+                (address_extraction_setting_id, name, city_name, city_name),
                 fetch_mode="one"
             )
             if dup.get("success") and dup.get("result"):
@@ -3526,7 +3526,7 @@ def get_system_storage_settings(
 # ===========================================================================
 # Incident Classification Settings
 # ===========================================================================
-_ALLOWED_INCIDENT_MODELS = {"gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"}
+_ALLOWED_INCIDENT_MODELS = {"gpt-5.4-mini", "gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"}
 
 
 def ensure_system_incident_classification_settings(db: PostgreSQLDatabase, radio_system_id: int) -> dict:

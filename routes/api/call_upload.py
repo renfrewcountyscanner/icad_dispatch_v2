@@ -443,6 +443,7 @@ def call_upload():
                     talkgroup_name=call_data.get("talkgroupLabel") or call_data.get("talkgroup_name"),
                     trigger_data=trigger_data,
                     fired_trigger_data=fired_trigger_data,
+                    location_hints=_load_transcription_location_hints(db, radio_system_id),
                 )
 
                 transcribe_response = transcribe_audio(
@@ -2332,6 +2333,7 @@ def _build_transcribe_request_cfg(
     talkgroup_name: Optional[str],
     trigger_data: Optional[List[Dict[str, Any]]] = None,
     fired_trigger_data: Optional[List[Dict[str, Any]]] = None,
+    location_hints: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     cfg = dict(transcribe_cfg or {})
     cfg["system_name"] = system_name
@@ -2339,7 +2341,45 @@ def _build_transcribe_request_cfg(
     cfg["talkgroup_name"] = talkgroup_name
     cfg["trigger_names"] = _collect_trigger_name_hints(trigger_data)
     cfg["fired_trigger_names"] = _collect_trigger_name_hints(fired_trigger_data)
+    cfg["location_hints"] = location_hints or []
     return cfg
+
+
+def _load_transcription_location_hints(db: PostgreSQLDatabase, radio_system_id: int) -> List[str]:
+    """Load a bounded vocabulary of local cities, roads, and learned aliases."""
+    hints: List[str] = []
+    queries = (
+        """
+        SELECT gc.city_name AS hint FROM geocoding_cities gc
+        JOIN radio_system_address_extraction_settings aes
+          ON aes.address_extraction_setting_id = gc.address_extraction_setting_id
+        WHERE aes.radio_system_id = ? ORDER BY gc.priority, gc.city_name LIMIT 8
+        """,
+        """
+        SELECT gr.road_name AS hint FROM geocoding_roads gr
+        JOIN radio_system_address_extraction_settings aes
+          ON aes.address_extraction_setting_id = gr.address_extraction_setting_id
+        WHERE aes.radio_system_id = ? ORDER BY gr.priority, gr.road_name LIMIT 12
+        """,
+        """
+        SELECT gaa.heard_phrase AS hint FROM geocoding_address_aliases gaa
+        JOIN radio_system_address_extraction_settings aes
+          ON aes.address_extraction_setting_id = gaa.address_extraction_setting_id
+        WHERE aes.radio_system_id = ? AND gaa.enabled = 1
+        ORDER BY gaa.created_epoch DESC LIMIT 8
+        """,
+    )
+    seen: set[str] = set()
+    for query in queries:
+        result = db.execute_query(query, (radio_system_id,), fetch_mode="all")
+        if not result.get("success"):
+            continue
+        for row in result.get("result") or []:
+            hint = str(row.get("hint") or "").strip()
+            if hint and hint.casefold() not in seen:
+                seen.add(hint.casefold())
+                hints.append(hint)
+    return hints
 
 
 def _load_address_extraction_service(
@@ -2406,7 +2446,21 @@ def _load_address_extraction_service(
         "bounds_max_lng": row.get("bounds_max_lng"),
         "regions": row.get("regions", []),
         "cities": row.get("cities", []),
+        "geocode_cities": row.get("cities", []),
+        "roads": row.get("roads", []),
     }
+
+    aliases_res = db.execute_query(
+        """
+        SELECT heard_phrase, canonical_address, latitude, longitude, enabled
+        FROM geocoding_address_aliases
+        WHERE address_extraction_setting_id = ? AND enabled = 1
+        ORDER BY created_epoch DESC
+        """,
+        (row["address_extraction_setting_id"],),
+        fetch_mode="all",
+    )
+    address_payload["aliases"] = aliases_res.get("result", []) if aliases_res.get("success") else []
 
     # Match the shape expected by AddressExtractionService.from_system_row(...)
     system_row = {"address_extraction": address_payload}
@@ -2669,6 +2723,7 @@ def _rerun_transcription_for_reprocess(
             talkgroup_name=talkgroup_name,
             trigger_data=trigger_data,
             fired_trigger_data=fired_trigger_data,
+            location_hints=_load_transcription_location_hints(db, radio_system_id),
         )
         resp = transcribe_audio(
             audio=wav_bytes,

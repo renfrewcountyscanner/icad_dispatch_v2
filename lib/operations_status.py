@@ -23,6 +23,10 @@ def get_operations_status(db: Any, window_hours: int = 24) -> dict[str, Any]:
             SUM(CASE WHEN ct.call_id IS NOT NULL
                       AND (ct.address_geocoded_json IS NULL OR ct.address_geocoded_json = '')
                      THEN 1 ELSE 0 END) AS geocode_pending,
+            SUM(CASE WHEN ct.address_extracted_json IS NOT NULL
+                      AND ct.address_extracted_json <> ''
+                      AND COALESCE((ct.address_extracted_json::jsonb->>'confidence')::numeric, 0) < 0.75
+                     THEN 1 ELSE 0 END) AS low_confidence_addresses,
             COUNT(cc.call_id) AS corrections_applied,
             MAX(cr.start_epoch_s) AS latest_call_epoch
         FROM call_records cr
@@ -65,7 +69,7 @@ def get_operations_status(db: Any, window_hours: int = 24) -> dict[str, Any]:
                 key: int(result.get(key) or 0)
                 for key in (
                     "calls_received", "calls_transcribed", "addresses_extracted",
-                    "addresses_geocoded", "geocode_pending", "corrections_applied",
+                    "addresses_geocoded", "geocode_pending", "low_confidence_addresses", "corrections_applied",
                 )
             } | {"latest_call_epoch": result.get("latest_call_epoch")},
             "retry_candidates": [

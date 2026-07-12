@@ -15,8 +15,12 @@ import requests
 
 module_logger = logging.getLogger("icad_dispatch.osm_roads")
 
-# Overpass API endpoint
-_OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Overpass API endpoints. Public instances can be temporarily overloaded, so
+# try a second independent instance before treating a road preview as failed.
+_OVERPASS_URLS = (
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+)
 
 # OSM highway tags we care about (exclude footways, paths, tracks, cycleways)
 _INCLUDED_HIGHWAY_TYPES = frozenset([
@@ -86,21 +90,30 @@ def fetch_roads_from_overpass(
         south, west, north, east,
     )
 
-    try:
-        resp = requests.post(
-            _OVERPASS_URL,
-            data={"data": query},
-            headers={
-                "User-Agent": (
-                    "iCADDispatch/2.0 "
-                    "(https://github.com/icad-dispatch/icad_dispatch_v2)"
-                ),
-            },
-            timeout=timeout,
-        )
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        raise RuntimeError(f"Overpass request failed: {e}")
+    response_errors: List[str] = []
+    resp = None
+    for endpoint in _OVERPASS_URLS:
+        try:
+            candidate = requests.post(
+                endpoint,
+                data={"data": query},
+                headers={
+                    "User-Agent": (
+                        "iCADDispatch/2.0 "
+                        "(https://github.com/icad-dispatch/icad_dispatch_v2)"
+                    ),
+                },
+                timeout=timeout,
+            )
+            candidate.raise_for_status()
+            resp = candidate
+            break
+        except requests.RequestException as e:
+            response_errors.append(f"{endpoint}: {e}")
+            module_logger.warning("Overpass request failed for %s: %s", endpoint, e)
+
+    if resp is None:
+        raise RuntimeError("Overpass request failed: " + "; ".join(response_errors))
 
     try:
         data = resp.json()
@@ -157,6 +170,43 @@ def fetch_roads_from_overpass(
     return result
 
 
+def fetch_roads_for_bounds(
+    south: float,
+    west: float,
+    north: float,
+    east: float,
+    max_span_degrees: float = 0.20,
+) -> List[Dict[str, Optional[str]]]:
+    """Fetch roads for a bounding box, splitting county-scale areas into tiles.
+
+    Public Overpass instances routinely time out for wide rural service areas.
+    Each tile stays small enough for a predictable response, then the results are
+    deduplicated using the same key as a single Overpass response.
+    """
+    if south >= north or west >= east:
+        raise ValueError("south < north and west < east are required")
+    if max_span_degrees <= 0:
+        raise ValueError("max_span_degrees must be positive")
+
+    lat_steps = max(1, int((north - south) / max_span_degrees) + 1)
+    lng_steps = max(1, int((east - west) / max_span_degrees) + 1)
+    lat_size = (north - south) / lat_steps
+    lng_size = (east - west) / lng_steps
+    unique: Dict[Tuple[str, str, Optional[str]], Dict[str, Optional[str]]] = {}
+
+    for lat_index in range(lat_steps):
+        tile_south = south + lat_index * lat_size
+        tile_north = north if lat_index == lat_steps - 1 else tile_south + lat_size
+        for lng_index in range(lng_steps):
+            tile_west = west + lng_index * lng_size
+            tile_east = east if lng_index == lng_steps - 1 else tile_west + lng_size
+            for road in fetch_roads_from_overpass(tile_south, tile_west, tile_north, tile_east):
+                key = (road["name"], road["type"], road.get("city"))
+                unique.setdefault(key, road)
+
+    return list(unique.values())
+
+
 def preview_roads_for_bounds(
     south: float,
     west: float,
@@ -168,5 +218,5 @@ def preview_roads_for_bounds(
 
     Returns (roads_list, total_count).
     """
-    roads = fetch_roads_from_overpass(south, west, north, east)
+    roads = fetch_roads_for_bounds(south, west, north, east)
     return roads, len(roads)
