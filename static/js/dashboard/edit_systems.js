@@ -18,7 +18,7 @@ let currentDiscordSettingId = null;
 let currentDiscordFields    = [];
 
 let currentMakeSettingId = null;   // PK from radio_system_make_settings
-let currentMakeFields    = [];     // [{payload_field_id, key, value_template, …}]
+let currentMakeFields    = [];     // [{payload_field_id, key, value_template, ...}]
 
 let currentEmailAddresses = [];
 
@@ -63,6 +63,209 @@ function showModalById(sel) {
     if (inst) inst.show();
 }
 
+const SETTINGS_FORM_STATE_CONFIGS = [
+    { formId: "updateSystemGeneralForm", titleId: "generalTabTitle", saveButtonId: "submitUpdateSystemGeneral" },
+    { formId: "updateSystemUploadForm", titleId: "uploadTabTitle", saveButtonId: "submitUpdateSystemUpload" },
+    { formId: "updateSystemStorageForm", titleId: "storageTabTitle", saveButtonId: "storageSettingsSaveBtn" },
+    { formId: "updateSystemToneForm", titleId: "toneTabTitle", saveButtonId: "toneSettingsSaveBtn" },
+    { formId: "updateSystemTelegramForm", titleId: "telegramTabTitle", saveButtonId: "telegramSettingsSaveBtn" },
+    { formId: "updateSystemNtfyForm", titleId: "ntfyTabTitle", saveButtonId: "ntfySettingsSaveBtn" },
+    { formId: "updateSystemDiscordForm", titleId: "discordTabTitle", saveButtonId: "discordSettingsSaveBtn" },
+    { formId: "updateSystemMakeForm", titleId: "makeTabTitle", saveButtonId: "makeSettingsSaveBtn" },
+    { formId: "updateSystemPushoverForm", titleId: "pushoverTabTitle", saveButtonId: "pushoverSettingsSaveBtn" },
+    { formId: "updateSystemSmtpForm", titleId: "smtpTabTitle", saveButtonId: "smtpSettingsSaveBtn" },
+    { formId: "updateSystemN8nForm", titleId: "n8nTabTitle", saveButtonId: "n8nSettingsSaveBtn" },
+    { formId: "updateSystemTranscribeForm", titleId: "transcribeTabTitle", saveButtonId: "transcribeSettingsSaveBtn" },
+    { formId: "updateSystemAddressExtractionForm", titleId: "addressTabTitle", saveButtonId: "addressExtractionSettingsSaveBtn" },
+    { formId: "updateSystemIncidentClassificationForm", titleId: "incidentTabTitle", saveButtonId: "incidentSettingsSaveBtn" }
+];
+
+const SETTINGS_FORM_STATE = new Map();
+
+function formatSettingsSavedAt(timestamp) {
+    if (!timestamp) return "";
+    try {
+        return new Intl.DateTimeFormat(undefined, {
+            hour: "numeric",
+            minute: "2-digit"
+        }).format(timestamp);
+    } catch {
+        return "";
+    }
+}
+
+function stableSerialize(value) {
+    if (value === null || value === undefined) return String(value);
+    if (Array.isArray(value)) {
+        return `[${value.map(item => stableSerialize(item)).join(",")}]`;
+    }
+    if (typeof value === "object") {
+        return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stableSerialize(value[key])}`).join(",")}}`;
+    }
+    return JSON.stringify(value);
+}
+
+function snapshotFormState(form) {
+    if (!form) return "";
+
+    const parts = [];
+    form.querySelectorAll("input, select, textarea").forEach(el => {
+        if (!el || el.disabled || el.type === "button" || el.type === "submit" || el.type === "reset") return;
+        if (el.type === "radio" && !el.checked) return;
+        if (el.type === "checkbox") {
+            parts.push([el.name || el.id || `field-${parts.length}`, !!el.checked]);
+            return;
+        }
+        if (el.tagName === "SELECT" && el.multiple) {
+            parts.push([el.name || el.id || `field-${parts.length}`, Array.from(el.selectedOptions).map(opt => opt.value)]);
+            return;
+        }
+        parts.push([el.name || el.id || `field-${parts.length}`, el.value]);
+    });
+
+    return stableSerialize(parts);
+}
+
+function renderTrackedFormState(meta, state, { label = "", timestamp = null } = {}) {
+    if (!meta) return;
+
+    if (meta.statusEl) {
+        meta.statusEl.dataset.state = state;
+        meta.statusEl.textContent = label;
+        meta.statusEl.title = label;
+        if (timestamp) {
+            meta.statusEl.dataset.savedAt = String(timestamp);
+        } else {
+            delete meta.statusEl.dataset.savedAt;
+        }
+    }
+
+    if (meta.saveButton) {
+        meta.saveButton.disabled = state !== "dirty";
+    }
+}
+
+function getTrackedFormMeta(formId) {
+    return SETTINGS_FORM_STATE.get(formId) || null;
+}
+
+function ensureTrackedFormChrome(config) {
+    const form = document.getElementById(config.formId);
+    const titleEl = document.getElementById(config.titleId);
+    if (!form || !titleEl) return null;
+
+    let wrapper = titleEl.closest(".ap-section-head");
+    if (!wrapper) {
+        wrapper = document.createElement("div");
+        wrapper.className = "ap-section-head";
+        titleEl.before(wrapper);
+        wrapper.appendChild(titleEl);
+    }
+
+    titleEl.classList.remove("mb-3");
+    titleEl.classList.add("mb-0");
+
+    let statusEl = document.getElementById(`${config.formId}State`);
+    if (!statusEl) {
+        statusEl = document.createElement("span");
+        statusEl.className = "ap-form-status";
+        statusEl.id = `${config.formId}State`;
+        wrapper.appendChild(statusEl);
+    }
+
+    const saveButton = config.saveButtonId ? document.getElementById(config.saveButtonId) : null;
+    if (saveButton) {
+        saveButton.classList.add("ap-save-btn");
+    }
+
+    const meta = {
+        ...config,
+        form,
+        titleEl,
+        statusEl,
+        saveButton,
+        baseline: "",
+        lastSavedAt: null,
+        initialized: false
+    };
+
+    SETTINGS_FORM_STATE.set(config.formId, meta);
+
+    form.addEventListener("input", () => updateTrackedFormState(config.formId));
+    form.addEventListener("change", () => updateTrackedFormState(config.formId));
+
+    return meta;
+}
+
+function markTrackedFormIdle(formId, label = "Select a system") {
+    const meta = getTrackedFormMeta(formId);
+    if (!meta) return;
+    meta.baseline = "";
+    meta.lastSavedAt = null;
+    meta.initialized = false;
+    renderTrackedFormState(meta, "idle", { label });
+}
+
+function markTrackedFormClean(formId, { label = "Saved" } = {}) {
+    const meta = getTrackedFormMeta(formId);
+    if (!meta || !meta.form) return;
+
+    meta.baseline = snapshotFormState(meta.form);
+    meta.lastSavedAt = Date.now();
+    meta.initialized = true;
+    const savedAt = formatSettingsSavedAt(meta.lastSavedAt);
+    const text = savedAt ? `${label} - ${savedAt}` : label;
+    renderTrackedFormState(meta, "clean", { label: text, timestamp: meta.lastSavedAt });
+}
+
+function markTrackedFormDirty(formId) {
+    const meta = getTrackedFormMeta(formId);
+    if (!meta) return;
+    renderTrackedFormState(meta, "dirty", { label: "Unsaved changes" });
+}
+
+function updateTrackedFormState(formId) {
+    const meta = getTrackedFormMeta(formId);
+    if (!meta || !meta.form) return;
+
+    if (!currentSystemId) {
+        markTrackedFormIdle(formId);
+        return;
+    }
+
+    if (!meta.initialized) {
+        renderTrackedFormState(meta, "idle", { label: "Loading..." });
+        return;
+    }
+
+    const snapshot = snapshotFormState(meta.form);
+    if (snapshot === meta.baseline) {
+        const savedAt = formatSettingsSavedAt(meta.lastSavedAt);
+        const text = savedAt ? `Saved - ${savedAt}` : "Saved";
+        renderTrackedFormState(meta, "clean", { label: text, timestamp: meta.lastSavedAt });
+        return;
+    }
+
+    markTrackedFormDirty(formId);
+}
+
+function wireTrackedFormStateUI() {
+    SETTINGS_FORM_STATE_CONFIGS.forEach(config => {
+        const meta = ensureTrackedFormChrome(config);
+        if (meta) {
+            markTrackedFormIdle(config.formId);
+        }
+    });
+}
+
+function resetTrackedFormStates(label = "Select a system") {
+    SETTINGS_FORM_STATE_CONFIGS.forEach(config => {
+        const meta = getTrackedFormMeta(config.formId);
+        if (!meta) return;
+        markTrackedFormIdle(config.formId, label);
+    });
+}
+
 
 /*****************************************************
  *               On Loaded Event
@@ -74,6 +277,7 @@ function showModalById(sel) {
 document.addEventListener("DOMContentLoaded", function () {
     initFormListeners();
     initEventListeners();
+    wireTrackedFormStateUI();
     initTooltips();          // enable [data-bs-toggle="tooltip"]
     wireSmtpPasswordToggle();// SMTP password eye toggle
     wireIntegrationTestButtons();
@@ -284,6 +488,7 @@ function initFormListeners() {
         apiKeyEl.value = rsp.result.api_key;
         apiKeyEl.readOnly = true;
         apiKeyEl.classList.remove("is-invalid");
+        markTrackedFormDirty("updateSystemGeneralForm");
 
         showAlert("New API key generated.", "success");
     });
@@ -571,6 +776,8 @@ function populateUpdateGeneral(system_data) {
     updateSystemName.value = system_data.system_name;
     updateSystemStreamURL.value = system_data.stream_url;
     updatePostToneDelay.value = system_data.post_tone_delay || 0;
+
+    markTrackedFormClean("updateSystemGeneralForm");
 }
 
 function gatherGeneralFormData () {
@@ -627,6 +834,8 @@ function populateUpdateUpload (system_data){
     document.getElementById("voiceRmsDbfs")    .value = up.voice_rms_dbfs        ?? -35.0;
     document.getElementById("maxSplitInterval").value = up.max_split_interval    ?? 30.0;
     document.getElementById("maxSplitLength")  .value = up.max_split_length      ?? 30.0;
+
+    markTrackedFormClean("updateSystemUploadForm");
 }
 
 function gatherUploadSettingsFormData (){
@@ -872,6 +1081,8 @@ function populateUpdateStorage(storage) {
 
     // Show/hide sections appropriately
     updateStorageTypeVisibility();
+
+    markTrackedFormClean("updateSystemStorageForm");
 }
 
 function gatherStorageSettingsFormData() {
@@ -1018,6 +1229,8 @@ function populateUpdateTone(system_data) {
     dtmfEndOffset.value   = tone.dtmf_end_offset_ms   ?? 20;
     dtmfSequenceGapS.value = tone.dtmf_sequence_gap_s ?? 0.3
 
+    markTrackedFormClean("updateSystemToneForm");
+
 }
 
 function gatherToneSettingsFormData() {
@@ -1085,6 +1298,7 @@ function populateUpdateTelegram(system_data) {
     telegramAlertBody.value = system_data.telegram.message_body;
 
     updateIntegrationTestButtonsState();
+    markTrackedFormClean("updateSystemTelegramForm");
 
 }
 
@@ -1151,6 +1365,7 @@ function populateUpdateDiscord(system_data) {
     });
 
     updateIntegrationTestButtonsState();
+    markTrackedFormClean("updateSystemDiscordForm");
 }
 
 function gatherTelegramSettingsFormData() {
@@ -1523,6 +1738,7 @@ function populateUpdateMake(system_data) {
     });
 
     updateIntegrationTestButtonsState();
+    markTrackedFormClean("updateSystemMakeForm");
 }
 
 function populateMakeFieldsTable(fields, {showActions=true, onEdit, onDelete} = {}) {
@@ -1689,6 +1905,7 @@ function populateUpdatePushover(system_data) {
     document.getElementById("pushoverAlertBody").value   = pushover.body        ?? "";
 
     updateIntegrationTestButtonsState();
+    markTrackedFormClean("updateSystemPushoverForm");
 }
 
 function gatherPushoverSettingsFormData() {
@@ -1746,6 +1963,7 @@ function populateUpdateEmail(system_data) {
     });
 
     updateIntegrationTestButtonsState();
+    markTrackedFormClean("updateSystemSmtpForm");
 
 }
 
@@ -1917,6 +2135,8 @@ function populateUpdateTranscribe(system_data) {
     document.getElementById("transcribeModel").value    = t.model    ?? "";
     document.getElementById("transcribeLanguage").value = t.language ?? "";
     document.getElementById("transcribePrompt").value   = t.prompt   ?? "";
+
+    markTrackedFormClean("updateSystemTranscribeForm");
 }
 
 function gatherTranscribeSettingsFormData() {
@@ -2054,6 +2274,8 @@ function populateUpdateAddressExtraction(system_data) {
         onDelete: confirmDeleteAddressCity,
         onMove:   reorderAddressCity
     });
+
+    markTrackedFormClean("updateSystemAddressExtractionForm");
 }
 
 
@@ -3005,6 +3227,8 @@ function populateUpdateIncidentClassification(system_data) {
 
     const minEl = document.getElementById("incidentMinConfidence");
     if (minEl) minEl.value = (s.min_confidence ?? "") === null ? "" : (s.min_confidence ?? "");
+
+    markTrackedFormClean("updateSystemIncidentClassificationForm");
 }
 
 function gatherIncidentClassificationFormData() {
@@ -3093,6 +3317,7 @@ function populateUpdateN8n(system_data) {
     if (sec) sec.value = (n.jwt_passphrase ?? "");
 
     updateIntegrationTestButtonsState();
+    markTrackedFormClean("updateSystemN8nForm");
 }
 
 function gatherN8nSettingsFormData() {
@@ -3175,6 +3400,7 @@ function populateUpdateNtfy(system_data) {
     if (ntfyBodyTmpl) ntfyBodyTmpl.value = n.body_tmpl ?? "";
 
     updateIntegrationTestButtonsState();
+    markTrackedFormClean("updateSystemNtfyForm");
 }
 
 function gatherNtfySettingsFormData() {
@@ -3500,6 +3726,8 @@ function clearAllForms() {
         // If there's no initial/default value, it becomes empty/unchecked
         form.reset();
     });
+
+    resetTrackedFormStates();
 }
 
 (function initApiKeyEditor(){

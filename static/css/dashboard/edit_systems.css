@@ -81,6 +81,56 @@
 .ap-settings-content{
   background: transparent;
 }
+
+/* Section headers inside each tab */
+body.ap-edit-systems .ap-section-head{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+body.ap-edit-systems .ap-section-head > h5{
+    margin-bottom: 0 !important;
+}
+body.ap-edit-systems .ap-form-status{
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    flex: 0 0 auto;
+    max-width: 100%;
+    padding: .35rem .6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.03);
+    color: var(--bs-secondary-color);
+    font-size: .78rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+body.ap-edit-systems .ap-form-status[data-state="clean"]{
+    color: #9fd7a3;
+    border-color: rgba(25,135,84,.35);
+    background: rgba(25,135,84,.08);
+}
+body.ap-edit-systems .ap-form-status[data-state="dirty"]{
+    color: #ffd18a;
+    border-color: rgba(255,193,7,.35);
+    background: rgba(255,193,7,.08);
+}
+body.ap-edit-systems .ap-form-status[data-state="saving"]{
+    color: #9ec5fe;
+    border-color: rgba(13,110,253,.35);
+    background: rgba(13,110,253,.08);
+}
+body.ap-edit-systems .ap-form-status[data-state="idle"]{
+    color: var(--bs-secondary-color);
+    border-color: rgba(255,255,255,.10);
+}
+body.ap-edit-systems .ap-save-btn:disabled{
+    opacity: .55;
+}
+
 /* only affect this page */
 body.ap-edit-systems .ap-toolbar-card{
     background: rgba(255,255,255,.03);
