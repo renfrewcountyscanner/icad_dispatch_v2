@@ -2689,6 +2689,7 @@ def _load_reprocess_audio(audio_file: str) -> Tuple[Path, Optional[str]]:
 
 def _rerun_transcription_for_reprocess(
         *,
+        db: PostgreSQLDatabase,
         audio_segment: AudioSegment,
         detect_result: ToneDetectionResult,
         transcribe_cfg: Dict[str, Any],
@@ -2906,6 +2907,7 @@ def reprocess_call_tones(call_id):
 
         route_logger.info("AI pipeline: call_id=%s", call_id)
         transcribe_response = _rerun_transcription_for_reprocess(
+            db=db,
             audio_segment=audio_segment,
             detect_result=detect_result,
             transcribe_cfg=_load_transcribe_cfg(db, radio_system_id),

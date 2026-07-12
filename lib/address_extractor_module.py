@@ -89,6 +89,9 @@ class AddressExtractionSettings:
     # Local road database for validation (list of dicts: road_name, road_type, city_name)
     roads: Optional[List[Dict[str, Any]]] = None
 
+    # Manually confirmed spoken-address aliases for this system.
+    aliases: Optional[List[Dict[str, Any]]] = None
+
     @staticmethod
     def from_system_row(system_row: Dict[str, Any]) -> "AddressExtractionSettings":
         """
@@ -127,6 +130,7 @@ class AddressExtractionSettings:
             ],
             regions=regions,
             roads=cfg.get("roads") or [],
+            aliases=cfg.get("aliases") or [],
         )
 
 
@@ -1178,8 +1182,6 @@ If no valid address is found, return:
         }
         payload = {
             "model": self.openai_model,
-            "temperature": 0.1,
-            "max_tokens": 150,
             "response_format": {"type": "json_object"},
             "messages": [
                 {
@@ -1192,11 +1194,22 @@ If no valid address is found, return:
                 {"role": "user", "content": prompt},
             ],
         }
+        if self.openai_model.startswith("gpt-5"):
+            # GPT-5 models use the newer completion-token parameter and do not
+            # accept custom temperature values on the Chat Completions API.
+            payload["max_completion_tokens"] = 150
+        else:
+            payload["temperature"] = 0.1
+            payload["max_tokens"] = 150
 
         resp = requests.post(
             url, headers=headers, json=payload, timeout=self.timeout
         )
-        resp.raise_for_status()
+        if not resp.ok:
+            raise requests.HTTPError(
+                f"{resp.status_code} {resp.reason}: {resp.text[:500]}",
+                response=resp,
+            )
         data = resp.json()
         content = data["choices"][0]["message"]["content"]
         return content
@@ -1367,7 +1380,7 @@ class AddressExtractionService:
                 latitude=float(alias["latitude"]),
                 longitude=float(alias["longitude"]),
             )
-            for alias in ((system_row or {}).get("address_extraction") or {}).get("aliases", [])
+            for alias in (settings.aliases or [])
             if alias.get("enabled", 1) and alias.get("heard_phrase") and alias.get("canonical_address")
             and alias.get("latitude") is not None and alias.get("longitude") is not None
         ]
