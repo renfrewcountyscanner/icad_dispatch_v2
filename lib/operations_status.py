@@ -59,6 +59,36 @@ def get_operations_status(db: Any, window_hours: int = 24) -> dict[str, Any]:
     if not retries.get("success"):
         return {"success": False, "message": retries.get("message", "Retry query failed")}
 
+    systems = db.execute_query(
+        """
+        SELECT rs.system_name,
+               COUNT(cr.call_id) AS calls_received,
+               SUM(CASE WHEN ct.address_geocoded_json IS NULL OR ct.address_geocoded_json = ''
+                        THEN 1 ELSE 0 END) AS unmapped,
+               SUM(CASE WHEN ct.address_extracted_json IS NOT NULL AND ct.address_extracted_json <> ''
+                         AND COALESCE((ct.address_extracted_json::jsonb->>'confidence')::numeric, 0) < 0.75
+                        THEN 1 ELSE 0 END) AS low_confidence,
+               COUNT(cc.call_id) AS corrected,
+               COUNT(gaa.address_alias_id) AS alias_resolved
+        FROM call_records cr
+        LEFT JOIN call_transcripts ct ON ct.call_id = cr.call_id
+        LEFT JOIN radio_systems rs ON rs.radio_system_id = cr.radio_system_id
+        LEFT JOIN call_corrections cc ON cc.call_id = cr.call_id
+        LEFT JOIN radio_system_address_extraction_settings aes ON aes.radio_system_id = cr.radio_system_id
+        LEFT JOIN geocoding_address_aliases gaa
+          ON gaa.address_extraction_setting_id = aes.address_extraction_setting_id
+         AND gaa.enabled = 1
+         AND ct.address_extracted_json::jsonb->>'raw_text' ILIKE '%' || gaa.heard_phrase || '%'
+        WHERE cr.start_epoch_s >= ?
+        GROUP BY rs.system_name
+        ORDER BY unmapped DESC, rs.system_name
+        """,
+        (since,),
+        fetch_mode="all",
+    )
+    if not systems.get("success"):
+        return {"success": False, "message": systems.get("message", "System metrics query failed")}
+
     result = metrics["result"] or {}
     return {
         "success": True,
@@ -81,6 +111,17 @@ def get_operations_status(db: Any, window_hours: int = 24) -> dict[str, Any]:
                     "transcript": (row.get("text_full") or "").strip()[:180],
                 }
                 for row in retries["result"]
+            ],
+            "system_metrics": [
+                {
+                    "system_name": row.get("system_name") or "Unknown",
+                    "calls_received": int(row.get("calls_received") or 0),
+                    "unmapped": int(row.get("unmapped") or 0),
+                    "low_confidence": int(row.get("low_confidence") or 0),
+                    "corrected": int(row.get("corrected") or 0),
+                    "alias_resolved": int(row.get("alias_resolved") or 0),
+                }
+                for row in systems["result"]
             ],
         },
     }

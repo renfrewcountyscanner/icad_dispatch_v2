@@ -18,6 +18,8 @@ async function loadOperations() {
     document.getElementById("retryCount").textContent = `${payload.retry_candidates.length} actionable calls`;
     document.getElementById("retryRows").innerHTML = payload.retry_candidates.length ? payload.retry_candidates.map(call => `
         <tr><td>${operationsTime(call.start_epoch)}</td><td>${operationsEscape(call.system_name || "-")}</td><td>${operationsEscape(call.talkgroup_name || "-")}</td><td class="text-truncate" style="max-width:28rem">${operationsEscape(call.transcript || "-")}</td><td class="text-end"><button class="btn btn-sm btn-outline-warning retry-geocode" data-call-id="${call.call_id}">Retry</button> <a class="btn btn-sm btn-outline-secondary" href="/dashboard/corrections?call_id=${call.call_id}">Review</a></td></tr>`).join("") : '<tr><td colspan="5" class="text-muted">No address retry candidates in this period.</td></tr>';
+    document.getElementById("systemQualityRows").innerHTML = payload.system_metrics.length ? payload.system_metrics.map(system => `
+        <tr><td>${operationsEscape(system.system_name)}</td><td class="text-end">${system.calls_received}</td><td class="text-end">${system.unmapped}</td><td class="text-end">${system.low_confidence}</td><td class="text-end">${system.corrected}</td><td class="text-end">${system.alias_resolved}</td></tr>`).join("") : '<tr><td colspan="6" class="text-muted">No calls in this period.</td></tr>';
     document.querySelectorAll(".retry-geocode").forEach(button => button.addEventListener("click", retryGeocoding));
 }
 

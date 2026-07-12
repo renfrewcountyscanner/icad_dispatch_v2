@@ -121,7 +121,10 @@ def save_correction(call_id: int):
     lng = body.get("lng")
     address = (body.get("address") or "").strip()
     notes = (body.get("notes") or "").strip()
-    learn_alias = bool(body.get("learn_alias"))
+    # Corrections for an unmapped call are normally valuable training data.
+    # An explicit false value always remains an operator opt-out.
+    learn_alias_value = body.get("learn_alias")
+    learn_alias = True if learn_alias_value is None else bool(learn_alias_value)
 
     if lat is None or lng is None:
         return _err("lat and lng are required", 400)
