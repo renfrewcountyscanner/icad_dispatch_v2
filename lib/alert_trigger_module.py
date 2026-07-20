@@ -596,7 +596,9 @@ def _sync_child_table(
             where = " AND ".join([f"{c}=?" for c in key_cols])
             del_sql = f"DELETE FROM {table} WHERE alert_trigger_id=? AND {where}"
             for key_tuple in to_delete:
-                db.execute_commit(del_sql, (trigger_id, *key_tuple))
+                deleted = db.execute_commit(del_sql, (trigger_id, *key_tuple))
+                if not deleted.get("success"):
+                    raise RuntimeError(deleted.get("message") or f"Could not delete rule from {table}")
 
     if not normalized:
         return
@@ -604,7 +606,12 @@ def _sync_child_table(
     insert_cols = ["alert_trigger_id"] + key_cols + updatable_cols
     placeholders = ",".join("?" for _ in insert_cols)
     conflict_cols = ", ".join(["alert_trigger_id", *key_cols])
-    set_clause = ", ".join([f"{c}=COALESCE(excluded.{c}, {c})" for c in updatable_cols])
+    # PostgreSQL exposes both the target table and `excluded` during an UPSERT.
+    # Qualify the existing value to avoid ambiguous-column errors on every child
+    # rule table (for example, freq_a_hz in two-tone rules).
+    set_clause = ", ".join(
+        [f"{c}=COALESCE(excluded.{c}, {table}.{c})" for c in updatable_cols]
+    )
 
     upsert_sql = (
         f"INSERT INTO {table} ({', '.join(insert_cols)}) VALUES ({placeholders}) "
@@ -613,7 +620,9 @@ def _sync_child_table(
 
     for it in normalized:
         params = [it.get(c) for c in insert_cols]
-        db.execute_commit(upsert_sql, params)
+        saved = db.execute_commit(upsert_sql, params)
+        if not saved.get("success"):
+            raise RuntimeError(saved.get("message") or f"Could not save rule to {table}")
 
 
 def _fetch_existing_keys(db, table: str, trigger_id: int, key_cols: list[str]) -> set[tuple]:

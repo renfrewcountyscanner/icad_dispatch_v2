@@ -342,6 +342,13 @@ function defaultTriggerNameFromRow(row) {
     }
 }
 
+/** Trigger endpoints require radio_system_id, unlike the system-decimal filter. */
+function getTriggerSystemId() {
+    return els.dPlayPauseBtn?.dataset.radioSystemId
+        || els.sysSel?.selectedOptions?.[0]?.dataset.radioSystemId
+        || "";
+}
+
 function scoreMatchForSet(row, typeKey, setObj, tolPct) {
     const n = (x) => {
         const f = Number(x);
@@ -737,6 +744,7 @@ async function fetchSystems() {
         result.forEach(sys => {
             const opt = document.createElement("option");
             opt.value = sys.system_decimal;
+            opt.dataset.radioSystemId = sys.radio_system_id;
             opt.textContent = sys.system_name || `ID ${sys.system_decimal}`;
             els.sysSel.appendChild(opt);
         });
@@ -751,7 +759,7 @@ async function fetchSystems() {
             els.trigSystemId.innerHTML = '';
             result.forEach(sys => {
                 const opt = document.createElement("option");
-                opt.value = sys.system_decimal;
+                opt.value = sys.radio_system_id;
                 opt.textContent = sys.system_name || `ID ${sys.system_decimal}`;
                 els.trigSystemId.appendChild(opt);
             });
@@ -1549,7 +1557,7 @@ function initToneFinderPage() {
             const row = addBtn.closest("tr.segment-row");
             if (!row) return;
 
-            const sysId = els.dPlayPauseBtn.dataset.systemId || els.sysSel.value;
+            const sysId = getTriggerSystemId();
             if (!sysId) { alert("Select a system first."); return; }
 
             ensureAddOrAttachModal();
@@ -1573,7 +1581,7 @@ function initToneFinderPage() {
                 return;
             }
 
-            const sysId = els.dPlayPauseBtn.dataset.systemId || els.sysSel.value || "";
+            const sysId = getTriggerSystemId();
             const matches = getAllMatchingTriggersForRow(tr); // uses your existing helper
 
             const list = Array.isArray(matches) ? matches : [];
@@ -1659,7 +1667,7 @@ function initToneFinderPage() {
         if (!pendingTriggerPayload || !activeTriggerRow) return;
         if (ev.submitter && ev.submitter.id !== "modalSaveBtn") return;
 
-        const sysId = els.trigSystemId.value || els.sysSel.value;
+        const sysId = els.trigSystemId.value || getTriggerSystemId();
         if (!sysId) { alert("Select a system first."); return; }
 
         const body = {
@@ -1699,7 +1707,7 @@ function initToneFinderPage() {
             const trigName = nameFromForm || parsedName;
             const label = trigName ? `“${trigName}”` : (newId != null ? `#${newId}` : "");
 
-            const sysIdForLink = els.trigSystemId.value || els.sysSel.value || "";
+            const sysIdForLink = els.trigSystemId.value || getTriggerSystemId();
             const editMarkup =
                 `<a href="/dashboard/triggers?system=${encodeURIComponent(sysIdForLink)}${newId ? `&trigger=${encodeURIComponent(newId)}` : ""}"
            class="btn btn-sm btn-secondary js-edit-trigger-link"
@@ -2555,6 +2563,7 @@ function renderCallDetails(data) {
 
     // Header/summary
     els.dPlayPauseBtn.dataset.systemId = els.sysSel.value || "";
+    els.dPlayPauseBtn.dataset.radioSystemId = call.radio_system_id || "";
     els.dCallId.textContent = call.call_id;
     els.dTG.textContent = call.talkgroup ?? "—";
     els.dPlayPauseBtn.dataset.id = call.call_id;
@@ -2793,7 +2802,7 @@ function renderCallDetails(data) {
         statusParts.push(`<span title="Tone detected">🔊</span>`);
         const statusMarkup = statusParts.join(" ");
 
-        const sysId = els.sysSel.value || els.dPlayPauseBtn.dataset.systemId || "";
+        const sysId = getTriggerSystemId();
         const editControl = buildEditControlForRow(tr, sysId, firedIdSet);
 
         // Label used in “Add trigger” tooltip
@@ -3049,7 +3058,7 @@ function ensureAddOrAttachModal() {
         ev.preventDefault();
         if (!activeTriggerRow || !pendingTriggerPayload) return;
 
-        const sysId = els.dPlayPauseBtn.dataset.systemId || els.sysSel.value;
+        const sysId = getTriggerSystemId();
         if (!sysId) {
             alert("Select a system first.");
             return;
@@ -3263,7 +3272,7 @@ async function attachRuleToExistingTrigger({sysId, triggerId, row}) {
 
 /** Fill the existing-triggers <select>, prefer a fuzzy/exact match preselected. */
 function populateExistingTriggerSelect(row) {
-    const sysId = els.dPlayPauseBtn.dataset.systemId || els.sysSel.value;
+    const sysId = getTriggerSystemId();
     els.aoaSelect.innerHTML = `<option value="">Select trigger…</option>`;
 
     // Prefer sorted by name, then id
@@ -3293,7 +3302,7 @@ function populateExistingTriggerSelect(row) {
 
 /** Factor existing “create new trigger from row” into a function we can call. */
 function openCreateTriggerFromRow(row) {
-    const sysId = els.dPlayPauseBtn.dataset.systemId || els.sysSel.value;
+    const sysId = getTriggerSystemId();
     if (!sysId) {
         alert("Select a system first.");
         return;
