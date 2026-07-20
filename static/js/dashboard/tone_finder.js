@@ -344,8 +344,8 @@ function defaultTriggerNameFromRow(row) {
 
 /** Trigger endpoints require radio_system_id, unlike the system-decimal filter. */
 function getTriggerSystemId() {
-    return els.dPlayPauseBtn?.dataset.radioSystemId
-        || els.sysSel?.selectedOptions?.[0]?.dataset.radioSystemId
+    return els.sysSel?.selectedOptions?.[0]?.dataset.radioSystemId
+        || els.dPlayPauseBtn?.dataset.radioSystemId
         || "";
 }
 
@@ -634,8 +634,8 @@ function resolveTriggerForToneRow(row, firedIdSet) {
  * Populate systemTriggerIndex for the selected system.
  * Builds exact and wildcard (no-TG) keys for fast lookup.
  */
-async function refreshSystemTriggers(force = false) {
-    const sysId = els.sysSel.value;
+async function refreshSystemTriggers(force = false, radioSystemId = "") {
+    const sysId = radioSystemId || getTriggerSystemId();
     if (!sysId) {
         systemTriggerIndex = {keys: new Set(), raw: [], byKey: new Map(), byId: new Map(), systemId: null};
         return;
@@ -1094,9 +1094,7 @@ async function onRowClick(e) {
         const js = await r.json();
         if (!js.success) throw new Error(js.message || "API error");
 
-        const sysId = els.sysSel.value;
-
-        await refreshSystemTriggers(true);
+        await refreshSystemTriggers(true, js.result.call.radio_system_id);
 
         renderCallDetails(js.result);
         bootstrap.Modal.getOrCreateInstance(els.callModal).show();
