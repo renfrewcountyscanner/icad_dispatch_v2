@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData(loginForm);
         const token = formData.get('_csrf_token');
 
+        let navigating = false;
         try {
             const resp = await fetch('/auth/login', {
                 method: 'POST',
@@ -61,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (gotJSON) {
                 if (resp.ok && data?.success) {
+                    navigating = true;
                     window.location.href = '/dashboard';
                     return;
                 }
@@ -78,8 +80,10 @@ document.addEventListener('DOMContentLoaded', function () {
             loginErrorDiv.textContent = String(err?.message || err);
         } finally {
             // Restore the button unless we've already navigated away.
-            submitBtn.classList.remove('loading');
-            submitBtn.disabled = false;
+            if (!navigating && document.contains(submitBtn)) {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
         }
     });
 });

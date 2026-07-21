@@ -4,7 +4,9 @@
 
 services:
   icad_dispatch:
-    build: .
+    build:
+      context: .
+      target: production
     image: icad_dispatch_v2:local
     environment:
       - LOG_LEVEL=2

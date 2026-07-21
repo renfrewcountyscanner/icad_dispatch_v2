@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: icad_test
+      POSTGRES_USER: icad_test
+      POSTGRES_PASSWORD: icad_test_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U icad_test -d icad_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      target: production
+    image: icad_dispatch_v2-test-app:local
+    environment:
+      LOG_LEVEL: 2
+      TIMEZONE: America/Toronto
+      ROOT_USERNAME: test-admin
+      ROOT_PASSWORD: TestAdmin!2026
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_DATABASE: icad_test
+      PG_USER: icad_test
+      PG_PASSWORD: icad_test_password
+      PUBLIC_MAP_URL: ""
+      PUBLIC_MAP_API_KEY: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import requests, sys; r = requests.get('http://localhost:9911/'); sys.exit(0 if r.status_code in (200, 302) else 1)\""]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  test_runner:
+    build:
+      context: .
+      target: test
+    image: icad_dispatch_v2-test-runner:local
+    environment:
+      TEST_BASE_URL: http://app:9911
+      TEST_DATABASE_URL: postgresql://icad_test:icad_test_password@postgres:5432/icad_test
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["python", "-m", "pytest", "-q", "tests/e2e"]
+
+volumes:
+  test_postgres_data:

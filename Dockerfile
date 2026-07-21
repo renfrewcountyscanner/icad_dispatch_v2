@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim AS runtime
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -52,3 +52,17 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Entrypoint fixes permissions then drops to non-root user
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:9911", "--workers", "4", "--threads", "2", "--timeout", "120", "app:app"]
+
+# Browser tests run in a separate image so production stays free of test tools.
+FROM runtime AS test
+
+USER root
+COPY requirements-dev.txt .
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
+    && pip install --no-cache-dir -r requirements-dev.txt \
+    && rm -rf /var/lib/apt/lists/*
+COPY tests/ ./tests/
+
+FROM runtime AS production

@@ -62,14 +62,19 @@ def get_operations_status(db: Any, window_hours: int = 24) -> dict[str, Any]:
     systems = db.execute_query(
         """
         SELECT rs.system_name,
-               COUNT(cr.call_id) AS calls_received,
-               SUM(CASE WHEN ct.address_geocoded_json IS NULL OR ct.address_geocoded_json = ''
-                        THEN 1 ELSE 0 END) AS unmapped,
-               SUM(CASE WHEN ct.address_extracted_json IS NOT NULL AND ct.address_extracted_json <> ''
-                         AND COALESCE((ct.address_extracted_json::jsonb->>'confidence')::numeric, 0) < 0.75
-                        THEN 1 ELSE 0 END) AS low_confidence,
-               COUNT(cc.call_id) AS corrected,
-               COUNT(gaa.address_alias_id) AS alias_resolved
+               COUNT(DISTINCT cr.call_id) AS calls_received,
+               COUNT(DISTINCT cr.call_id) FILTER (
+                   WHERE ct.address_geocoded_json IS NULL OR ct.address_geocoded_json = ''
+               ) AS unmapped,
+               COUNT(DISTINCT cr.call_id) FILTER (
+                   WHERE ct.address_extracted_json IS NOT NULL
+                     AND ct.address_extracted_json <> ''
+                     AND COALESCE((ct.address_extracted_json::jsonb->>'confidence')::numeric, 0) < 0.75
+               ) AS low_confidence,
+               COUNT(DISTINCT cc.call_id) AS corrected,
+               COUNT(DISTINCT cr.call_id) FILTER (
+                   WHERE gaa.address_alias_id IS NOT NULL
+               ) AS alias_resolved
         FROM call_records cr
         LEFT JOIN call_transcripts ct ON ct.call_id = cr.call_id
         LEFT JOIN radio_systems rs ON rs.radio_system_id = cr.radio_system_id
@@ -78,7 +83,8 @@ def get_operations_status(db: Any, window_hours: int = 24) -> dict[str, Any]:
         LEFT JOIN geocoding_address_aliases gaa
           ON gaa.address_extraction_setting_id = aes.address_extraction_setting_id
          AND gaa.enabled = 1
-         AND ct.address_extracted_json::jsonb->>'raw_text' ILIKE '%' || gaa.heard_phrase || '%'
+         AND ct.address_extracted_json::jsonb->>'raw_text'
+             ILIKE chr(37) || gaa.heard_phrase || chr(37)
         WHERE cr.start_epoch_s >= ?
         GROUP BY rs.system_name
         ORDER BY unmapped DESC, rs.system_name
