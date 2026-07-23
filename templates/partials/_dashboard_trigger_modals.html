@@ -5,13 +5,7 @@
     <div class="modal-dialog modal-lg">
         <form id="triggerForm" class="modal-content input-form">
             <input type="hidden" name="_csrf_token"    value="{{ csrf_token }}">
-            <div class="px-4 pt-3">
-                <label class="form-label" for="modalSystemId">Radio System</label>
-                <select class="form-select" name="radio_system_id" id="modalSystemId" required>
-                    <option value="">Select a radio system</option>
-                </select>
-                <div class="form-text">Choose which radio system this trigger belongs to.</div>
-            </div>
+            <input type="hidden" name="radio_system_id" id="modalSystemId">
             <input type="hidden" name="alert_trigger_id" id="modalTriggerId">
 
             <div class="modal-header">

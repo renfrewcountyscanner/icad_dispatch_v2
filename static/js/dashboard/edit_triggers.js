@@ -279,8 +279,6 @@ async function loadSystems() {
         .concat(rsp.result.map(s => `<option value="${s.radio_system_id}">${s.system_name}</option>`));
     sysSel.innerHTML = options.join("");
 
-    const modalSystem = document.getElementById("modalSystemId");
-    if (modalSystem) modalSystem.innerHTML = options.join("").replace("Select System", "Select a radio system");
 }
 
 /** Preselect system/trigger from URL params (?system=...&trigger=...) */
@@ -338,14 +336,7 @@ async function populateTriggersForSystem(systemId) {
 
 /** System selector change → refresh triggers */
 sysSel.addEventListener("change", async () => {
-    const modalSystem = document.getElementById("modalSystemId");
-    if (modalSystem) modalSystem.value = sysSel.value;
     await populateTriggersForSystem(sysSel.value || null);
-});
-
-document.getElementById("modalSystemId")?.addEventListener("change", async (event) => {
-    sysSel.value = event.target.value;
-    await populateTriggersForSystem(event.target.value || null);
 });
 
 /** Trigger selector change → load trigger payload + show editor */
@@ -461,10 +452,11 @@ async function reloadTriggerSelect(selectId = null) {
 const modalEl   = document.getElementById("triggerModal");
 const modalForm = document.getElementById("triggerForm");
 
-/** Open Add Trigger modal with no system preselected. */
+/** Open Add Trigger modal using the explicitly selected page system. */
 document.getElementById("addTriggerBtn").addEventListener("click", () => {
+    if (!curSys) { showAlert("Select a radio system first.", "warning"); return; }
     modalForm.reset();
-    modalForm.modalSystemId.value  = "";
+    modalForm.modalSystemId.value  = curSys;
     modalForm.modalTriggerId.value = "";
     document.getElementById("triggerModalLabel").textContent = "Add Trigger";
 });
@@ -473,7 +465,7 @@ document.getElementById("addTriggerBtn").addEventListener("click", () => {
 modalForm.addEventListener("submit", async ev => {
     ev.preventDefault();
     const data  = Object.fromEntries(new FormData(modalForm).entries());
-    const selectedSystemId = data.radio_system_id;
+    const selectedSystemId = data.radio_system_id || curSys;
     if (!selectedSystemId) {
         showAlert("Select a radio system before saving the trigger.", "warning");
         modalForm.modalSystemId.focus();
