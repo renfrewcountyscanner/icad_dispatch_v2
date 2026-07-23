@@ -31,6 +31,22 @@ let currentStorageSettings = null;
 
 let currentIncidentClassificationSettings = null;
 
+function updateAddSystemIdAvailability(systems) {
+    const status = document.getElementById("addSystemIdAvailability");
+    if (!status) return;
+
+    const used = systems
+        .map(system => Number(system.system_decimal))
+        .filter(id => Number.isInteger(id) && id > 0)
+        .sort((a, b) => a - b);
+    const usedSet = new Set(used);
+    let next = 1;
+    while (usedSet.has(next)) next += 1;
+
+    const usedText = used.length ? `In use: ${used.join(", ")}` : "No system IDs are currently in use.";
+    status.textContent = `Next available system ID: ${next}. ${usedText}`;
+}
+
 const GEO_LABELS_BY_COUNTRY = {
     US: {
         stateLabel: "State",
@@ -400,6 +416,8 @@ function fetchSystems() {
         .then(response => response.json())
         .then(result => {
             const systems = result.result || [];
+
+            updateAddSystemIdAvailability(systems);
 
             systemSelect.textContent = '';
 
