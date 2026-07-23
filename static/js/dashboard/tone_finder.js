@@ -1228,6 +1228,8 @@ function initToneFinderPage() {
         dAddrMapLink: document.getElementById("dAddrMapLink"),
 
     });
+    // Tone actions use the call's routed operational system automatically.
+    document.getElementById("triggerModalSystemPicker")?.classList.add("d-none");
 
     if (els.autoRef) {
         if (!els.autoRef.value || els.autoRef.value === "0") {
@@ -1668,8 +1670,8 @@ function initToneFinderPage() {
         if (!pendingTriggerPayload || !activeTriggerRow) return;
         if (ev.submitter && ev.submitter.id !== "modalSaveBtn") return;
 
-        const sysId = els.trigSystemId.value;
-        if (!sysId) { alert("Select a radio system first."); els.trigSystemId.focus(); return; }
+        const sysId = els.trigSystemId.value || getTriggerSystemId();
+        if (!sysId) { alert("The call has no operational radio system."); return; }
 
         const body = {
             ...pendingTriggerPayload.body,
@@ -3006,11 +3008,6 @@ function ensureAddOrAttachModal() {
             <div class="text-muted">Choose to create a new trigger or add this tone as another rule to an existing trigger.</div>
           </div>
 
-          <label for="aoaSystemSelect" class="form-label">Radio system</label>
-          <select id="aoaSystemSelect" class="form-select mb-3" required>
-            <option value="">Select a radio system</option>
-          </select>
-
           <div class="form-check mb-2">
             <input class="form-check-input" type="radio" name="aoaMode" id="aoaNew" value="new" checked>
             <label class="form-check-label" for="aoaNew">Create a <strong>new</strong> trigger</label>
@@ -3050,14 +3047,6 @@ function ensureAddOrAttachModal() {
         aoaSelect: document.getElementById('aoaExistingSelect'),
         aoaSubmit: document.getElementById('aoaSubmitBtn'),
         aoaTonePreview: document.getElementById('aoaTonePreview'),
-        aoaSystemSelect: document.getElementById('aoaSystemSelect'),
-    });
-    els.aoaSystemSelect.innerHTML = '<option value="">Select a radio system</option>';
-    availableRadioSystems.forEach(sys => {
-        const option = document.createElement('option');
-        option.value = String(sys.radio_system_id);
-        option.textContent = sys.system_name || `ID ${sys.system_decimal}`;
-        els.aoaSystemSelect.appendChild(option);
     });
 
     // Toggle select visibility
@@ -3066,21 +3055,12 @@ function ensureAddOrAttachModal() {
     };
     els.aoaNew.addEventListener('change', toggle);
     els.aoaExisting.addEventListener('change', toggle);
-    els.aoaSystemSelect.addEventListener('change', async () => {
-        const sysId = els.aoaSystemSelect.value;
-        els.aoaSelect.innerHTML = '<option value="">Select trigger…</option>';
-        if (sysId) {
-            await refreshSystemTriggers(true, sysId);
-            populateExistingTriggerSelect(activeTriggerRow);
-        }
-    });
-
     // Submit handler: branch to new vs existing
     els.aoaForm.addEventListener('submit', async (ev) => {
         ev.preventDefault();
         if (!activeTriggerRow || !pendingTriggerPayload) return;
 
-        const sysId = els.aoaSystemSelect.value;
+        const sysId = getTriggerSystemId();
         if (!sysId) {
             alert("Select a radio system first.");
             return;
@@ -3114,7 +3094,6 @@ function ensureAddOrAttachModal() {
 
     // Rebuild select on-open
     els.aoaModal.addEventListener('show.bs.modal', () => {
-        els.aoaSystemSelect.value = '';
         populateExistingTriggerSelect(activeTriggerRow);
     });
 
@@ -3336,7 +3315,7 @@ function openCreateTriggerFromRow(row) {
 
     // (This block is your existing prefill; kept verbatim.)
     els.trigTitle.textContent = "Add Trigger";
-    els.trigSystemId.value = "";
+    els.trigSystemId.value = getTriggerSystemId();
     els.trigId.value = "";
     els.trigTalkgroup.value = "";
     const hintTg = Number.isFinite(Number(els.dTG.textContent)) ? els.dTG.textContent : "";

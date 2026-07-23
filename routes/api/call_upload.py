@@ -158,6 +158,24 @@ def _log_tone_detect(route_logger, prefix: str, rsid: int, tg: Any, dur_s: float
     if route_logger.isEnabledFor(logging.DEBUG):
         route_logger.debug("%s %s tone_detect=%s", LOG["tone"], prefix, _dump_json(td))
 
+
+def _route_talkgroup_system(db, talkgroup: Any, current_system_id: int, route_logger) -> int:
+    """Return the configured operational system for a talkgroup, if any."""
+    tg = str(talkgroup or "").strip()
+    if not tg:
+        return current_system_id
+    result = db.execute_query(
+        "SELECT target_radio_system_id FROM talkgroup_system_routes "
+        "WHERE talkgroup = ? AND enabled = 1",
+        (tg,), fetch_mode="one",
+    )
+    if result.get("success") and result.get("result"):
+        target = int(result["result"]["target_radio_system_id"])
+        if target != current_system_id:
+            route_logger.info("Routing talkgroup %s from sys=%s to operational sys=%s", tg, current_system_id, target)
+        return target
+    return current_system_id
+
 @api_call_upload.route("", methods=["POST"])
 @token_or_login_required
 def call_upload():
@@ -208,6 +226,13 @@ def call_upload():
     })
 
     talkgroup = call_data.get("talkgroup", 0)
+
+    # A receiver/API key can carry multiple agencies. Resolve the operational
+    # system from the talkgroup before loading tone, transcription, and trigger settings.
+    radio_system_id = _route_talkgroup_system(db, talkgroup, radio_system_id, route_logger)
+    upload_cfg = _load_upload_cfg(db, radio_system_id) or {}
+    call_data["radio_system_id"] = radio_system_id
+    call_data["system_name"] = _load_system_name(db, radio_system_id)
 
     route_logger.info("%s upload sys=%s tg=%s dur=%.2fs raw_len=%d",
                       LOG["tone"], radio_system_id, talkgroup,
