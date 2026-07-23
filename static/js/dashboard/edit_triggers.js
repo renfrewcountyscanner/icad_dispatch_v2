@@ -275,13 +275,12 @@ async function loadSystems() {
     const rsp = await apiJson("/api/systems");
     if (!rsp.success) { showAlert(rsp.message, "danger"); return; }
 
-    sysSel.innerHTML = `<option value="">Select System</option>`;
-    rsp.result.forEach(s =>
-        sysSel.insertAdjacentHTML(
-            "beforeend",
-            `<option value="${s.radio_system_id}">${s.system_name}</option>`
-        )
-    );
+    const options = [`<option value="">Select System</option>`]
+        .concat(rsp.result.map(s => `<option value="${s.radio_system_id}">${s.system_name}</option>`));
+    sysSel.innerHTML = options.join("");
+
+    const modalSystem = document.getElementById("modalSystemId");
+    if (modalSystem) modalSystem.innerHTML = options.join("").replace("Select System", "Select a radio system");
 }
 
 /** Preselect system/trigger from URL params (?system=...&trigger=...) */
@@ -339,7 +338,14 @@ async function populateTriggersForSystem(systemId) {
 
 /** System selector change → refresh triggers */
 sysSel.addEventListener("change", async () => {
+    const modalSystem = document.getElementById("modalSystemId");
+    if (modalSystem) modalSystem.value = sysSel.value;
     await populateTriggersForSystem(sysSel.value || null);
+});
+
+document.getElementById("modalSystemId")?.addEventListener("change", async (event) => {
+    sysSel.value = event.target.value;
+    await populateTriggersForSystem(event.target.value || null);
 });
 
 /** Trigger selector change → load trigger payload + show editor */
