@@ -24,6 +24,13 @@
                         <input id="addSystemStreamURL" class="form-control" type="text" name="stream_url">
                         <div class="form-text">Add a URL where the audio can be heard. (Optional)</div>
                     </div>
+                    <div class="form-group mb-3">
+                        <label for="addSystemCopySource">Copy settings from</label>
+                        <select id="addSystemCopySource" class="form-select" name="copy_from_radio_system_id">
+                            <option value="">Start with default settings</option>
+                        </select>
+                        <div class="form-text">Copies system settings only. Triggers, tone rules, calls, and the API key are not copied.</div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">

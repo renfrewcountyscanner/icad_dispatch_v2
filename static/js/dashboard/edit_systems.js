@@ -421,6 +421,21 @@ function fetchSystems() {
                 systemSelect.appendChild(option);
             });
 
+            const copySource = document.getElementById("addSystemCopySource");
+            if (copySource) {
+                copySource.textContent = "";
+                const defaultCopy = document.createElement("option");
+                defaultCopy.value = "";
+                defaultCopy.textContent = "Start with default settings";
+                copySource.appendChild(defaultCopy);
+                systems.forEach(system => {
+                    const option = document.createElement("option");
+                    option.value = String(system.radio_system_id);
+                    option.textContent = system.system_name;
+                    copySource.appendChild(option);
+                });
+            }
+
             // restore selection if still available
             if (prev && systems.some(s => String(s.radio_system_id) === String(prev))) {
                 systemSelect.value = String(prev);

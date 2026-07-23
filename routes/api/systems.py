@@ -323,7 +323,7 @@ def systems_collection():
     system_data = request.get_json(silent=True) if request.is_json else request.form.to_dict()
 
     # normalize numerics
-    for k in ("system_decimal", "radio_system_id"):
+    for k in ("system_decimal", "radio_system_id", "copy_from_radio_system_id"):
         if k in system_data and system_data[k] not in (None, ""):
             try:
                 system_data[k] = int(system_data[k])

@@ -151,6 +151,22 @@ def add_system(db: PostgreSQLDatabase, system_data: dict) -> dict:
 
         add_system_default_settings(db, radio_system_id)
 
+        copy_from = system_data.get("copy_from_radio_system_id")
+        if copy_from not in (None, ""):
+            try:
+                copy_from = int(copy_from)
+            except (TypeError, ValueError):
+                raise ValueError("Invalid source system for settings copy")
+            if copy_from == radio_system_id:
+                raise ValueError("A system cannot copy settings from itself")
+            source_check = db.execute_query(
+                "SELECT 1 FROM radio_systems WHERE radio_system_id = ?",
+                (copy_from,), fetch_mode="one",
+            )
+            if not source_check.get("success") or not source_check.get("result"):
+                raise ValueError("Source system for settings copy was not found")
+            copy_system_settings(db, copy_from, radio_system_id)
+
         db.commit()
         return {
             "success": True,
@@ -162,6 +178,90 @@ def add_system(db: PostgreSQLDatabase, system_data: dict) -> dict:
         module_logger.error("add_system() rolled back: %s", e)
         db.rollback()
         return {"success": False, "message": str(e), "result": None}
+
+
+_COPY_ONE_TO_ONE_TABLES = (
+    "radio_system_upload_settings", "radio_system_tone_settings",
+    "radio_system_email_settings", "radio_system_pushover_settings",
+    "radio_system_telegram_settings", "radio_system_discord_settings",
+    "radio_system_make_settings", "radio_system_transcribe_settings",
+    "radio_system_address_extraction_settings", "radio_system_n8n_settings",
+    "radio_system_storage_settings", "radio_system_incident_classification_settings",
+    "radio_system_ntfy_settings",
+)
+
+
+def _table_columns(db, table: str) -> list[str]:
+    result = db.execute_query(
+        "SELECT column_name FROM information_schema.columns "
+        "WHERE table_schema = current_schema() AND table_name = ? ORDER BY ordinal_position",
+        (table,), fetch_mode="all",
+    )
+    if not result.get("success"):
+        raise RuntimeError(result.get("message", f"Unable to inspect {table}"))
+    return [row["column_name"] for row in result.get("result", [])]
+
+
+def _copy_one_to_one_settings(db, table: str, source_id: int, target_id: int) -> None:
+    columns = _table_columns(db, table)
+    pk = next((c for c in columns if c.endswith("_setting_id")), None)
+    values = [c for c in columns if c not in {pk, "radio_system_id"}]
+    if not values:
+        return
+    assignments = ", ".join(f'"{c}" = (SELECT "{c}" FROM "{table}" WHERE radio_system_id = ?)' for c in values)
+    result = db.execute_commit(
+        f'UPDATE "{table}" SET {assignments} WHERE radio_system_id = ?',
+        tuple([source_id] * len(values) + [target_id]), return_row_id=False,
+    )
+    if not result.get("success"):
+        raise RuntimeError(f"{table}: {result.get('message')}")
+
+
+def _copy_children(db, table: str, parent_column: str, source_parent: int, target_parent: int) -> None:
+    columns = _table_columns(db, table)
+    pk = next((c for c in columns if c.endswith("_id") and c != parent_column), None)
+    values = [c for c in columns if c not in {pk, parent_column}]
+    if not values:
+        return
+    quoted = ", ".join(f'"{c}"' for c in values)
+    result = db.execute_commit(
+        f'INSERT INTO "{table}" ("{parent_column}", {quoted}) '
+        f'SELECT ?, {quoted} FROM "{table}" WHERE "{parent_column}" = ?',
+        (target_parent, source_parent), return_row_id=False,
+    )
+    if not result.get("success"):
+        raise RuntimeError(f"{table}: {result.get('message')}")
+
+
+def copy_system_settings(db: PostgreSQLDatabase, source_id: int, target_id: int) -> None:
+    """Copy configuration only; API keys, calls, and alert triggers never copy."""
+    for table in _COPY_ONE_TO_ONE_TABLES:
+        _copy_one_to_one_settings(db, table, source_id, target_id)
+
+    # Direct per-system recipients.
+    _copy_children(db, "radio_system_emails", "radio_system_id", source_id, target_id)
+
+    pairs = (
+        ("radio_system_discord_settings", "discord_setting_id", "radio_system_discord_embed_fields"),
+        ("radio_system_make_settings", "make_setting_id", "radio_system_make_payload_fields"),
+        ("radio_system_address_extraction_settings", "address_extraction_setting_id", "geocoding_regions"),
+        ("radio_system_address_extraction_settings", "address_extraction_setting_id", "geocoding_cities"),
+        ("radio_system_address_extraction_settings", "address_extraction_setting_id", "geocoding_roads"),
+        ("radio_system_address_extraction_settings", "address_extraction_setting_id", "geocoding_address_aliases"),
+    )
+    for parent_table, parent_pk, child_table in pairs:
+        source = db.execute_query(
+            f'SELECT "{parent_pk}" FROM "{parent_table}" WHERE radio_system_id = ?',
+            (source_id,), fetch_mode="one",
+        )
+        target = db.execute_query(
+            f'SELECT "{parent_pk}" FROM "{parent_table}" WHERE radio_system_id = ?',
+            (target_id,), fetch_mode="one",
+        )
+        if not source.get("success") or not target.get("success"):
+            raise RuntimeError(f"Unable to map {parent_table} settings")
+        if source.get("result") and target.get("result"):
+            _copy_children(db, child_table, parent_pk, source["result"][parent_pk], target["result"][parent_pk])
 
 
 def add_system_default_settings(db: PostgreSQLDatabase, radio_system_id: int) -> None:
