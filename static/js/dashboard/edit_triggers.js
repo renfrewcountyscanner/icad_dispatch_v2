@@ -461,11 +461,10 @@ async function reloadTriggerSelect(selectId = null) {
 const modalEl   = document.getElementById("triggerModal");
 const modalForm = document.getElementById("triggerForm");
 
-/** Open Add Trigger modal (prefill system) */
+/** Open Add Trigger modal with no system preselected. */
 document.getElementById("addTriggerBtn").addEventListener("click", () => {
-    if (!curSys) { showAlert("Select a system first.", "warning"); return; }
     modalForm.reset();
-    modalForm.modalSystemId.value  = curSys;
+    modalForm.modalSystemId.value  = "";
     modalForm.modalTriggerId.value = "";
     document.getElementById("triggerModalLabel").textContent = "Add Trigger";
 });
@@ -474,15 +473,23 @@ document.getElementById("addTriggerBtn").addEventListener("click", () => {
 modalForm.addEventListener("submit", async ev => {
     ev.preventDefault();
     const data  = Object.fromEntries(new FormData(modalForm).entries());
+    const selectedSystemId = data.radio_system_id;
+    if (!selectedSystemId) {
+        showAlert("Select a radio system before saving the trigger.", "warning");
+        modalForm.modalSystemId.focus();
+        return;
+    }
     const isNew = !data.alert_trigger_id;
     const url   = isNew
-        ? `/api/systems/${curSys}/triggers`
-        : `/api/systems/${curSys}/triggers/${data.alert_trigger_id}`;
+        ? `/api/systems/${selectedSystemId}/triggers`
+        : `/api/systems/${selectedSystemId}/triggers/${data.alert_trigger_id}`;
 
     const rsp = await apiJson(url, { method: isNew ? "POST" : "PATCH", body: data });
     if (!rsp.success) { showAlert(rsp.message, "danger"); return; }
 
     bootstrap.Modal.getInstance(modalEl).hide();
+    curSys = selectedSystemId;
+    sysSel.value = selectedSystemId;
     await reloadTriggerSelect(rsp.result.alert_trigger_id);
     showAlert(rsp.message, "success");
 });
