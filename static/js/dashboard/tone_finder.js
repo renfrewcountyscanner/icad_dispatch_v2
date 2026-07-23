@@ -756,7 +756,7 @@ async function fetchSystems() {
 
         // Also populate trigger modal system dropdown
         if (els.trigSystemId) {
-            els.trigSystemId.innerHTML = '';
+            els.trigSystemId.innerHTML = '<option value="">Select a radio system</option>';
             result.forEach(sys => {
                 const opt = document.createElement("option");
                 opt.value = sys.radio_system_id;
@@ -1665,8 +1665,8 @@ function initToneFinderPage() {
         if (!pendingTriggerPayload || !activeTriggerRow) return;
         if (ev.submitter && ev.submitter.id !== "modalSaveBtn") return;
 
-        const sysId = els.trigSystemId.value || getTriggerSystemId();
-        if (!sysId) { alert("Select a system first."); return; }
+        const sysId = els.trigSystemId.value;
+        if (!sysId) { alert("Select a radio system first."); els.trigSystemId.focus(); return; }
 
         const body = {
             ...pendingTriggerPayload.body,
@@ -1705,7 +1705,7 @@ function initToneFinderPage() {
             const trigName = nameFromForm || parsedName;
             const label = trigName ? `“${trigName}”` : (newId != null ? `#${newId}` : "");
 
-            const sysIdForLink = els.trigSystemId.value || getTriggerSystemId();
+            const sysIdForLink = els.trigSystemId.value;
             const editMarkup =
                 `<a href="/dashboard/triggers?system=${encodeURIComponent(sysIdForLink)}${newId ? `&trigger=${encodeURIComponent(newId)}` : ""}"
            class="btn btn-sm btn-secondary js-edit-trigger-link"
@@ -3003,6 +3003,11 @@ function ensureAddOrAttachModal() {
             <div class="text-muted">Choose to create a new trigger or add this tone as another rule to an existing trigger.</div>
           </div>
 
+          <label for="aoaSystemSelect" class="form-label">Radio system</label>
+          <select id="aoaSystemSelect" class="form-select mb-3" required>
+            <option value="">Select a radio system</option>
+          </select>
+
           <div class="form-check mb-2">
             <input class="form-check-input" type="radio" name="aoaMode" id="aoaNew" value="new" checked>
             <label class="form-check-label" for="aoaNew">Create a <strong>new</strong> trigger</label>
@@ -3042,6 +3047,7 @@ function ensureAddOrAttachModal() {
         aoaSelect: document.getElementById('aoaExistingSelect'),
         aoaSubmit: document.getElementById('aoaSubmitBtn'),
         aoaTonePreview: document.getElementById('aoaTonePreview'),
+        aoaSystemSelect: document.getElementById('aoaSystemSelect'),
     });
 
     // Toggle select visibility
@@ -3050,15 +3056,23 @@ function ensureAddOrAttachModal() {
     };
     els.aoaNew.addEventListener('change', toggle);
     els.aoaExisting.addEventListener('change', toggle);
+    els.aoaSystemSelect.addEventListener('change', async () => {
+        const sysId = els.aoaSystemSelect.value;
+        els.aoaSelect.innerHTML = '<option value="">Select trigger…</option>';
+        if (sysId) {
+            await refreshSystemTriggers(true, sysId);
+            populateExistingTriggerSelect(activeTriggerRow);
+        }
+    });
 
     // Submit handler: branch to new vs existing
     els.aoaForm.addEventListener('submit', async (ev) => {
         ev.preventDefault();
         if (!activeTriggerRow || !pendingTriggerPayload) return;
 
-        const sysId = getTriggerSystemId();
+        const sysId = els.aoaSystemSelect.value;
         if (!sysId) {
-            alert("Select a system first.");
+            alert("Select a radio system first.");
             return;
         }
 
@@ -3090,6 +3104,7 @@ function ensureAddOrAttachModal() {
 
     // Rebuild select on-open
     els.aoaModal.addEventListener('show.bs.modal', () => {
+        els.aoaSystemSelect.value = '';
         populateExistingTriggerSelect(activeTriggerRow);
     });
 
@@ -3300,12 +3315,6 @@ function populateExistingTriggerSelect(row) {
 
 /** Factor existing “create new trigger from row” into a function we can call. */
 function openCreateTriggerFromRow(row) {
-    const sysId = getTriggerSystemId();
-    if (!sysId) {
-        alert("Select a system first.");
-        return;
-    }
-
     const built = buildTriggerPayloadForRow(row);
     if (!built) {
         alert("Unsupported or invalid tone row.");
@@ -3317,7 +3326,7 @@ function openCreateTriggerFromRow(row) {
 
     // (This block is your existing prefill; kept verbatim.)
     els.trigTitle.textContent = "Add Trigger";
-    els.trigSystemId.value = sysId;
+    els.trigSystemId.value = "";
     els.trigId.value = "";
     els.trigTalkgroup.value = "";
     const hintTg = Number.isFinite(Number(els.dTG.textContent)) ? els.dTG.textContent : "";
