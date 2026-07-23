@@ -2292,11 +2292,11 @@ def _fetch_geocoding_region_by_id(db, region_id: int):
     if not res.get("success"):
         return {"success": False, "message": res.get("message"), "result": {}}
 
-    regions = res.get("result", [])
-    if not regions:
+    region = res.get("result")
+    if not region:
         return {"success": False, "message": "Region not found.", "result": {}}
 
-    return {"success": True, "message": "Region retrieved.", "result": regions[0]}
+    return {"success": True, "message": "Region retrieved.", "result": region}
 
 
 def _fetch_geocoding_regions_for_system(db, radio_system_id: int):
@@ -2552,11 +2552,11 @@ def _fetch_geocoding_city_by_id(db, city_id: int):
     if not res.get("success"):
         return {"success": False, "message": res.get("message"), "result": {}}
 
-    cities = res.get("result", [])
-    if not cities:
+    city = res.get("result")
+    if not city:
         return {"success": False, "message": "City not found.", "result": {}}
 
-    return {"success": True, "message": "City retrieved.", "result": cities[0]}
+    return {"success": True, "message": "City retrieved.", "result": city}
 
 
 def _fetch_geocoding_cities_for_system(db, radio_system_id: int):
