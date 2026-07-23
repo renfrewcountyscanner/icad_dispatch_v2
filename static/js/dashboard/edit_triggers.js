@@ -452,6 +452,10 @@ async function reloadTriggerSelect(selectId = null) {
 const modalEl   = document.getElementById("triggerModal");
 const modalForm = document.getElementById("triggerForm");
 
+// The trigger editor has a page-level system selector. The shared modal
+// picker remains available for tone-finder, which has no page-level selector.
+document.getElementById("triggerModalSystemPicker")?.classList.add("d-none");
+
 /** Open Add Trigger modal using the explicitly selected page system. */
 document.getElementById("addTriggerBtn").addEventListener("click", () => {
     if (!curSys) { showAlert("Select a radio system first.", "warning"); return; }
