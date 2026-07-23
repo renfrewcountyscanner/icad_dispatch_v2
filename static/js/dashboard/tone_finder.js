@@ -24,6 +24,7 @@
 
 let table;                                  // DataTable instance
 const els = {};                             // Centralized DOM refs (populated in init)
+let availableRadioSystems = [];
 let callIdToDelete = null;                  // Pending delete id
 let refreshTimer = null;                    // Auto-refresh handle
 let currentPlayingId = null;                // Call-id currently playing
@@ -748,6 +749,8 @@ async function fetchSystems() {
             opt.textContent = sys.system_name || `ID ${sys.system_decimal}`;
             els.sysSel.appendChild(opt);
         });
+
+        availableRadioSystems = result;
 
         updateDashboardBanner({
             systemLabel: "All Systems",
@@ -3048,6 +3051,13 @@ function ensureAddOrAttachModal() {
         aoaSubmit: document.getElementById('aoaSubmitBtn'),
         aoaTonePreview: document.getElementById('aoaTonePreview'),
         aoaSystemSelect: document.getElementById('aoaSystemSelect'),
+    });
+    els.aoaSystemSelect.innerHTML = '<option value="">Select a radio system</option>';
+    availableRadioSystems.forEach(sys => {
+        const option = document.createElement('option');
+        option.value = String(sys.radio_system_id);
+        option.textContent = sys.system_name || `ID ${sys.system_decimal}`;
+        els.aoaSystemSelect.appendChild(option);
     });
 
     // Toggle select visibility
