@@ -204,7 +204,10 @@ def _table_columns(db, table: str) -> list[str]:
 
 def _copy_one_to_one_settings(db, table: str, source_id: int, target_id: int) -> None:
     columns = _table_columns(db, table)
-    pk = next((c for c in columns if c.endswith("_setting_id")), None)
+    # Settings tables use both ``*_setting_id`` and names such as
+    # ``tone_settings_id``. The first non-radio *_id column is the surrogate
+    # primary key; never copy it into the target row.
+    pk = next((c for c in columns if c != "radio_system_id" and c.endswith("_id")), None)
     values = [c for c in columns if c not in {pk, "radio_system_id"}]
     if not values:
         return
