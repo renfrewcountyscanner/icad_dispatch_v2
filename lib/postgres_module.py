@@ -363,7 +363,20 @@ class PostgreSQLDatabase:
         """
         Apply every migrations/NNN_description.sql whose NNN is not yet in
         schema_migrations. Each file is applied atomically.
+
+        Gunicorn creates one database wrapper per worker, so startup migration
+        execution must be serialized across processes.
         """
+        lock_key = 846271903
+        with self._get_cursor() as lock_cursor:
+            lock_cursor.execute("SELECT pg_advisory_lock(%s)", (lock_key,))
+            try:
+                self._run_pending_migrations_locked()
+            finally:
+                lock_cursor.execute("SELECT pg_advisory_unlock(%s)", (lock_key,))
+                lock_cursor.connection.commit()
+
+    def _run_pending_migrations_locked(self) -> None:
         pending_files: List[Path] = sorted(MIGRATIONS_DIR.glob("*.sql"))
         if not pending_files:
             module_logger.info("No migration files found in %s", MIGRATIONS_DIR)
@@ -387,7 +400,7 @@ class PostgreSQLDatabase:
             if self.run_migration(sql_content):
                 # Record the migration as applied
                 self.execute_commit(
-                    "INSERT INTO schema_migrations (version) VALUES (%s)",
+                    "INSERT INTO schema_migrations (version) VALUES (%s) ON CONFLICT (version) DO NOTHING",
                     (version,),
                 )
                 module_logger.info("Migration %s applied successfully.", path.name)
@@ -397,6 +410,6 @@ class PostgreSQLDatabase:
                     "for legacy data migrations. Marking as applied and continuing.", path.name
                 )
                 self.execute_commit(
-                    "INSERT INTO schema_migrations (version) VALUES (%s)",
+                    "INSERT INTO schema_migrations (version) VALUES (%s) ON CONFLICT (version) DO NOTHING",
                     (version,),
                 )

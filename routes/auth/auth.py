@@ -39,7 +39,8 @@ def auth_login():
     return resp
 
 
-@auth.route("/logout", methods=['GET'])
+@auth.route("/logout", methods=['POST'])
+@csrf_protect
 def auth_logout():
     db = current_app.config["db"]
     if session.get("user_id"):

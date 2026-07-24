@@ -274,7 +274,13 @@ def token_or_login_required(fn):
                 return fn(*args, **kwargs)
 
         # Fall back to session authentication
-        if "user_id" in session:
+        if session.get("authenticated"):
+            if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+                session_token = session.get("_csrf_token")
+                sent_token = _extract_csrf_token()
+                if not (session_token and sent_token and hmac.compare_digest(
+                        str(session_token), str(sent_token))):
+                    return api_error(403, "CSRF token missing or invalid.", code="csrf_failed")
             # User is logged in - use the requested system or first system
             db = current_app.config["db"]
 

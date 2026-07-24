@@ -59,7 +59,8 @@
 
 <script>
     // Set the current year dynamically in footer
-    document.getElementById("currentYear").textContent = new Date().getFullYear();
+    const currentYear = document.getElementById("currentYear");
+    if (currentYear) currentYear.textContent = new Date().getFullYear();
 </script>
 
 <script src="{{ url_for('static', filename='js/global.js') }}"></script>

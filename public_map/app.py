@@ -9,6 +9,7 @@ Hardened for 5-50 concurrent public users behind a reverse proxy.
 """
 import os
 import json
+import hmac
 import time
 import psycopg2
 import logging
@@ -247,9 +248,9 @@ def health():
             "calls_total": count,
             "timestamp": int(time.time()),
         }
-    except Exception as e:
-        logger.error("Health check failed: %s", e)
-        return {"status": "error", "message": str(e)}, 503
+    except Exception:
+        logger.exception("Health check failed")
+        return {"status": "error", "message": "Map health check unavailable"}, 503
 
 
 # ── On-demand map image renderer (zero persistent storage) ─────────
@@ -650,7 +651,7 @@ def api_push_call():
     """
     # API key check — fail closed for security
     api_key = request.headers.get("X-API-Key")
-    if not PUBLIC_MAP_API_KEY or api_key != PUBLIC_MAP_API_KEY:
+    if not PUBLIC_MAP_API_KEY or not hmac.compare_digest(str(api_key or ""), str(PUBLIC_MAP_API_KEY)):
         logger.warning("Unauthorized push attempt from %s", request.remote_addr)
         return {"success": False, "message": "Unauthorized"}, 401
 
@@ -674,9 +675,9 @@ def api_push_call():
             logger.info("Broadcast %d pushed call(s) from iCAD", len(valid_calls))
 
         return {"success": True, "broadcasted": len(valid_calls)}
-    except Exception as e:
-        logger.error("Push call error: %s", e)
-        return {"success": False, "message": str(e)}, 500
+    except Exception:
+        logger.exception("Push call error")
+        return {"success": False, "message": "Unable to process call payload"}, 500
 
 
 @app.route("/api/calls/<int:call_id>")

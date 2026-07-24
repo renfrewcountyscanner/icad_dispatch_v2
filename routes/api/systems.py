@@ -75,6 +75,33 @@ SSH_KEY_ROOT = Path("var/.ssh")
 
 api_systems = Blueprint("api_systems", __name__)
 
+
+@api_systems.before_request
+def enforce_system_permissions():
+    """Apply one consistent read/write boundary to every system-scoped route."""
+    if not session.get("authenticated") or session.get("is_admin"):
+        return None
+
+    view_args = request.view_args or {}
+    system_id = view_args.get("radio_system_id")
+    if system_id is None:
+        # Creating a system is an administrative operation. Collection GET is
+        # filtered by get_systems(user_id=...) below.
+        if request.method not in ("GET", "HEAD", "OPTIONS"):
+            return jsonify(success=False, message="Admin access required.", result=[]), 403
+        return None
+
+    try:
+        system_id = int(system_id)
+    except (TypeError, ValueError):
+        return jsonify(success=False, message="Invalid system.", result=[]), 400
+
+    permission = (session.get("user_systems") or {}).get(system_id)
+    required = "read" if request.method in ("GET", "HEAD", "OPTIONS") else "write"
+    if permission not in ("read", "write") or (required == "write" and permission != "write"):
+        return jsonify(success=False, message="System not found or access denied.", result=[]), 404
+    return None
+
 # ======================================================================
 # Helpers shared by trigger routes
 # ======================================================================
@@ -396,6 +423,7 @@ def systems_item(radio_system_id: int):
 # ======================================================================
 @api_systems.route("/<int:radio_system_id>/apikey", methods=["POST"])
 @login_required
+@csrf_protect
 def regenerate_api_key(radio_system_id: int):
     """
     Regenerate the API key for a system.
@@ -737,6 +765,7 @@ def systems_discord_fields_reorder(radio_system_id: int):
 
 @api_systems.route("/<int:radio_system_id>/discord/test", methods=["POST"])
 @login_required
+@csrf_protect
 def systems_discord_test(radio_system_id: int):
     """
     Send a Discord test message using the system's configured Discord settings + templates.

@@ -400,16 +400,11 @@ def one_call(call_id: int):
 #  DELETE /api/tone-finder/calls/<call_id>
 # ───────────────────────────────────────────────────────────────
 @bp_tone.route("/calls/<int:call_id>", methods=["DELETE"])
+@csrf_protect
 @login_required
 def delete_call(call_id: int):
     db     = current_app.config["db"]
     logger = current_app.config["logger"]
-
-    # ── optional CSRF snippet (unchanged) ───────────────────────
-    if request.is_json:
-        csrf = (request.json or {}).get("_csrf_token", "")
-        if not csrf or csrf != request.cookies.get("_csrf_token"):
-            return _err("CSRF token missing / invalid", 403)
 
     # ── locate file before deleting DB row ──────────────────────
     file_q = db.execute_query(
