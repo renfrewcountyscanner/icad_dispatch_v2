@@ -131,7 +131,11 @@ def token_required(fn):
         auth = request.headers.get("Authorization", "")
         if auth.lower().startswith("bearer "):
             return auth[7:].strip()
-        return request.form.get("key") or request.values.get("key")
+        return (
+            request.headers.get("X-API-Key")
+            or request.form.get("key")
+            or request.values.get("key")
+        )
 
     def _extract_system_decimal() -> int | None:
         sid = (
@@ -207,7 +211,11 @@ def token_or_login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         # Try token authentication first
-        token = request.form.get("key") or request.values.get("key")
+        token = (
+            request.headers.get("X-API-Key")
+            or request.form.get("key")
+            or request.values.get("key")
+        )
         auth_header = request.headers.get("Authorization", "")
         if auth_header.lower().startswith("bearer "):
             token = auth_header[7:].strip()
@@ -226,23 +234,44 @@ def token_or_login_required(fn):
             except (TypeError, ValueError):
                 sys_dec_id = None
 
+        db = current_app.config["db"]
+
         if token and sys_dec_id:
             # Try token authentication
-            if sys_dec_id:
-                db = current_app.config["db"]
+            row = db.execute_query(
+                "SELECT radio_system_id, system_decimal, api_key FROM radio_systems WHERE system_decimal = ?",
+                (sys_dec_id,), fetch_mode="one"
+            )
+            # Accept the internal primary key as a compatibility fallback for
+            # older uploaders that used radio_system_id instead of system_decimal.
+            if not row.get("result"):
                 row = db.execute_query(
-                    "SELECT radio_system_id, system_decimal, api_key FROM radio_systems WHERE system_decimal = ?",
-                    (sys_dec_id,),
-                    fetch_mode="one"
+                    "SELECT radio_system_id, system_decimal, api_key FROM radio_systems WHERE radio_system_id = ?",
+                    (sys_dec_id,), fetch_mode="one"
                 )
 
-                if row.get("success") and row.get("result") and token == row["result"]["api_key"]:
-                    # Token authentication successful
-                    g.radio_system_id = row["result"]["radio_system_id"]
-                    g.system_decimal = row["result"]["system_decimal"]
-                    g.api_token = token
-                    g.radio_system = row["result"]
-                    return fn(*args, **kwargs)
+            if row.get("success") and row.get("result") and hmac.compare_digest(
+                    str(token), str(row["result"].get("api_key") or "")):
+                g.radio_system_id = row["result"]["radio_system_id"]
+                g.system_decimal = row["result"]["system_decimal"]
+                g.api_token = token
+                g.radio_system = row["result"]
+                return fn(*args, **kwargs)
+
+        # A unique system API key is sufficient to identify its system. This
+        # keeps external clients working when they cannot send a system field.
+        if token and not sys_dec_id:
+            row = db.execute_query(
+                "SELECT radio_system_id, system_decimal, api_key FROM radio_systems WHERE api_key = ?",
+                (token,), fetch_mode="all"
+            )
+            matches = row.get("result") or [] if row.get("success") else []
+            if len(matches) == 1:
+                g.radio_system_id = matches[0]["radio_system_id"]
+                g.system_decimal = matches[0]["system_decimal"]
+                g.api_token = token
+                g.radio_system = matches[0]
+                return fn(*args, **kwargs)
 
         # Fall back to session authentication
         if "user_id" in session:
