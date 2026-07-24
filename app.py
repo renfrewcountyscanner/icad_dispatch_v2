@@ -21,6 +21,12 @@ DEFAULT_TIMEZONE = "America/New_York"
 load_dotenv()
 
 IS_DEBUG = os.getenv("DEBUG", "").lower() in ("true", "1", "yes", "on")
+PUBLIC_DEPLOYMENT = env_bool("PUBLIC_DEPLOYMENT", default=False)
+_proxy_hops_raw = os.getenv("TRUSTED_PROXY_HOPS", "1" if PUBLIC_DEPLOYMENT else "0")
+try:
+    TRUSTED_PROXY_HOPS = max(0, int(_proxy_hops_raw))
+except ValueError:
+    raise RuntimeError("TRUSTED_PROXY_HOPS must be a non-negative integer")
 
 raw_tz = (os.getenv("TIMEZONE") or "").strip()
 
@@ -110,7 +116,11 @@ main_logger.info(f"Timezone set to: {tz_name}")
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(
-    app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+    app.wsgi_app,
+    x_for=TRUSTED_PROXY_HOPS,
+    x_proto=TRUSTED_PROXY_HOPS,
+    x_host=TRUSTED_PROXY_HOPS,
+    x_prefix=TRUSTED_PROXY_HOPS,
 )
 
 secret_key_file = os.path.join(var_path, "secret_key.txt")
@@ -138,13 +148,18 @@ app.config["AUDIO_ARCHIVE_PATH"] = audio_path
 app.config['SESSION_TYPE']        = 'filesystem'
 app.config['SESSION_FILE_DIR']    = os.path.join(var_path, 'sessions')
 app.config['SESSION_PERMANENT']   = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 604800  # 7 days
+app.config['PERMANENT_SESSION_LIFETIME'] = int(os.getenv(
+    "SESSION_LIFETIME_SECONDS", "43200" if PUBLIC_DEPLOYMENT else "604800"
+))
 app.config['SESSION_USE_SIGNER']  = True
 app.config['SESSION_KEY_PREFIX']  = 'icad_dispatch_session:'
 
 # ─────────────── Cookies ───────────────
 # Secure only on HTTPS by default (or force via env)
-app.config['SESSION_COOKIE_SECURE']   = env_bool("SESSION_COOKIE_SECURE", default=False)
+app.config['SESSION_COOKIE_SECURE']   = env_bool(
+    "SESSION_COOKIE_SECURE", default=PUBLIC_DEPLOYMENT
+)
+app.config['PUBLIC_DEPLOYMENT']       = PUBLIC_DEPLOYMENT
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_DOMAIN']   = choose_cookie_domain()  # None => host-only (works for IP/localhost)
 app.config['SESSION_COOKIE_NAME']     = os.getenv("SESSION_COOKIE_NAME", "icad_dispatch")

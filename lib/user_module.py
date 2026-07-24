@@ -155,6 +155,8 @@ def set_session_keys(db, user_data: Dict[str, Any]) -> bool:
     """
     module_logger.debug("Setting Session Keys from user_data=%s", user_data)
     try:
+        # Replace the session on authentication to prevent session fixation.
+        session.clear()
         username = user_data.get("user_username")
         user_id = user_data.get("user_id")
         if not username:

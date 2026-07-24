@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, flash, redirect, url_for, render_
 from lib.cookie_module import issue_cookie
 from lib.user_module import authenticate_user, user_change_password, get_users
 from routes.decorators import login_required, csrf_protect
+from routes.middleware import login_rate_limited, clear_login_attempts
 
 auth = Blueprint('auth', __name__)
 
@@ -17,9 +18,15 @@ def auth_login():
     if not username or not password:
         return jsonify(success=False, message="Malformed Request"), 400
 
+    rate_key = f"{request.remote_addr or 'unknown'}:{username.casefold()}"
+    if login_rate_limited(rate_key):
+        return jsonify(success=False, message="Too many login attempts. Try again shortly."), 429
+
     auth_result = authenticate_user(current_app.config['db'], username, password)
     if not auth_result.get('success'):
         return jsonify(success=False, message="Invalid credentials"), 401
+
+    clear_login_attempts(rate_key)
 
     user_data = auth_result.get('result')
 

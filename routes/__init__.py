@@ -1,7 +1,7 @@
 # routes/__init__.py
 
 from flask import Flask
-from routes.middleware import log_ip, inject_csrf_token, log_request_path, load_remembered_user, attach_rotated_cookie
+from routes.middleware import log_ip, inject_csrf_token, log_request_path, load_remembered_user, attach_rotated_cookie, add_security_headers
 from routes.base_site.base_site import base_site
 from routes.auth.auth import auth
 from routes.dashboard.dashboard import dashboard
@@ -21,4 +21,5 @@ def register_middlewares(app: Flask):
     app.before_request(log_request_path) # Log Request path
     app.before_request(load_remembered_user)
     app.after_request(attach_rotated_cookie)
+    app.after_request(add_security_headers)
     app.context_processor(inject_csrf_token)  # Inject CSRF token into templates

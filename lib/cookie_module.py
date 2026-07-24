@@ -51,7 +51,7 @@ def _set_cookie(resp, value):
         "remember_me", value,
         max_age=60*60*24*30,
         httponly=True,
-        secure=not IS_DEBUG,  # Secure only in prod
+        secure=os.getenv("SESSION_COOKIE_SECURE", "true").lower() in ("1", "true", "yes", "on") and not IS_DEBUG,
         domain=os.getenv("SESSION_COOKIE_DOMAIN"),
         samesite="Lax",
         path="/"

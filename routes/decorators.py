@@ -208,8 +208,9 @@ def token_or_login_required(fn):
     def wrapper(*args, **kwargs):
         # Try token authentication first
         token = request.form.get("key") or request.values.get("key")
-        if token and request.headers.get("Authorization", "").lower().startswith("bearer "):
-            token = request.headers.get("Authorization")[7:].strip()
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header[7:].strip()
 
         sys_dec_id = (
             request.form.get("system") or

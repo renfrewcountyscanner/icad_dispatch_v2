@@ -2,12 +2,35 @@
 import base64
 import os
 import secrets
+import threading
+import time
+from collections import defaultdict, deque
 from typing import Dict, Any
 
 from flask import request, session, current_app
 from flask import g
 from lib.cookie_module import verify_cookie, _set_cookie
 from lib.user_module import get_users, set_session_keys
+
+_LOGIN_WINDOW_SECONDS = 60
+_LOGIN_MAX_ATTEMPTS = 8
+_login_attempts = defaultdict(deque)
+_login_lock = threading.Lock()
+
+def login_rate_limited(key: str) -> bool:
+    now = time.monotonic()
+    with _login_lock:
+        attempts = _login_attempts[key]
+        while attempts and now - attempts[0] > _LOGIN_WINDOW_SECONDS:
+            attempts.popleft()
+        if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
+            return True
+        attempts.append(now)
+        return False
+
+def clear_login_attempts(key: str) -> None:
+    with _login_lock:
+        _login_attempts.pop(key, None)
 
 def log_ip():
     """Logs the IP address of the incoming request."""
@@ -119,9 +142,21 @@ def load_remembered_user():
         # Rebuild your session quickly
         user_row = get_users(current_app.config['db'], user_id=user_id)
         if user_row:
-            set_session_keys(user_row[0])
+            set_session_keys(current_app.config['db'], user_row[0])
 
 def attach_rotated_cookie(resp):
     if hasattr(g, "_remember_outgoing_cookie"):
         _set_cookie(resp, g._remember_outgoing_cookie)
+    return resp
+
+def add_security_headers(resp):
+    """Apply conservative browser protections to HTML and API responses."""
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    if request.path == "/login" or request.path.startswith(("/auth/", "/dashboard", "/admin", "/api/")):
+        resp.headers.setdefault("Cache-Control", "no-store")
+    if request.is_secure and current_app.config.get("PUBLIC_DEPLOYMENT"):
+        resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return resp
