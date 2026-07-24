@@ -19,6 +19,7 @@
     <div class="ap-page-panel">
         <div class="ap-page-panel-body">
             <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
                 <div class="mb-3">
                     <label for="systemSelect" class="form-label">Radio System</label>
                     <select class="form-select" id="systemSelect" name="system" required>
