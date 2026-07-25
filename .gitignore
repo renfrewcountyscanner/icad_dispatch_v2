@@ -74,6 +74,7 @@ build/
 
 # Docker
 *.dockerignore
+!.dockerignore
 
 # AI Config
 .claude/

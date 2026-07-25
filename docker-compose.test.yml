@@ -1,3 +1,5 @@
+name: icad_dispatch_v2_test
+
 services:
   postgres:
     image: postgis/postgis:16-3.4

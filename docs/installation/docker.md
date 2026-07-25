@@ -449,6 +449,11 @@ docker compose -f docker-compose.production.yml up -d
 
 ## Common Commands
 
+### Move configuration to another instance
+
+Use the [Configuration Migration](config-migration.md) guide to export and
+import operational settings without copying call history or user passwords.
+
 ```bash
 # View all running containers
 docker compose -f docker-compose.production.yml ps
